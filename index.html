@@ -222,7 +222,7 @@
                 </div>
             </div>
 
-            <div class="text-[11px] text-slate-400">تجمع عسير الصحي © 2026 — جميع الحقوق محفوظة</div>
+            <div class="text-[11px] text-slate-400">تجمع عسير الصحي © 2026 — جميع الحقوق محفوظة · <span class="app-version"></span></div>
         </div>
     </aside>
 
@@ -266,6 +266,7 @@
                 <span class="flex-1 text-right"><span class="block text-sm font-bold text-slate-900">الدخول كزائر</span><span class="block text-[11px] text-slate-500">عرض لوحة المؤشرات فقط دون تعديل</span></span>
                 <i class="fa-solid fa-chevron-left text-slate-300 text-xs"></i>
             </button>
+            <div class="lg:hidden text-center text-[10px] text-slate-400 mt-6"><span class="app-version"></span></div>
         </div>
     </section>
 </div>
@@ -758,6 +759,8 @@ const STORAGE = { users: "ASEER_USERS_V5", kpis: "ASEER_KPIS_V5", records: "ASEE
 // Keys used by the previous version, so existing data entries are carried over.
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
+// Shown on the login screen so users can confirm the browser loaded the latest version.
+const APP_VERSION = "الإصدار 2.1 — 2026-10-02";
 const SECTIONS = ["dashboard", "data", "kpis", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -826,6 +829,35 @@ const defaultKpis = [
 
 // ---- KPI_Dashboard_Ready.xlsx format (03_KPI_MASTER + 02_NORMALIZED_DATA) ----
 const DASHBOARD_SHEETS = { master:"03_KPI_MASTER", data:"02_NORMALIZED_DATA", input:"KPI_Input", lists:"LISTS" };
+// Sheets are recognized by their header columns, so renamed or added sheets still import.
+const DASHBOARD_HEADERS = {
+    master: ["KPI_Code", "KPI_Name", "Definition", "Data_Frequency", "Aggregation_Method"],
+    data:   ["Date", "KPI_Code", "Actual_Value", "Quarter", "Data_Quality_Status"],
+    input:  ["KPI_Code", "Valid", "Mode"],
+    lists:  ["Label (dropdown)", "KPI_Code"]
+};
+
+// Returns { name, headerRow } for the sheet whose header (within its first rows) has all the columns.
+function findSheetByHeaders(workbook, columns, preferred){
+    const order = [preferred, ...workbook.SheetNames.filter(n => n !== preferred)].filter(n => workbook.Sheets[n]);
+    for(const name of order){
+        const ws = workbook.Sheets[name];
+        if(!ws["!ref"]) continue;
+        const ref = XLSX.utils.decode_range(ws["!ref"]);
+        const top = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true, range:{ s:{ r:ref.s.r, c:ref.s.c }, e:{ r:Math.min(ref.e.r, ref.s.r + 15), c:Math.min(ref.e.c, ref.s.c + 60) } } });
+        const idx = top.findIndex(row => Array.isArray(row) && columns.every(c => row.some(cell => String(cell ?? "").trim() === c)));
+        if(idx >= 0) return { name, headerRow: ref.s.r + idx };
+    }
+    return null;
+}
+
+function locateDashboardSheets(workbook){
+    const found = {};
+    Object.keys(DASHBOARD_HEADERS).forEach(k => found[k] = findSheetByHeaders(workbook, DASHBOARD_HEADERS[k], DASHBOARD_SHEETS[k]));
+    return found.master && found.data ? found : null;
+}
+
+const sheetRows = (workbook, loc) => XLSX.utils.sheet_to_json(workbook.Sheets[loc.name], { defval:null, raw:true, range: loc.headerRow });
 // Rows the source file marks as not real readings; per its rules they stay empty, never zero.
 const EXCLUDED_DQ = { MISSING:"خانة فارغة", NOT_SENT:"لم تُرسل", NOT_MEASURED:"لم تُقس", NON_NUMERIC:"قيمة غير رقمية", ZERO_DENOMINATOR:"مقام صفري", EXCEL_ERROR:"خطأ في Excel" };
 const MASTER_CATEGORY_AR = {
@@ -886,6 +918,7 @@ function init(){
     records = unpackRecords(load(STORAGE.records, null) || load(LEGACY_STORAGE.records, []));
     auditLogs = load(STORAGE.audit, null) || load(LEGACY_STORAGE.audit, []);
 
+    document.querySelectorAll(".app-version").forEach(e => e.textContent = APP_VERSION);
     renderLoginUsers();
     const session = sessionStorage.getItem(STORAGE.session);
     if(session){
@@ -1687,8 +1720,9 @@ async function handleExcelUpload(event){
         const workbook = XLSX.read(await file.arrayBuffer(), { type:"array", cellDates:true });
         importedRows = [];
         importWorkbookInfo = { fileName: file.name, sheets: workbook.SheetNames, mode:"rows" };
-        if(workbook.SheetNames.includes(DASHBOARD_SHEETS.master) && workbook.SheetNames.includes(DASHBOARD_SHEETS.data)){
-            prepareDashboardImport(workbook);
+        const dashboardSheets = locateDashboardSheets(workbook);
+        if(dashboardSheets){
+            prepareDashboardImport(workbook, dashboardSheets);
             return;
         }
         // A filled-in template: read only its data sheet, not the KPI list or instructions.
@@ -1809,11 +1843,11 @@ function closeImportModal(){ document.getElementById("importModal").classList.ad
 // ---- Import of the KPI_Dashboard_Ready workbook: KPI definitions + normalized data in one step ----
 let pendingWorkbook = null;
 
-function prepareDashboardImport(workbook){
-    const masterRows = XLSX.utils.sheet_to_json(workbook.Sheets[DASHBOARD_SHEETS.master], { defval:null, raw:true });
+function prepareDashboardImport(workbook, sheets){
+    const masterRows = sheetRows(workbook, sheets.master);
     const fileKpis = masterRows.filter(m => m.KPI_Code && m.KPI_Name && !/^(Legend|ADMIN)/i.test(String(m.KPI_Code))).map(kpiFromMaster);
     const byCode = new Map(fileKpis.map(k => [k.code, k]));
-    const dataRows = XLSX.utils.sheet_to_json(workbook.Sheets[DASHBOARD_SHEETS.data], { defval:null, raw:true });
+    const dataRows = sheetRows(workbook, sheets.data);
 
     const rows = [], excluded = {}, seen = new Set();
     let unknown = 0, invalid = 0, duplicates = 0, ratioOnly = 0;
@@ -1843,7 +1877,7 @@ function prepareDashboardImport(workbook){
             dataSource: String(r.Data_Source || "").trim(), dq: dq === "OK" ? "" : dq, notes: dq === "OK" ? "" : String(r.Notes || "").trim()
         });
     });
-    const input = readKpiInputSheet(workbook, byCode);
+    const input = readKpiInputSheet(workbook, sheets, byCode);
     // Entries typed in KPI_Input are newer than the historical sheet, so they win on the same KPI and date.
     const rowIndex = new Map(rows.map((r, i) => [r.kpiCode + "|" + formatDateInput(r.date), i]));
     input.rows.forEach(r => {
@@ -1881,10 +1915,10 @@ function prepareDashboardImport(workbook){
 }
 
 // Staff entry sheet: date, KPI (dropdown label from LISTS), value or numerator/denominator, notes.
-function readKpiInputSheet(workbook, byCode){
+function readKpiInputSheet(workbook, sheets, byCode){
     const result = { present:false, rows:[], rejected:0 };
-    const ws = workbook.Sheets[DASHBOARD_SHEETS.input];
-    if(!ws) return result;
+    if(!sheets.input) return result;
+    const ws = workbook.Sheets[sheets.input.name];
     result.present = true;
     const grid = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true });
     const headerIdx = grid.findIndex(r => Array.isArray(r) && r.includes("KPI_Code") && r.some(c => String(c || "").startsWith("التاريخ")));
@@ -1893,8 +1927,8 @@ function readKpiInputSheet(workbook, byCode){
     const col = prefix => header.findIndex(h => h.startsWith(prefix));
     const c = { date:col("التاريخ"), label:col("المؤشر"), value:col("القيمة"), num:col("البسط"), den:col("المقام"), notes:col("ملاحظات"), code:header.indexOf("KPI_Code") };
     const labelToCode = new Map();
-    if(workbook.Sheets[DASHBOARD_SHEETS.lists]){
-        XLSX.utils.sheet_to_json(workbook.Sheets[DASHBOARD_SHEETS.lists], { defval:null, raw:true })
+    if(sheets.lists){
+        sheetRows(workbook, sheets.lists)
             .forEach(l => { if(l["Label (dropdown)"] && l.KPI_Code) labelToCode.set(normalizeText(l["Label (dropdown)"]), String(l.KPI_Code).trim()); });
     }
     grid.slice(headerIdx + 1).forEach(r => {
