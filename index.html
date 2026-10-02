@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة مؤشرات الأداء التنفيذية | مستشفى إرادة والصحة النفسية بأبها</title>
+    <link rel="icon" type="image/png" href="logo-mark.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -44,6 +45,15 @@
             .desktop-nav { display: flex; }
             .mobile-nav { display: none; }
         }
+
+        .brand-logo { filter: drop-shadow(0 2px 10px rgba(56, 189, 248, .18)); }
+        .header-logo { height: 40px; }
+        @media (min-width: 640px) { .header-logo { height: 48px; } }
+        @media (min-width: 1280px) { .header-logo { height: 56px; } }
+        /* Responsive "show" helpers; Tailwind's hidden + sm:block loses to the .hidden !important override. */
+        .show-sm, .show-xl { display: none; }
+        @media (min-width: 640px) { .show-sm { display: block; } }
+        @media (min-width: 1536px) { .show-xl { display: block; } }
 
         .tab-btn {
             transition: all 0.2s ease;
@@ -89,6 +99,8 @@
         .btn-secondary { background: #f1f5f9; color: #334155; }
         .btn-secondary:hover { background: #e2e8f0; }
         .btn-danger { background: #ef4444; color: white; }
+        .btn-ghost { background: rgba(255,255,255,.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,.16); padding: 8px 14px; white-space: nowrap; }
+        .btn-ghost:hover { background: rgba(255,255,255,.16); color: #fff; }
         .btn-danger:hover { background: #dc2626; }
 
         .modal {
@@ -161,15 +173,7 @@
     <aside class="login-brand">
         <div class="login-brand-grid"></div>
         <div class="relative z-10 flex flex-col h-full">
-            <div class="flex items-center gap-3">
-                <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md p-2 flex items-center justify-center border border-white/20 shrink-0">
-                    <img src="logo.png" alt="شعار المستشفى" class="w-full h-full object-contain">
-                </div>
-                <div>
-                    <div class="text-sm font-bold text-white">مستشفى إرادة والصحة النفسية بأبها</div>
-                    <div class="text-[11px] text-sky-300 font-medium">تجمع عسير الصحي</div>
-                </div>
-            </div>
+            <img src="logo-full-white.png" alt="مستشفى إرادة والصحة النفسية بأبها — تجمع عسير الصحي" class="brand-logo h-16 w-auto self-start">
 
             <div class="my-auto py-10">
                 <div class="inline-flex items-center gap-2 text-[11px] font-bold text-sky-200 bg-sky-400/10 border border-sky-300/20 rounded-full px-3 py-1 mb-5">
@@ -192,12 +196,8 @@
     <!-- Account picker -->
     <section class="login-panel">
         <div class="w-full max-w-md">
-            <div class="lg:hidden flex items-center gap-3 mb-8">
-                <div class="w-12 h-12 rounded-xl bg-slate-900 p-1.5 flex items-center justify-center shrink-0"><img src="logo.png" alt="شعار المستشفى" class="w-full h-full object-contain"></div>
-                <div>
-                    <div class="text-sm font-bold text-slate-900">مستشفى إرادة والصحة النفسية بأبها</div>
-                    <div class="text-[11px] text-sky-700 font-semibold">لوحة مؤشرات الأداء التنفيذية</div>
-                </div>
+            <div class="lg:hidden executive-header rounded-2xl px-5 py-4 mb-8 flex justify-center">
+                <img src="logo-full-white.png" alt="مستشفى إرادة والصحة النفسية بأبها — تجمع عسير الصحي" class="brand-logo h-12 w-auto">
             </div>
 
             <h2 class="text-2xl font-black text-slate-900">مرحباً بك</h2>
@@ -234,33 +234,31 @@
 <div id="app" class="hidden min-h-screen flex flex-col">
     <!-- EXECUTIVE HEADER -->
     <header class="executive-header text-white sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-            <div class="flex items-center space-x-4 space-x-reverse">
-                <div class="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl p-1.5 flex items-center justify-center border border-white/20 shadow-inner shrink-0">
-                    <img src="logo.png" alt="شعار المستشفى" class="w-full h-full object-contain filter drop-shadow-md">
-                </div>
-                <div>
-                    <h2 class="text-sm sm:text-base font-bold text-white tracking-wide">مستشفى إرادة والصحة النفسية بأبها</h2>
-                    <p class="text-[11px] text-sky-300 font-medium">تجمع عسير الصحي - لوحة مؤشرات الأداء التنفيذية</p>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[88px] flex items-center justify-between gap-4">
+            <div class="flex items-center gap-5 min-w-0">
+                <img src="logo-full-white.png" alt="مستشفى إرادة والصحة النفسية بأبها — تجمع عسير الصحي" class="brand-logo header-logo w-auto shrink-0">
+                <div class="show-xl border-r border-white/15 pr-5">
+                    <div class="text-[13px] font-bold text-white">لوحة مؤشرات الأداء التنفيذية</div>
+                    <div class="text-[10px] text-sky-300/80 font-medium mt-0.5 tracking-wide">EXECUTIVE KPI DASHBOARD</div>
                 </div>
             </div>
 
             <!-- TABS NAVIGATION IN HEADER -->
             <nav class="desktop-nav items-center gap-1 bg-sky-950/40 p-1.5 rounded-2xl border border-sky-800/50">
-                <button data-section="dashboard" onclick="showSection('dashboard')" class="tab-btn active px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-chart-pie ml-1"></i> اللوحة</button>
-                <button data-section="data" onclick="showSection('data')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-pen-to-square ml-1"></i> إدخال واستيراد</button>
-                <button data-section="kpis" onclick="showSection('kpis')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-bullseye ml-1"></i> المؤشرات</button>
-                <button data-section="quality" onclick="showSection('quality')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-shield-halved ml-1"></i> الجودة</button>
-                <button data-section="users" onclick="showSection('users')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-users-gear ml-1"></i> المستخدمين</button>
-                <button data-section="audit" onclick="showSection('audit')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-clock-rotate-left ml-1"></i> التدقيق</button>
+                <button data-section="dashboard" onclick="showSection('dashboard')" class="tab-btn active px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-chart-pie ml-1"></i> اللوحة</button>
+                <button data-section="data" onclick="showSection('data')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-pen-to-square ml-1"></i> إدخال واستيراد</button>
+                <button data-section="kpis" onclick="showSection('kpis')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-bullseye ml-1"></i> المؤشرات</button>
+                <button data-section="quality" onclick="showSection('quality')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-shield-halved ml-1"></i> الجودة</button>
+                <button data-section="users" onclick="showSection('users')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-users-gear ml-1"></i> المستخدمين</button>
+                <button data-section="audit" onclick="showSection('audit')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left ml-1"></i> التدقيق</button>
             </nav>
 
             <div class="flex items-center gap-3">
-                <div class="text-left hidden sm:block">
-                    <div id="headerUserName" class="text-xs font-bold text-white"></div>
-                    <div id="headerUserRole" class="text-[10px] text-sky-300 font-semibold"></div>
+                <div class="show-sm text-left max-w-[170px]">
+                    <div id="headerUserName" class="text-xs font-bold text-white truncate"></div>
+                    <div id="headerUserRole" class="text-[10px] text-sky-300 font-semibold truncate"></div>
                 </div>
-                <button onclick="logout()" class="btn btn-secondary text-xs px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20" title="تسجيل الخروج"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+                <button onclick="logout()" class="btn btn-ghost text-xs" title="تسجيل الخروج"><i class="fa-solid fa-arrow-right-from-bracket ml-1"></i> خروج</button>
             </div>
         </div>
     </header>
@@ -350,8 +348,21 @@
             <!-- MAIN TABLE -->
             <div class="card overflow-hidden">
                 <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
-                    <h3 class="font-bold text-sm text-slate-900">جدول أداء المؤشرات التنفيذية المعتمدة</h3>
+                    <h3 class="font-bold text-sm text-slate-900">جدول أداء المؤشرات التنفيذية المعتمدة <span id="tableCount" class="text-[11px] font-semibold text-slate-400 mr-1"></span></h3>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input id="tableSearch" type="search" placeholder="بحث باسم المؤشر أو الكود..." class="!py-2 !pr-9 !text-xs w-56" oninput="renderDashboard()">
+                        </div>
+                        <select id="tableStatus" class="!py-2 !text-xs !w-36" onchange="renderDashboard()">
+                            <option value="ALL">كل الحالات</option>
+                            <option value="green">محقق</option>
+                            <option value="yellow">تحذير</option>
+                            <option value="red">غير محقق</option>
+                            <option value="gray">بدون بيانات</option>
+                        </select>
                     <button id="exportDashboardBtn" onclick="exportDashboard()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير البيانات إلى Excel</button>
+                    </div>
                 </div>
                 <div class="overflow-auto max-h-[500px]">
                     <table>
@@ -382,7 +393,27 @@
                 </div>
                 <div class="card p-5">
                     <h3 class="font-bold text-sm text-slate-900 mb-4">نسبة الإنجاز حسب المؤشر</h3>
-                    <div style="height:280px"><canvas id="achievementChart"></canvas></div>
+                    <div id="achievementWrap" class="overflow-y-auto" style="max-height:400px"><div id="achievementBox" style="height:280px"><canvas id="achievementChart"></canvas></div></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card p-5">
+                    <div class="mb-4">
+                        <h3 class="font-bold text-sm text-slate-900">مقارنة الأداء عبر الأرباع</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">متوسط نسبة الإنجاز لكل ربع — السنة المختارة مقابل السنة السابقة</p>
+                    </div>
+                    <div style="height:300px"><canvas id="quarterChart"></canvas></div>
+                </div>
+                <div id="trendCard" class="card p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-900">اتجاه المؤشر ربعياً</h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">القيمة الفعلية لكل ربع مقابل المستهدف</p>
+                        </div>
+                        <select id="trendKpi" class="!py-2 !text-xs !w-56" onchange="renderTrendChart()"></select>
+                    </div>
+                    <div style="height:300px"><canvas id="trendChart"></canvas></div>
                 </div>
             </div>
         </section>
@@ -462,7 +493,13 @@
                             </div>
                         </div>
                     </div>
-                    <h4 class="text-xs font-bold text-slate-700 pt-2">آخر السجلات المدخلة</h4>
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <h4 class="text-xs font-bold text-slate-700">السجلات المدخلة <span id="recordsCount" class="text-slate-400 font-semibold mr-1"></span></h4>
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input id="recordSearch" type="search" placeholder="بحث بالمؤشر أو التاريخ..." class="!py-2 !pr-9 !text-xs w-56" oninput="renderRecords()">
+                        </div>
+                    </div>
                     <div class="overflow-auto max-h-[450px]">
                         <table>
                             <thead>
@@ -620,6 +657,34 @@
     </div>
 </div>
 
+<!-- ================= MODAL: RECORD ================= -->
+<div id="recordModal" class="modal hidden">
+    <div class="modal-box space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+            <div>
+                <h3 class="text-base font-bold text-slate-900">تعديل سجل بيانات</h3>
+                <p id="editRecordKpi" class="text-xs text-sky-700 font-semibold mt-0.5"></p>
+            </div>
+            <button onclick="closeRecordModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+        </div>
+        <input type="hidden" id="editRecordId">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div><label class="block font-bold text-slate-700 mb-1">تاريخ السجل</label><input type="date" id="editRecordDate"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">القيمة الفعلية</label><input type="number" step="any" id="editRecordValue"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">البسط</label><input type="number" step="any" id="editRecordNumerator"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">المقام</label><input type="number" step="any" id="editRecordDenominator"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">الوزن</label><input type="number" step="any" id="editRecordWeight"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">مصدر البيانات</label><input type="text" id="editRecordSource"></div>
+            <div class="md:col-span-2"><label class="block font-bold text-slate-700 mb-1">ملاحظات</label><textarea id="editRecordNotes" rows="2"></textarea></div>
+            <div class="md:col-span-2"><label class="block font-bold text-rose-600 mb-1">سبب التعديل <span class="text-rose-500">*</span></label><textarea id="editRecordReason" rows="2" placeholder="يُسجل في سجل التدقيق"></textarea></div>
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
+            <button onclick="closeRecordModal()" class="btn btn-secondary text-xs">إلغاء</button>
+            <button onclick="saveRecordEdit()" class="btn btn-primary text-xs">حفظ التعديل</button>
+        </div>
+    </div>
+</div>
+
 <!-- ================= MODAL: IMPORT ================= -->
 <div id="importModal" class="modal hidden">
     <div class="modal-box space-y-4">
@@ -673,7 +738,23 @@ const defaultKpis = [
 ];
 
 let users = [], kpis = [], records = [], auditLogs = [], currentUser = null;
-let statusChart = null, achievementChart = null;
+let statusChart = null, achievementChart = null, quarterChart = null, trendChart = null;
+
+// Chart palette: series colors (categorical slots 1-2) and a neutral target reference.
+const CHART = { current:"#2a78d6", previous:"#eb6834", target:"#64748b", grid:"#eef2f6", tick:"#64748b" };
+if(window.Chart){
+    Chart.defaults.font.family = "'Janna LT', 'Tajawal', Tahoma, sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = CHART.tick;
+    Chart.defaults.plugins.legend.rtl = true;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    Chart.defaults.plugins.tooltip.rtl = true;
+    Chart.defaults.plugins.tooltip.backgroundColor = "#0b1f33";
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 10;
+    Chart.defaults.scale.grid.color = CHART.grid;
+}
 let importedRows = [], importWorkbookInfo = {};
 
 function init(){
@@ -723,6 +804,8 @@ function logout(){
     document.getElementById("loginUsername").value = "";
     document.getElementById("loginPassword").value = "";
     document.getElementById("loginPasswordBox").classList.add("hidden");
+    ["tableSearch","recordSearch"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("tableStatus").value = "ALL";
     hideLoginError();
     renderLoginUsers();
 }
@@ -904,6 +987,61 @@ function deleteRecord(id){
     showToast("تم حذف السجل.");
 }
 
+// Approvers can edit any record; data entry can edit its own records until they are approved.
+function canEditRecord(r){
+    if(can("approve")) return true;
+    return can("data") && !r.approved && r.createdBy === currentUser.displayName;
+}
+
+function openRecordModal(id){
+    const r = records.find(x => x.id === id);
+    if(!r || !canEditRecord(r)){ showToast("ليس لديك صلاحية تعديل هذا السجل."); return; }
+    const k = kpis.find(x => x.code === r.kpiCode);
+    document.getElementById("editRecordId").value = id;
+    document.getElementById("editRecordKpi").textContent = k?.name || r.kpiName || r.kpiCode;
+    document.getElementById("editRecordDate").value = r.date;
+    document.getElementById("editRecordValue").value = r.actualValue ?? "";
+    document.getElementById("editRecordNumerator").value = r.numerator ?? "";
+    document.getElementById("editRecordDenominator").value = r.denominator ?? "";
+    document.getElementById("editRecordWeight").value = r.weight ?? "";
+    document.getElementById("editRecordSource").value = r.dataSource || "";
+    document.getElementById("editRecordNotes").value = r.notes || "";
+    document.getElementById("editRecordReason").value = "";
+    document.getElementById("recordModal").classList.remove("hidden");
+}
+
+function closeRecordModal(){ document.getElementById("recordModal").classList.add("hidden"); }
+
+function saveRecordEdit(){
+    const id = document.getElementById("editRecordId").value;
+    const idx = records.findIndex(x => x.id === id);
+    if(idx < 0 || !canEditRecord(records[idx])) return;
+    const old = records[idx];
+    const date = document.getElementById("editRecordDate").value;
+    const value = parseFloat(document.getElementById("editRecordValue").value);
+    const reason = document.getElementById("editRecordReason").value.trim();
+    if(!date || Number.isNaN(value)){ showToast("التاريخ والقيمة الفعلية مطلوبان."); return; }
+    if(!reason){ showToast("اكتب سبب التعديل."); return; }
+    const den = parseNum("editRecordDenominator");
+    if(den === 0){ showToast("لا يمكن أن يكون المقام صفراً."); return; }
+    if(records.some(x => x.id !== id && x.kpiCode === old.kpiCode && x.date === date)){ showToast("يوجد سجل آخر لنفس المؤشر في هذا التاريخ."); return; }
+
+    const updated = normalizeRecord({
+        ...old, date, actualValue:value,
+        numerator:parseNum("editRecordNumerator"), denominator:den, weight:parseNum("editRecordWeight"),
+        dataSource:document.getElementById("editRecordSource").value.trim(),
+        notes:document.getElementById("editRecordNotes").value.trim()
+    });
+    updated.updatedBy = currentUser.displayName;
+    updated.updatedAt = new Date().toISOString();
+    records[idx] = updated;
+    save(STORAGE.records, records);
+    const summary = r => `${r.date}: ${r.actualValue}${r.numerator != null || r.denominator != null ? ` (${r.numerator ?? "—"}/${r.denominator ?? "—"})` : ""}`;
+    addAudit("EDIT_RECORD", updated.kpiName, summary(old), summary(updated), reason);
+    closeRecordModal(); refreshData();
+    showToast("تم حفظ تعديل السجل.");
+}
+
 function refreshData(){ renderRecords(); populateFilters(); renderDashboard(); runQualityCheck(); }
 
 function parseNum(id){ const v = document.getElementById(id).value; if(v === "") return null; const n = parseFloat(v); return Number.isNaN(n) ? null : n; }
@@ -1048,8 +1186,90 @@ function renderDashboard(){
     document.getElementById("summaryAchievement").textContent = avgAch == null ? "—" : avgAch.toFixed(1) + "%";
 
     renderExecInsights(results, year, q);
-    renderTable(results);
+
+    const term = normalizeName(document.getElementById("tableSearch").value);
+    const st = document.getElementById("tableStatus").value;
+    const tableRows = results.filter(r =>
+        (st === "ALL" || r.status.key === st) &&
+        (!term || normalizeName(r.kpi.name).includes(term) || r.kpi.code.toLowerCase().includes(term)));
+    document.getElementById("tableCount").textContent = `(${tableRows.length} من ${results.length})`;
+    renderTable(tableRows);
     renderCharts(results);
+    renderQuarterChart(year, cat);
+    populateTrendKpis();
+    renderTrendChart();
+}
+
+function avgAchievement(year, q, cat){
+    const vals = computeResults(year, q, cat).map(r => r.ach).filter(v => v != null);
+    return vals.length ? Number((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)) : null;
+}
+
+const QUARTERS = ["Q1","Q2","Q3","Q4"];
+const QUARTER_LABELS = ["الربع الأول","الربع الثاني","الربع الثالث","الربع الرابع"];
+
+function renderQuarterChart(year, cat){
+    const cur = QUARTERS.map(q => avgAchievement(year, q, cat));
+    const prev = QUARTERS.map(q => avgAchievement(year-1, q, cat));
+    if(quarterChart) quarterChart.destroy();
+    quarterChart = new Chart(document.getElementById("quarterChart"), {
+        data: {
+            labels: QUARTER_LABELS,
+            datasets: [
+                { type:"bar", label:String(year), data:cur, backgroundColor:CHART.current, borderRadius:4, maxBarThickness:28, categoryPercentage:.6, barPercentage:.85, order:2 },
+                { type:"bar", label:String(year-1), data:prev, backgroundColor:CHART.previous, borderRadius:4, maxBarThickness:28, categoryPercentage:.6, barPercentage:.85, order:2 },
+                { type:"line", label:"المستهدف 100%", data:[100,100,100,100], borderColor:CHART.target, borderWidth:1.5, borderDash:[5,4], pointRadius:0, pointHitRadius:0, order:1 }
+            ]
+        },
+        options: {
+            responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:16 } }, interaction:{ mode:"index", intersect:false },
+            scales:{ y:{ position:"right", beginAtZero:true, suggestedMax:120, ticks:{ callback:v => v + "%" } }, x:{ reverse:true, grid:{ display:false } } },
+            plugins:{ legend:{ position:"bottom" }, tooltip:{ filter: i => i.dataset.type !== "line", callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : c.raw + "%"}` } } }
+        }
+    });
+}
+
+function populateTrendKpis(){
+    const sel = document.getElementById("trendKpi");
+    const current = sel.value;
+    sel.innerHTML = kpis.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("");
+    if(kpis.some(k => k.code === current)) sel.value = current;
+    else {
+        // Default to the first KPI that has data this year.
+        const { year } = getFilters();
+        const withData = kpis.find(k => QUARTERS.some(q => getPeriodValue(k.code, year, q) != null));
+        if(withData) sel.value = withData.code;
+    }
+}
+
+function renderTrendChart(){
+    const code = document.getElementById("trendKpi").value;
+    const kpi = kpis.find(k => k.code === code);
+    if(trendChart) trendChart.destroy();
+    if(!kpi) return;
+    const { year } = getFilters();
+    const cur = QUARTERS.map(q => round(getPeriodValue(code, year, q)));
+    const prev = QUARTERS.map(q => round(getPeriodValue(code, year-1, q)));
+    const datasets = [
+        { label:String(year), data:cur, borderColor:CHART.current, backgroundColor:CHART.current, borderWidth:2, pointRadius:4, pointHoverRadius:6, tension:.25, spanGaps:true },
+        { label:String(year-1), data:prev, borderColor:CHART.previous, backgroundColor:CHART.previous, borderWidth:2, pointRadius:4, pointHoverRadius:6, tension:.25, spanGaps:true }
+    ];
+    if(kpi.target != null) datasets.push({ label:`المستهدف (${fmt(kpi.target, kpi)})`, data:QUARTERS.map(() => Number(kpi.target)), borderColor:CHART.target, borderWidth:1.5, borderDash:[5,4], pointRadius:0, pointHitRadius:0 });
+    trendChart = new Chart(document.getElementById("trendChart"), {
+        type:"line",
+        data:{ labels:QUARTER_LABELS, datasets },
+        options:{
+            responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:16 } }, interaction:{ mode:"index", intersect:false },
+            scales:{ y:{ position:"right", beginAtZero: kpi.unit !== "%", ticks:{ callback:v => fmt(v, kpi) } }, x:{ reverse:true, offset:true, grid:{ display:false } } },
+            plugins:{ legend:{ position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : fmt(c.raw, kpi)}` } } }
+        }
+    });
+}
+
+function focusTrend(code){
+    document.getElementById("trendKpi").value = code;
+    renderTrendChart();
+    document.getElementById("trendCard").scrollIntoView({ behavior:"smooth", block:"center" });
 }
 
 function periodName(q){ return { ALL:"السنة كاملة", Q1:"الربع الأول", Q2:"الربع الثاني", Q3:"الربع الثالث", Q4:"الربع الرابع" }[q] || q; }
@@ -1071,13 +1291,13 @@ function statusColor(key){ return { green:"#10b981", yellow:"#f59e0b", red:"#ef4
 
 function renderTable(results){
     const tbody = document.getElementById("dashboardTableBody");
-    if(!results.length){ tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">لا توجد بيانات مطابقة للفلتر</td></tr>`; return; }
+    if(!results.length){ tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">${kpis.length ? "لا توجد مؤشرات مطابقة للبحث أو الفلتر" : "لا توجد مؤشرات معرفة بعد"}</td></tr>`; return; }
     tbody.innerHTML = results.map(r => {
         const k = r.kpi;
         const achStr = r.ach == null ? "—" : r.ach.toFixed(1) + "%";
         const varNum = r.act == null || k.target == null ? "—" : (Number(r.act)-Number(k.target)).toLocaleString("en-US",{maximumFractionDigits:2,signDisplay:"exceptZero"});
         return `
-            <tr>
+            <tr class="cursor-pointer" title="عرض اتجاه المؤشر" onclick="focusTrend('${escapeAttr(k.code)}')">
                 <td><div class="font-bold text-slate-900">${escapeHtml(k.name)}</div><div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}</div></td>
                 <td>${frequencyName(k.frequency)}</td>
                 <td class="font-extrabold text-slate-900">${fmt(r.act, k)}</td>
@@ -1099,28 +1319,39 @@ function renderCharts(results){
     if(statusChart) statusChart.destroy();
     statusChart = new Chart(document.getElementById("statusChart"), {
         type: 'doughnut',
-        data: { labels: ["محقق", "تحذير", "غير محقق", "بدون بيانات"], datasets:[{ data:[counts.green, counts.yellow, counts.red, counts.gray], backgroundColor:['#10b981','#f59e0b','#ef4444','#cbd5e1'], borderWidth:0 }] },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+        data: { labels: ["محقق", "تحذير", "غير محقق", "بدون بيانات"], datasets:[{ data:[counts.green, counts.yellow, counts.red, counts.gray], backgroundColor:['#10b981','#f59e0b','#ef4444','#cbd5e1'], borderColor:'#ffffff', borderWidth:2 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{ legend:{ position:'bottom' } } }
     });
 
-    const active = results.filter(r => r.ach != null);
+    const active = results.filter(r => r.ach != null).sort((a,b) => b.ach - a.ach);
+    // Horizontal bars grow with the KPI count; the wrapper scrolls past ~12 rows.
+    document.getElementById("achievementBox").style.height = Math.max(280, active.length * 26 + 50) + "px";
     if(achievementChart) achievementChart.destroy();
     achievementChart = new Chart(document.getElementById("achievementChart"), {
         type: 'bar',
-        data: { labels: active.map(r => shorten(r.kpi.name, 15)), datasets:[{ label:'الإنجاز %', data:active.map(r=>Number(r.ach.toFixed(1))), backgroundColor:active.map(r=>statusColor(r.status.key)), borderRadius:6 }] },
-        options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, suggestedMax:120 } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ title: items => active[items[0].dataIndex].kpi.name } } } }
+        data: { labels: active.map(r => shorten(r.kpi.name, 28)), datasets:[{ label:'الإنجاز %', data:active.map(r=>Number(r.ach.toFixed(1))), backgroundColor:active.map(r=>statusColor(r.status.key)), borderRadius:4, maxBarThickness:18 }] },
+        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, scales:{ x:{ beginAtZero:true, suggestedMax:120, reverse:true, ticks:{ callback:v => v + "%" } }, y:{ position:'right', grid:{ display:false } } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ title: items => active[items[0].dataIndex].kpi.name } } } }
     });
 }
 
 function renderRecords(){
     const tbody = document.getElementById("recordsTableBody");
-    const rows = [...records].sort((a,b)=>String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100);
-    if(!rows.length){ tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">لا توجد سجلات مدخلة</td></tr>`; return; }
+    const term = normalizeName(document.getElementById("recordSearch").value);
+    const kpiName = r => kpis.find(x => x.code === r.kpiCode)?.name || r.kpiName || r.kpiCode;
+    const matched = [...records]
+        .filter(r => !term || normalizeName(kpiName(r)).includes(term) || String(r.date).includes(term) || String(r.kpiCode).toLowerCase().includes(term))
+        .sort((a,b)=>String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)));
+    const LIMIT = 200;
+    const rows = matched.slice(0, LIMIT);
+    document.getElementById("recordsCount").textContent = matched.length > LIMIT ? `(أحدث ${LIMIT} من ${matched.length})` : `(${matched.length})`;
+    if(!rows.length){ tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">${records.length ? "لا توجد سجلات مطابقة للبحث" : "لا توجد سجلات مدخلة"}</td></tr>`; return; }
     tbody.innerHTML = rows.map(r => {
         const k = kpis.find(x => x.code === r.kpiCode);
-        const actions = can("approve") ? `
-            ${r.approved ? "" : `<button onclick="approveRecord('${escapeAttr(r.id)}')" class="btn btn-primary text-[11px] py-1 px-2.5">اعتماد</button>`}
-            <button onclick="deleteRecord('${escapeAttr(r.id)}')" class="btn btn-danger text-[11px] py-1 px-2.5">حذف</button>` : "—";
+        const actions = [
+            canEditRecord(r) ? `<button onclick="openRecordModal('${escapeAttr(r.id)}')" class="btn btn-secondary text-[11px] py-1 px-2.5">تعديل</button>` : "",
+            can("approve") && !r.approved ? `<button onclick="approveRecord('${escapeAttr(r.id)}')" class="btn btn-primary text-[11px] py-1 px-2.5">اعتماد</button>` : "",
+            can("approve") ? `<button onclick="deleteRecord('${escapeAttr(r.id)}')" class="btn btn-danger text-[11px] py-1 px-2.5">حذف</button>` : ""
+        ].join("") || "—";
         return `
         <tr>
             <td>${escapeHtml(r.date)}</td>
@@ -1474,10 +1705,30 @@ function exportDashboard(){
         "الفترة السابقة": round(r.prev), "نفس الفترة العام الماضي": round(r.sameY),
         "الاتجاه": r.trend.label, "الحالة": r.status.label
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = Object.keys(rows[0] || {}).map(() => ({ wch: 18 }));
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "KPIs");
-    wb.Workbook = { Views: [{ RTL: true }] };
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: true }, { RTL: true }, { RTL: true }] };
+    const addSheet = (data, name) => {
+        const ws = XLSX.utils.json_to_sheet(data.length ? data : [{}]);
+        ws["!cols"] = Object.keys(data[0] || {}).map(k => ({ wch: Math.max(12, k.length + 4) }));
+        XLSX.utils.book_append_sheet(wb, ws, name);
+    };
+    addSheet(rows, "ملخص الأداء");
+
+    const quarterly = kpis.filter(k => cat === "ALL" || k.category === cat).map(k => {
+        const row = { "الكود": k.code, "المؤشر": k.name, "المستهدف": k.target };
+        QUARTERS.forEach((qq, i) => { row[`${QUARTER_LABELS[i]} ${year}`] = round(getPeriodValue(k.code, year, qq)); });
+        QUARTERS.forEach((qq, i) => { row[`${QUARTER_LABELS[i]} ${year-1}`] = round(getPeriodValue(k.code, year-1, qq)); });
+        return row;
+    });
+    addSheet(quarterly, "المقارنة الربعية");
+
+    const raw = getApprovedRecords()
+        .filter(r => Number(r.year) === year && (q === "ALL" || r.quarter === q))
+        .filter(r => { const k = kpis.find(x => x.code === r.kpiCode); return k && (cat === "ALL" || k.category === cat); })
+        .sort((a,b) => String(a.date).localeCompare(String(b.date)))
+        .map(r => ({ "التاريخ": r.date, "الكود": r.kpiCode, "المؤشر": r.kpiName, "القيمة": r.actualValue, "البسط": r.numerator, "المقام": r.denominator, "المصدر": r.dataSource, "أدخله": r.createdBy }));
+    addSheet(raw, "السجلات المعتمدة");
+
     XLSX.writeFile(wb, `Aseer_KPIs_${year}_${q}.xlsx`);
 }
 
@@ -1497,7 +1748,7 @@ function exportAudit(){
 function frequencyName(f){ return { daily:"يومي", weekly:"أسبوعي", monthly:"شهري", quarterly:"ربع سنوي", annual:"سنوي" }[f] || f || "—"; }
 function aggregationName(a){ return { SUM:"مجموع", AVERAGE:"متوسط", WEIGHTED_AVERAGE:"متوسط موزون", RATIO:"بسط/مقام", LAST_VALUE:"آخر قيمة" }[a] || a || "—"; }
 function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف" }[d] || d || "—"; }
-function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", IMPORT_EXCEL:"استيراد Excel", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
+function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 function pad2(n){ return String(n).padStart(2, "0"); }
 // Local-date formatting/parsing: toISOString() would shift dates by the UTC offset.
