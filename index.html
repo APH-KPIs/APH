@@ -9,6 +9,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 
@@ -102,6 +104,8 @@
         tr:hover td { background: #fafafa; }
         /* Long official KPI names wrap so the status column stays in view. */
         td.kpi-name-cell { white-space: normal; min-width: 220px; max-width: 300px; line-height: 1.5; }
+        td.rec-name-cell { min-width: 150px; max-width: 220px; }
+        #recordsTableBody td { padding-left: 10px; padding-right: 10px; }
 
         input, select, textarea {
             width: 100%;
@@ -199,6 +203,12 @@
         .detail-tile .t-sub { font-size: 10.5px; color: #64748b; margin-top: 2px; }
         #detailDefinition dt { color: #64748b; font-weight: 700; }
         #detailDefinition dd { grid-column: span 2; color: #0f172a; font-weight: 600; }
+
+        /* ---------- Live sync badge ---------- */
+        .live-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: #cbd5e1; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+        .live-badge .dot { width: 7px; height: 7px; border-radius: 999px; background: #94a3b8; }
+        .live-badge.live .dot { background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+        .live-badge.offline .dot { background: #f87171; }
 
         /* ---------- Entry form ---------- */
         .entry-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #eef2f6; border-radius: 12px; padding: 4px; }
@@ -341,6 +351,8 @@
             </nav>
 
             <div class="flex items-center gap-3">
+                <span id="liveBadge" class="live-badge hidden" title="حالة الاتصال بقاعدة البيانات المشتركة"><span class="dot"></span><span class="txt"></span></span>
+                <button id="changePwBtn" onclick="openPasswordModal(false)" class="btn btn-ghost text-xs hidden" title="تغيير كلمة المرور"><i class="fa-solid fa-key"></i></button>
                 <div class="show-sm text-left max-w-[170px]">
                     <div id="headerUserName" class="text-xs font-bold text-white truncate"></div>
                     <div id="headerUserRole" class="text-[10px] text-sky-300 font-semibold truncate"></div>
@@ -717,14 +729,22 @@
 
         <!-- ================= SECTION: USERS ================= -->
         <section id="sectionUsers" class="hidden space-y-6">
-            <div class="card p-6 space-y-2">
-                <h3 class="font-bold text-sm text-slate-900">إدارة المستخدمين والصلاحيات الثابتة</h3>
-                <p class="text-xs text-slate-500">حسابات الإدارة المعتمدة وصلاحياتهم داخل النظام:</p>
+            <div class="card p-5 flex flex-wrap justify-between items-center gap-3">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900">إدارة المستخدمين والصلاحيات</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">مدير النظام وحده يضيف المستخدمين ويحدد أدوارهم. كلمة المرور المؤقتة يغيّرها المستخدم عند أول دخول.</p>
+                </div>
+                <button onclick="openUserModal()" class="btn btn-primary text-xs"><i class="fa-solid fa-user-plus ml-1"></i> إضافة مستخدم</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div class="card p-4"><b class="text-sky-700">مدير النظام</b><p class="text-slate-500 mt-1">كل الصلاحيات: المؤشرات، المستهدفات، المستخدمون، الاعتماد، سجل التدقيق.</p></div>
+                <div class="card p-4"><b class="text-emerald-700">مدير الأداء</b><p class="text-slate-500 mt-1">إدخال واعتماد القراءات، تحديد المستهدفات بمبرر، التصدير.</p></div>
+                <div class="card p-4"><b class="text-amber-700">مدخل بيانات</b><p class="text-slate-500 mt-1">إدخال القراءات (بانتظار الاعتماد) وتعديل قراءاته غير المعتمدة، والتصدير.</p></div>
             </div>
             <div class="card overflow-auto">
                 <table>
                     <thead>
-                        <tr><th>اسم المستخدم</th><th>الاسم الرسمي</th><th>الدور الإداري المعتمد</th><th>الحالة</th></tr>
+                        <tr><th>اسم الدخول</th><th>الاسم الظاهر</th><th>الدور</th><th>الحالة</th><th>كلمة المرور</th><th>الإجراءات</th></tr>
                     </thead>
                     <tbody id="usersTableBody"></tbody>
                 </table>
@@ -799,6 +819,57 @@
             <button onclick="closeKpiModal()" class="btn btn-secondary text-xs">إلغاء</button>
             <button onclick="saveKpi()" class="btn btn-primary text-xs">حفظ التغييرات</button>
         </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: USER ================= -->
+<div id="userModal" class="modal hidden">
+    <div class="modal-box space-y-4" style="width:min(520px,100%)">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+            <h3 id="userModalTitle" class="text-base font-bold text-slate-900">إضافة مستخدم</h3>
+            <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold" aria-label="إغلاق">&times;</button>
+        </div>
+        <input type="hidden" id="userEditing">
+        <div class="space-y-3 text-xs">
+            <div><label for="userUsername" class="block font-bold text-slate-700 mb-1">اسم الدخول (إنجليزي)</label><input id="userUsername" dir="ltr" placeholder="مثال: nurse.ali" autocomplete="off"><p class="text-[10.5px] text-slate-400 mt-1">3–32 حرفاً: أحرف إنجليزية صغيرة وأرقام و . _ -</p></div>
+            <div><label for="userDisplayName" class="block font-bold text-slate-700 mb-1">الاسم الظاهر</label><input id="userDisplayName" placeholder="مثال: وحدة مؤشرات الأداء"></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label for="userRole" class="block font-bold text-slate-700 mb-1">الدور</label><select id="userRole"><option value="data">مدخل بيانات</option><option value="manager">مدير الأداء</option><option value="admin">مدير النظام</option></select></div>
+                <div><label for="userActive" class="block font-bold text-slate-700 mb-1">الحالة</label><select id="userActive"><option value="true">فعال</option><option value="false">معطل</option></select></div>
+            </div>
+            <div><label id="userPasswordLabel" for="userPassword" class="block font-bold text-slate-700 mb-1">كلمة مرور مؤقتة</label><input id="userPassword" type="text" dir="ltr" autocomplete="new-password" placeholder="8 أحرف على الأقل"><p id="userPasswordHint" class="text-[10.5px] text-slate-400 mt-1">سيُطلب من المستخدم تغييرها عند أول دخول.</p></div>
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
+            <button onclick="closeUserModal()" class="btn btn-secondary text-xs">إلغاء</button>
+            <button id="userSaveBtn" onclick="saveUser()" class="btn btn-primary text-xs">حفظ</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: PASSWORD ================= -->
+<div id="passwordModal" class="modal hidden">
+    <div class="modal-box space-y-4" style="width:min(440px,100%)">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+            <h3 class="text-base font-bold text-slate-900">تغيير كلمة المرور</h3>
+            <button id="passwordCloseBtn" onclick="closePasswordModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold" aria-label="إغلاق">&times;</button>
+        </div>
+        <div id="passwordForced" class="hidden entry-warn">كلمة المرور الحالية مؤقتة. يجب تغييرها قبل المتابعة.</div>
+        <div class="space-y-3 text-xs">
+            <div><label for="pwOld" class="block font-bold text-slate-700 mb-1">كلمة المرور الحالية</label><input id="pwOld" type="password" autocomplete="current-password"></div>
+            <div><label for="pwNew" class="block font-bold text-slate-700 mb-1">كلمة المرور الجديدة</label><input id="pwNew" type="password" autocomplete="new-password" placeholder="8 أحرف على الأقل"></div>
+            <div><label for="pwNew2" class="block font-bold text-slate-700 mb-1">تأكيد كلمة المرور الجديدة</label><input id="pwNew2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter') changePassword()"></div>
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
+            <button id="passwordCancelBtn" onclick="closePasswordModal()" class="btn btn-secondary text-xs">إلغاء</button>
+            <button onclick="changePassword()" class="btn btn-primary text-xs">تغيير كلمة المرور</button>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="modal hidden" style="z-index:150">
+    <div class="bg-white rounded-2xl px-8 py-6 text-center shadow-xl">
+        <i class="fa-solid fa-circle-notch fa-spin text-sky-600 text-2xl"></i>
+        <div id="loadingText" class="text-sm font-bold text-slate-800 mt-3">جاري تحميل البيانات...</div>
     </div>
 </div>
 
@@ -905,7 +976,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 2.3 — 2026-10-02";
+const APP_VERSION = "الإصدار 3.0 — 2026-10-02";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1054,7 +1125,33 @@ if(window.Chart){
 }
 let importedRows = [], importWorkbookInfo = {};
 
-function init(){
+async function init(){
+    document.querySelectorAll(".app-version").forEach(e => e.textContent = APP_VERSION);
+    try{ dashboardView = localStorage.getItem(STORAGE.view) === "table" ? "table" : "cards"; }catch(e){}
+    if(cloudInit()){
+        setLoading(true, "جاري الاتصال بقاعدة البيانات...");
+        try{
+            users = (await rpc("public_users")).map(u => ({ ...u, active:true }));
+        }catch(e){
+            users = [];
+            showLoginError("تعذر الاتصال بقاعدة البيانات المشتركة. تحقق من الإنترنت ثم أعد تحميل الصفحة.");
+            document.getElementById("loginPasswordBox").classList.remove("hidden");
+        }
+        renderLoginUsers();
+        const session = sessionStorage.getItem(STORAGE.session);
+        if(session){
+            try{
+                const saved = JSON.parse(session);
+                if(saved.token){
+                    const me = await rpc("whoami", { p_token: saved.token });
+                    currentUser = { username: me.username, displayName: me.displayName, role: me.role, token: saved.token, mustChange: me.mustChange };
+                } else currentUser = saved;  // guest
+                await enterCloudApp();
+            }catch(e){ sessionStorage.removeItem(STORAGE.session); currentUser = null; }
+        }
+        setLoading(false);
+        return;
+    }
     users = load(STORAGE.users, null) || defaultUsers;
     // The data-entry account now carries the unit's official name.
     users = users.map(u => u.username === "data" && u.displayName === "عمر هادي عسيري" ? { ...u, displayName: "وحدة مؤشرات الأداء" } : u);
@@ -1066,9 +1163,6 @@ function init(){
     records = unpackRecords(load(STORAGE.records, null) || load(LEGACY_STORAGE.records, []));
     auditLogs = load(STORAGE.audit, null) || load(LEGACY_STORAGE.audit, []);
     targetYears = load(STORAGE.targetYears, {});
-    try{ dashboardView = localStorage.getItem(STORAGE.view) === "table" ? "table" : "cards"; }catch(e){}
-
-    document.querySelectorAll(".app-version").forEach(e => e.textContent = APP_VERSION);
     renderLoginUsers();
     const session = sessionStorage.getItem(STORAGE.session);
     if(session){
@@ -1123,14 +1217,255 @@ function indexedRecords(code, year){
     return recordIndex.get(code + "|" + year) || [];
 }
 
+// =====================================================================
+// Shared database (Supabase). Configured in config.js; without it the page runs in local mode
+// (everything kept in this browser). Writes go through the login-checked functions in
+// supabase/setup.sql; every write bumps app_events, which open pages listen to and then pull
+// the changed rows. A 60-second poll covers missed realtime messages.
+// =====================================================================
+const CLOUD = { on:false, client:null, lastRev:0, fullAt:0, channel:null, timer:null, status:"off", syncing:false, again:false, debounce:null };
+
+function cloudInit(){
+    const cfg = window.APP_CONFIG || {};
+    if(!cfg.supabaseUrl || !cfg.supabaseKey || !window.supabase?.createClient) return false;
+    CLOUD.client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { persistSession:false, autoRefreshToken:false } });
+    CLOUD.on = true;
+    return true;
+}
+
+const CLOUD_ERRORS = {
+    BAD_CREDENTIALS:"كلمة المرور غير صحيحة.", SESSION_EXPIRED:"انتهت الجلسة — سجّل الدخول مرة أخرى.",
+    FORBIDDEN:"ليس لديك صلاحية لهذا الإجراء.", WEAK_PASSWORD:"كلمة المرور يجب ألا تقل عن 8 أحرف.",
+    LAST_ADMIN:"لا يمكن تعطيل أو تغيير دور آخر مدير نظام.", PASSWORD_REQUIRED:"كلمة المرور المؤقتة مطلوبة للمستخدم الجديد.",
+    NAME_REQUIRED:"الاسم الظاهر مطلوب.", BAD_ROLE:"الدور غير صالح.", app_users_username_check:"اسم الدخول: 3–32 حرفاً إنجليزياً صغيراً أو أرقاماً أو . _ -"
+};
+
+async function rpc(fn, args = {}){
+    const { data, error } = await CLOUD.client.rpc(fn, args);
+    if(error){
+        const code = Object.keys(CLOUD_ERRORS).find(c => String(error.message || "").includes(c));
+        const err = new Error(code ? CLOUD_ERRORS[code] : "تعذر الاتصال بقاعدة البيانات: " + (error.message || "خطأ غير معروف"));
+        err.code = code;
+        if(code === "SESSION_EXPIRED" && currentUser?.token) setTimeout(() => { showToast(err.message); logout(); }, 0);
+        throw err;
+    }
+    return data;
+}
+
+const withToken = (args = {}) => ({ p_token: currentUser?.token, ...args });
+
+async function fetchAll(table, build){
+    const out = [], page = 1000;
+    for(let from = 0; ; from += page){
+        const { data, error } = await build(CLOUD.client.from(table).select("*")).range(from, from + page - 1);
+        if(error) throw new Error("تعذر قراءة البيانات: " + error.message);
+        out.push(...data);
+        if(data.length < page) return out;
+    }
+}
+
+function rowToRecord(row){
+    const k = kpis.find(x => x.code === row.kpi_code);
+    return {
+        id: row.id, date: String(row.date).slice(0, 10), year: Number(row.year), quarter: row.quarter, kpiCode: row.kpi_code, kpiName: k?.name || "",
+        actualValue: row.actual, numerator: row.numerator, denominator: row.denominator, weight: row.weight,
+        dataSource: row.data_source || "", notes: row.notes || "", dq: row.dq || "", approved: row.approved === true,
+        createdBy: row.created_by || "", createdUser: row.created_user || undefined, createdAt: row.created_at,
+        updatedBy: row.updated_by, updatedAt: row.updated_at, approvedBy: row.approved_by, approvedAt: row.approved_at
+    };
+}
+function recordToRow(r){
+    return { kpiCode: r.kpiCode, date: r.date, year: r.year, quarter: r.quarter, actualValue: r.actualValue, numerator: r.numerator,
+             denominator: r.denominator, weight: r.weight, dataSource: r.dataSource, notes: r.notes, dq: r.dq, approved: r.approved, createdBy: r.createdBy };
+}
+
+function sortKpisByOrder(list){
+    const defaultOrder = new Map(defaultKpis.map((k, i) => [k.code, i]));
+    return list.sort((a, b) => (a.sortOrder ?? defaultOrder.get(a.code) ?? 999) - (b.sortOrder ?? defaultOrder.get(b.code) ?? 999));
+}
+
+async function cloudLoadAll(){
+    const kRows = await fetchAll("kpis", q => q.order("code"));
+    kpis = kRows.length ? sortKpisByOrder(kRows.map(r => r.data)) : defaultKpis.map(k => ({ ...k }));
+    const rRows = await fetchAll("records", q => q.eq("deleted", false).order("id"));
+    records = rRows.map(rowToRecord);
+    CLOUD.lastRev = rRows.reduce((m, r) => Math.max(m, Number(r.rev) || 0), 0);
+    CLOUD.fullAt = Date.now();
+    const tRows = await fetchAll("target_years", q => q.order("year"));
+    targetYears = Object.fromEntries(tRows.map(r => [r.year, r.data]));
+    recordIndex = null;
+}
+
+// Pulls readings with a newer rev than the last one seen, plus the small tables. The 200-rev overlap covers
+// writes that committed out of order; a full reload every 15 minutes is the backstop.
+async function cloudSync(fromOthers){
+    if(!CLOUD.on || !currentUser) return;
+    if(CLOUD.syncing){ CLOUD.again = true; return; }
+    CLOUD.syncing = true;
+    try{
+        if(Date.now() - CLOUD.fullAt > 15 * 60000){
+            await cloudLoadAll();
+            rerenderAfterSync();
+            CLOUD.lastSyncAt = new Date(); updateLiveBadge();
+            return;
+        }
+        const rows = await fetchAll("records", q => q.gt("rev", Math.max(0, CLOUD.lastRev - 200)).order("rev"));
+        const byId = new Map(records.map(r => [r.id, r]));
+        let changed = 0;
+        rows.forEach(row => {
+            CLOUD.lastRev = Math.max(CLOUD.lastRev, Number(row.rev) || 0);
+            const cur = byId.get(row.id);
+            if(row.deleted){ if(cur){ byId.delete(row.id); changed++; } return; }
+            if(cur && cur.updatedAt && Date.parse(cur.updatedAt) === Date.parse(row.updated_at)) return;
+            byId.set(row.id, rowToRecord(row)); changed++;
+        });
+        if(changed){ records = [...byId.values()]; recordIndex = null; }
+        const kRows = await fetchAll("kpis", q => q.order("code"));
+        const newKpis = kRows.length ? sortKpisByOrder(kRows.map(r => r.data)) : kpis;
+        const kpisChanged = JSON.stringify(newKpis) !== JSON.stringify(kpis);
+        if(kpisChanged){ kpis = newKpis; records.forEach(r => r.kpiName = kpis.find(k => k.code === r.kpiCode)?.name || r.kpiName); recordIndex = null; }
+        const tRows = await fetchAll("target_years", q => q.order("year"));
+        const newYears = Object.fromEntries(tRows.map(r => [r.year, r.data]));
+        const yearsChanged = JSON.stringify(newYears) !== JSON.stringify(targetYears);
+        if(yearsChanged) targetYears = newYears;
+        CLOUD.status = CLOUD.channel ? CLOUD.status : "live";
+        CLOUD.lastSyncAt = new Date();
+        if(changed || kpisChanged || yearsChanged){
+            rerenderAfterSync();
+            if(fromOthers) showToast("وصلت تحديثات جديدة من مستخدم آخر.");
+        }
+        updateLiveBadge();
+    }catch(e){
+        CLOUD.status = "offline"; updateLiveBadge();
+    }finally{
+        CLOUD.syncing = false;
+        if(CLOUD.again){ CLOUD.again = false; cloudSync(fromOthers); }
+    }
+}
+
+function rerenderAfterSync(){
+    populateFilters(); populateRecordKpis(); refreshData(); renderKpis();
+    if(!document.getElementById("sectionTargets").classList.contains("hidden")) renderTargets();
+    if(!document.getElementById("kpiDetailModal").classList.contains("hidden") && detailCode) openKpiDetail(detailCode);
+}
+
+function cloudSubscribe(){
+    if(!CLOUD.on || CLOUD.channel) return;
+    CLOUD.channel = CLOUD.client.channel("aph-events")
+        .on("postgres_changes", { event:"INSERT", schema:"public", table:"app_events" }, payload => {
+            const ev = payload.new || {};
+            if(ev.kind === "users" && can("users")) loadUsers();
+            clearTimeout(CLOUD.debounce);
+            CLOUD.debounce = setTimeout(() => cloudSync(ev.by_user && ev.by_user !== currentUser?.username), 500);
+        })
+        .subscribe(status => { CLOUD.status = status === "SUBSCRIBED" ? "live" : "offline"; updateLiveBadge(); });
+    CLOUD.timer = setInterval(() => cloudSync(true), 60000);
+}
+
+function cloudUnsubscribe(){
+    if(CLOUD.channel){ try{ CLOUD.client.removeChannel(CLOUD.channel); }catch(e){} CLOUD.channel = null; }
+    clearInterval(CLOUD.timer); CLOUD.timer = null;
+}
+
+function updateLiveBadge(){
+    const b = document.getElementById("liveBadge");
+    if(!CLOUD.on){ b.classList.add("hidden"); return; }
+    b.classList.remove("hidden");
+    b.classList.toggle("live", CLOUD.status === "live");
+    b.classList.toggle("offline", CLOUD.status !== "live");
+    const at = CLOUD.lastSyncAt ? CLOUD.lastSyncAt.toLocaleTimeString("ar-SA", { hour:"2-digit", minute:"2-digit" }) : "";
+    b.querySelector(".txt").textContent = CLOUD.status === "live" ? `مباشر${at ? " · " + at : ""}` : "غير متصل";
+}
+
+function setLoading(on, text){
+    document.getElementById("loadingText").textContent = text || "جاري تحميل البيانات...";
+    document.getElementById("loadingOverlay").classList.toggle("hidden", !on);
+}
+
+// ---- Persistence used by every feature: local storage or the shared database ----
+async function persistRecords(changed = [], deletedIds = []){
+    recordIndex = null;
+    if(!CLOUD.on){ saveRecords(); return true; }
+    try{
+        let skipped = 0;
+        for(let i = 0; i < changed.length; i += 500){
+            const res = await rpc("upsert_records", withToken({ p_rows: changed.slice(i, i + 500).map(recordToRow) }));
+            skipped += res?.skipped || 0;
+        }
+        if(deletedIds.length) await rpc("delete_records", withToken({ p_ids: deletedIds }));
+        if(skipped) showToast(`لم يُحفظ ${skipped} سجل لأنه معتمد أو يخص مستخدماً آخر.`);
+        await cloudSync(false);
+        return true;
+    }catch(e){
+        showToast(e.message);
+        await reloadFromCloud();
+        return false;
+    }
+}
+
+async function persistKpis(replace = false){
+    if(!CLOUD.on){ save(STORAGE.kpis, kpis); return true; }
+    try{
+        await rpc("save_kpis", withToken({ p_kpis: kpis.map((k, i) => ({ ...k, sortOrder: i })), p_replace: replace }));
+        await cloudSync(false);
+        return true;
+    }catch(e){ showToast(e.message); await reloadFromCloud(); return false; }
+}
+
+async function persistTargets(year, changedKpis){
+    if(!CLOUD.on){ save(STORAGE.kpis, kpis); save(STORAGE.targetYears, targetYears); return true; }
+    try{
+        if(changedKpis.length) await rpc("save_kpi_targets", withToken({ p_kpis: changedKpis.map(k => ({ ...k, sortOrder: kpis.indexOf(k) })) }));
+        if(targetYears[year]) await rpc("save_target_year", withToken({ p_year: Number(year), p_data: targetYears[year] }));
+        await cloudSync(false);
+        return true;
+    }catch(e){ showToast(e.message); await reloadFromCloud(); return false; }
+}
+
+async function reloadFromCloud(){
+    try{ await cloudLoadAll(); rerenderAfterSync(); }catch(e){}
+}
+
+// Audit entries are buffered and sent together; the server stamps the user and time.
+let auditQueue = [];
+function flushAudit(){
+    const entries = auditQueue; auditQueue = [];
+    if(entries.length) rpc("add_audit", withToken({ p_entries: entries })).catch(() => {});
+}
+
 function load(key, fallback){ try{ const d = localStorage.getItem(key); return d ? JSON.parse(d) : fallback; }catch(e){ return fallback; } }
 function save(key, data){ try{ localStorage.setItem(key, JSON.stringify(data)); return true; }catch(e){ showToast("تعذر حفظ البيانات في المتصفح — مساحة التخزين ممتلئة."); return false; } }
 
-function login(){
+async function enterCloudApp(){
+    setLoading(true);
+    await cloudLoadAll();
+    CLOUD.status = "live"; CLOUD.lastSyncAt = new Date();
+    showApp();
+    cloudSubscribe();
+    setLoading(false);
+    if(currentUser.mustChange) openPasswordModal(true);
+}
+
+async function login(){
     const u = document.getElementById("loginUsername").value;
     const p = document.getElementById("loginPassword").value;
     if(!u){ showToast("اختر الحساب أولاً."); return; }
     if(!p){ showLoginError("أدخل كلمة المرور."); return; }
+    if(CLOUD.on){
+        try{
+            setLoading(true, "جاري تسجيل الدخول...");
+            const res = await rpc("login", { p_username: u, p_password: p });
+            currentUser = { username: res.user.username, displayName: res.user.displayName, role: res.user.role, token: res.token, mustChange: res.user.mustChange };
+            sessionStorage.setItem(STORAGE.session, JSON.stringify({ token: res.token }));
+            hideLoginError();
+            await enterCloudApp();
+        }catch(e){
+            setLoading(false);
+            showLoginError(e.message);
+            document.getElementById("loginPassword").select();
+        }
+        return;
+    }
     const user = users.find(x => x.username === u && x.password === p && x.active);
     if(!user){ showLoginError("كلمة المرور غير صحيحة."); document.getElementById("loginPassword").select(); return; }
     currentUser = { username:user.username, displayName:user.displayName, role:user.role };
@@ -1138,13 +1473,23 @@ function login(){
     hideLoginError(); showApp();
 }
 
-function guestLogin(){
+async function guestLogin(){
     currentUser = { username:null, displayName:"زائر النظام", role:"visitor" };
     sessionStorage.setItem(STORAGE.session, JSON.stringify(currentUser));
+    if(CLOUD.on){
+        try{ await enterCloudApp(); }catch(e){ setLoading(false); currentUser = null; showToast(e.message); }
+        return;
+    }
     showApp();
 }
 
 function logout(){
+    if(CLOUD.on){
+        flushAudit();
+        if(currentUser?.token) rpc("logout", { p_token: currentUser.token }).catch(() => {});
+        cloudUnsubscribe();
+        rpc("public_users").then(list => { users = list.map(u => ({ ...u, active:true })); renderLoginUsers(); }).catch(() => {});
+    }
     sessionStorage.removeItem(STORAGE.session);
     currentUser = null;
     document.getElementById("app").classList.add("hidden");
@@ -1238,6 +1583,8 @@ function updatePermissions(){
     document.getElementById("addKpiBtn").classList.toggle("hidden", !can("editKpi"));
     document.getElementById("importSteps").classList.toggle("hidden", !can("import"));
     document.getElementById("exportRecordsBtn").classList.toggle("hidden", !can("exportRecords"));
+    document.getElementById("changePwBtn").classList.toggle("hidden", !currentUser.username);
+    updateLiveBadge();
 }
 
 function roleName(r){ return { admin:"مدير النظام (Admin)", manager:"مدير الأداء", data:"مدخل بيانات", visitor:"زائر (عرض فقط)" }[r] || r; }
@@ -1263,6 +1610,8 @@ function showSection(section){
     // Charts drawn while the dashboard was hidden (e.g. after an import) have zero size; redraw on show.
     if(section === "dashboard" && currentUser) renderDashboard();
     if(section === "targets" && currentUser) renderTargets();
+    if(section === "users" && currentUser) loadUsers();
+    if(section === "audit" && currentUser) loadAudit();
     document.getElementById("pageTitle").textContent = titles[section][0];
     document.getElementById("pageSubtitle").textContent = titles[section][1];
 }
@@ -1440,7 +1789,7 @@ function deriveRecords(changed){
     return [upserts, removed];
 }
 
-function addRecord(){
+async function addRecord(){
     if(!can("data")){ showToast("ليس لديك صلاحية لإدخال البيانات."); return; }
     snapEntryDate();
     const date = document.getElementById("recordDate").value;
@@ -1474,8 +1823,11 @@ function addRecord(){
         record.updatedBy = currentUser.displayName; record.updatedAt = new Date().toISOString();
         records[records.indexOf(existing)] = record;
     } else records.push(record);
-    const [derived] = deriveRecords([record]);
-    saveRecords();
+    const [derived, derivedRemoved] = deriveRecords([record]);
+    const btn = document.getElementById("entrySaveBtn"); btn.disabled = true;
+    const ok = await persistRecords([record, ...derived], derivedRemoved);
+    btn.disabled = false;
+    if(!ok) return;
     const shown = mode === "ratio" ? `${num}/${den}` : value;
     if(existing) addAudit("EDIT_RECORD", kpi.name, existing.actualValue, shown, `${date} — تحديث من نموذج الإدخال${notes ? " — " + notes : ""}`);
     else addAudit("ADD_RECORD", kpi.name, "", shown, `${date}${notes ? " — " + notes : ""}`);
@@ -1487,27 +1839,27 @@ function addRecord(){
     showToast((record.approved ? "تم حفظ القراءة واعتمادها" : "تم حفظ القراءة بانتظار اعتماد مدير الأداء") + extra + ".");
 }
 
-function approveRecord(id){
+async function approveRecord(id){
     if(!can("approve")){ showToast("ليس لديك صلاحية اعتماد البيانات."); return; }
     const r = records.find(x => x.id === id);
     if(!r || r.approved) return;
     r.approved = true;
     r.approvedBy = currentUser.displayName;
     r.approvedAt = new Date().toISOString();
-    deriveRecords([r]);
-    saveRecords();
+    const [dUp, dRem] = deriveRecords([r]);
+    if(!await persistRecords([r, ...dUp], dRem)) return;
     addAudit("APPROVE_RECORD", r.kpiName, "بانتظار الاعتماد", "معتمد", r.date);
     refreshData();
     showToast("تم اعتماد السجل.");
 }
 
-function deleteRecord(id){
+async function deleteRecord(id){
     if(!can("approve")){ showToast("ليس لديك صلاحية حذف البيانات."); return; }
     const r = records.find(x => x.id === id);
     if(!r || !confirm("هل أنت متأكد من حذف هذا السجل؟")) return;
     records = records.filter(x => x.id !== id);
-    deriveRecords([r]);
-    saveRecords();
+    const [dUp, dRem] = deriveRecords([r]);
+    if(!await persistRecords(dUp, [id, ...dRem])) return;
     addAudit("DELETE_RECORD", r.kpiName, r.actualValue, "", r.date);
     refreshData();
     showToast("تم حذف السجل.");
@@ -1538,7 +1890,7 @@ function openRecordModal(id){
 
 function closeRecordModal(){ document.getElementById("recordModal").classList.add("hidden"); }
 
-function saveRecordEdit(){
+async function saveRecordEdit(){
     const id = document.getElementById("editRecordId").value;
     const idx = records.findIndex(x => x.id === id);
     if(idx < 0 || !canEditRecord(records[idx])) return;
@@ -1562,8 +1914,8 @@ function saveRecordEdit(){
     updated.updatedBy = currentUser.displayName;
     updated.updatedAt = new Date().toISOString();
     records[idx] = updated;
-    deriveRecords(date === old.date ? [updated] : [old, updated]);
-    saveRecords();
+    const [dUp, dRem] = deriveRecords(date === old.date ? [updated] : [old, updated]);
+    if(!await persistRecords([updated, ...dUp], [...(old.id !== updated.id ? [old.id] : []), ...dRem])) return;
     const summary = r => `${r.date}: ${r.actualValue}${r.numerator != null || r.denominator != null ? ` (${r.numerator ?? "—"}/${r.denominator ?? "—"})` : ""}`;
     addAudit("EDIT_RECORD", updated.kpiName, summary(old), summary(updated), reason);
     closeRecordModal(); refreshData();
@@ -1577,7 +1929,8 @@ function parseNum(id){ const v = document.getElementById(id).value; if(v === "")
 function normalizeRecord(row){
     const date = row.date instanceof Date ? row.date : parseIsoDate(row.date);
     return {
-        id: row.id || "REC-" + Date.now() + "-" + Math.random().toString(36).substring(2,8),
+        // In the shared database a reading is identified by KPI and date.
+        id: CLOUD.on ? `${row.kpiCode}|${formatDateInput(date)}` : (row.id || "REC-" + Date.now() + "-" + Math.random().toString(36).substring(2,8)),
         // Year/quarter come from the source when given (a week can straddle two quarters); otherwise from the date.
         date: formatDateInput(date), year: Number(row.year) || date.getFullYear(), quarter: row.quarter || "Q" + Math.ceil((date.getMonth()+1)/3),
         kpiCode: row.kpiCode || "", kpiName: row.kpiName || "",
@@ -2289,7 +2642,7 @@ function renderRecords(){
         return `
         <tr>
             <td>${escapeHtml(r.date)}</td>
-            <td class="kpi-name-cell font-bold text-slate-900">${escapeHtml(k?.name || r.kpiName || r.kpiCode)}${r.dataSource === DERIVED_SOURCE ? ` <span class="pill status-gray !py-0.5 !px-1.5 !text-[9px]">محسوب</span>` : ""}</td>
+            <td class="kpi-name-cell rec-name-cell font-bold text-slate-900">${escapeHtml(k?.name || r.kpiName || r.kpiCode)}${r.dataSource === DERIVED_SOURCE ? ` <span class="pill status-gray !py-0.5 !px-1.5 !text-[9px]">محسوب</span>` : ""}</td>
             <td>${r.actualValue == null ? "—" : Number(r.actualValue).toLocaleString("en-US")}</td>
             <td>${r.numerator ?? "—"}</td>
             <td>${r.denominator ?? "—"}</td>
@@ -2354,7 +2707,7 @@ function toggleTargetReason(){
 
 function closeKpiModal(){ document.getElementById("kpiModal").classList.add("hidden"); }
 
-function saveKpi(){
+async function saveKpi(){
     if(!can("editKpi")){ showToast("ليس لديك صلاحية."); return; }
     const orig = document.getElementById("editKpiOriginalCode").value;
     const form = {};
@@ -2379,9 +2732,17 @@ function saveKpi(){
             addAudit("CHANGE_TARGET", form.code, old.target, form.target, reason);
         }
         if(orig !== form.code){
-            // Keep existing records attached to the KPI when its code changes.
-            records.forEach(r => { if(r.kpiCode === orig) r.kpiCode = form.code; });
-            saveRecords();
+            // Keep existing records attached to the KPI when its code changes (ids follow the code in the shared database).
+            const moved = [], oldIds = [];
+            records = records.map(r => {
+                if(r.kpiCode !== orig) return r;
+                oldIds.push(r.id);
+                const m = normalizeRecord({ ...r, kpiCode: form.code, id: CLOUD.on ? undefined : r.id });
+                moved.push(m); return m;
+            });
+            kpis[idx] = updated;
+            if(CLOUD.on && !await persistKpis()) return;
+            if(!await persistRecords(moved, CLOUD.on ? oldIds : [])) return;
         }
         kpis[idx] = updated;
         addAudit("EDIT_KPI", form.code, orig !== form.code ? orig : "", "", "تعديل تعريف مؤشر");
@@ -2390,17 +2751,20 @@ function saveKpi(){
         kpis.push({ ...form, targetLastUpdated: form.target != null ? now : null, targetUpdatedBy: form.target != null ? currentUser.displayName : null });
         addAudit("ADD_KPI", form.code, "", form.target, "إضافة مؤشر جديد");
     }
-    save(STORAGE.kpis, kpis);
+    if(!await persistKpis()) return;
     closeKpiModal(); populateRecordKpis(); populateFilters(); renderKpis(); renderRecords(); renderDashboard(); runQualityCheck();
     showToast("تم حفظ التعديلات بنجاح.");
 }
 
-function deleteKpi(code){
+async function deleteKpi(code){
     if(!can("deleteKpi")){ showToast("حذف المؤشرات متاح لمدير النظام فقط."); return; }
     const linked = records.filter(r => r.kpiCode === code).length;
     if(!confirm(linked ? `هذا المؤشر مرتبط بـ ${linked} سجل. هل أنت متأكد من حذفه؟` : "هل أنت متأكد من حذف هذا المؤشر؟")) return;
     kpis = kpis.filter(x=>x.code!==code);
-    save(STORAGE.kpis, kpis);
+    if(CLOUD.on){
+        try{ await rpc("delete_kpi", withToken({ p_code: code })); await cloudSync(false); }
+        catch(e){ showToast(e.message); await reloadFromCloud(); return; }
+    } else save(STORAGE.kpis, kpis);
     addAudit("DELETE_KPI", code, "", "", "حذف مؤشر");
     renderKpis(); populateRecordKpis(); populateFilters(); renderDashboard(); runQualityCheck();
     showToast("تم حذف المؤشر.");
@@ -2651,7 +3015,7 @@ function readKpiInputSheet(workbook, sheets, byCode){
     return result;
 }
 
-function confirmWorkbookImport(){
+async function confirmWorkbookImport(){
     const wbData = pendingWorkbook;
     if(!wbData) return;
     // Only the admin changes KPI definitions; only approvers replace (delete) existing readings.
@@ -2683,6 +3047,7 @@ function confirmWorkbookImport(){
     const now = new Date().toISOString();
     let added = 0, skipped = 0, seq = 0;
     const stamp = Date.now().toString(36);
+    const addedRecords = [];
     wbData.rows.forEach(row => {
         if(!known.has(row.kpiCode)){ skipped++; return; }
         const rec = normalizeRecord({ ...row, id: "X" + stamp + (seq++).toString(36), approved: can("approve"), createdBy: currentUser.displayName, createdAt: now });
@@ -2690,15 +3055,31 @@ function confirmWorkbookImport(){
         if(existing.has(key)){ skipped++; return; }
         existing.add(key);
         records.push(rec); added++;
+        addedRecords.push(rec);
     });
 
-    if(!save(STORAGE.kpis, kpis) || !saveRecords()){
+    if(CLOUD.on){
+        closeImportModal();
+        try{
+            if(mayEditKpis){ setLoading(true, "جاري حفظ تعريفات المؤشرات..."); await rpc("save_kpis", withToken({ p_kpis: kpis.map((k, i) => ({ ...k, sortOrder: i })), p_replace: replaceKpis })); }
+            const CHUNK = 1000;
+            for(let i = 0; i < addedRecords.length; i += CHUNK){
+                setLoading(true, `جاري رفع القراءات إلى قاعدة البيانات... ${Math.min(i + CHUNK, addedRecords.length).toLocaleString("en-US")} من ${addedRecords.length.toLocaleString("en-US")}`);
+                await rpc("import_records", withToken({ p_rows: addedRecords.slice(i, i + CHUNK).map(recordToRow), p_replace_codes: i === 0 && replaceRecords ? [...fileCodes] : null }));
+            }
+            setLoading(true, "جاري تحديث اللوحة...");
+            await cloudLoadAll();
+        }catch(e){
+            setLoading(false); showToast(e.message); await reloadFromCloud(); return;
+        }
+        setLoading(false);
+    } else if(!save(STORAGE.kpis, kpis) || !saveRecords()){
         kpis = before.kpis; records = before.records; recordIndex = null;
         save(STORAGE.kpis, kpis); saveRecords();
         showToast("تعذر حفظ البيانات: مساحة التخزين في المتصفح غير كافية. لم يتم تغيير أي شيء.");
         return;
     }
-    addAudit("IMPORT_WORKBOOK", importWorkbookInfo.fileName, removed ? `${removed} سجل سابق` : "", `${wbData.fileKpis.length} مؤشر، ${added} قراءة`,
+    addAudit("IMPORT_WORKBOOK", importWorkbookInfo.fileName || "", removed ? `${removed} سجل سابق` : "", `${wbData.fileKpis.length} مؤشر، ${added} قراءة`,
         `${replaceKpis ? "اعتماد قائمة الملف" : "دمج المؤشرات"}؛ ${replaceRecords ? "استبدال القراءات" : `تجاهل المكرر (${skipped})`}`);
     closeImportModal();
     populateRecordKpis(); renderKpis();
@@ -2709,8 +3090,8 @@ function confirmWorkbookImport(){
     showToast(`تم استيراد ${wbData.fileKpis.length} مؤشراً و ${added.toLocaleString("en-US")} قراءة بنجاح.`);
 }
 
-function confirmImport(){
-    if(importWorkbookInfo.mode === "workbook"){ confirmWorkbookImport(); return; }
+async function confirmImport(){
+    if(importWorkbookInfo.mode === "workbook"){ await confirmWorkbookImport(); return; }
     const getMap = f => document.getElementById("map_"+f).value || null;
     const m = {}; IMPORT_FIELDS.forEach(([f]) => m[f] = getMap(f));
     if(!m.date || !m.value){ showToast("يجب تحديد عمود التاريخ والقيمة على الأقل."); return; }
@@ -2744,8 +3125,12 @@ function confirmImport(){
         records.push(record); added++;
         addedRecords.push(record);
     });
-    deriveRecords(addedRecords);
-    saveRecords();
+    const [dUp, dRem] = deriveRecords(addedRecords);
+    closeImportModal();
+    setLoading(true, "جاري حفظ السجلات...");
+    const ok = await persistRecords([...addedRecords, ...dUp], dRem);
+    setLoading(false);
+    if(!ok) return;
     addAudit("IMPORT_EXCEL", importWorkbookInfo.fileName, "", `${added} سجل`, `مكرر: ${duplicates}، غير صالح: ${invalid}، مؤشر غير معروف: ${unknown}`);
     closeImportModal(); refreshData();
     const skipped = duplicates + invalid + unknown;
@@ -2875,7 +3260,7 @@ function renderTargets(){
         </div>`;
 }
 
-function saveTargets(approve){
+async function saveTargets(approve){
     if(!can("editTarget")){ showToast("تحديد المستهدفات متاح لمدير النظام ومدير الأداء فقط."); return; }
     const year = Number(document.getElementById("targetYear").value);
     if(targetYearState(year).status === "approved"){ showToast(`مستهدفات ${year} معتمدة ومقفلة.`); return; }
@@ -2924,30 +3309,142 @@ function saveTargets(approve){
     changes.forEach(c => addAudit("CHANGE_TARGET", c.k.code, c.old == null ? "" : c.old, c.val == null ? "" : c.val, `مستهدف ${year} — ${reason}`));
     if(approve){
         targetYears[year] = { status:"approved", by: currentUser.displayName, at: now };
-        save(STORAGE.targetYears, targetYears);
         addAudit("APPROVE_TARGETS", String(year), "", `${kpis.filter(k => k.targets?.[year]).length} مستهدف`, reason || "اعتماد وقفل المستهدفات السنوية");
     }
-    save(STORAGE.kpis, kpis);
+    const touched = [...new Set([...changes.map(c => c.k), ...dirChanges.map(c => c.k)])];
+    if(!await persistTargets(year, touched)) return;
     renderTargets(); renderKpis(); renderDashboard(); runQualityCheck();
     showToast(approve ? `تم اعتماد وقفل مستهدفات ${year}.` : `تم حفظ المسودة (${changes.length} تعديل).`);
 }
 
-function unlockTargets(){
+async function unlockTargets(){
     if(!can("editTarget")) return;
     const year = Number(document.getElementById("targetYear").value);
     const reason = (prompt(`سبب فتح مستهدفات ${year} للتعديل (يُسجل في سجل التدقيق):`) || "").trim();
     if(!reason){ showToast("لم يتم الفتح: السبب مطلوب."); return; }
     targetYears[year] = { status:"draft", reopenedBy: currentUser.displayName, reopenedAt: new Date().toISOString() };
-    save(STORAGE.targetYears, targetYears);
+    if(!await persistTargets(year, [])) return;
     addAudit("UNLOCK_TARGETS", String(year), "معتمدة", "مسودة", reason);
     renderTargets();
     showToast(`تم فتح مستهدفات ${year} للتعديل.`);
 }
 
+// ---- Users (admin only) ----
+let adminUsers = [];
+
+async function loadUsers(){
+    if(!can("users")) return;
+    if(CLOUD.on){
+        try{ adminUsers = await rpc("list_users", withToken()); }catch(e){ showToast(e.message); return; }
+    } else adminUsers = users.map(u => ({ ...u, mustChange: false }));
+    renderUsers();
+}
+
 function renderUsers(){
-    document.getElementById("usersTableBody").innerHTML = users.map(u => `
-        <tr><td class="font-bold">${escapeHtml(u.username)}</td><td>${escapeHtml(u.displayName)}</td><td><span class="pill bg-sky-50 text-sky-700">${roleName(u.role)}</span></td><td><span class="pill ${u.active ? "status-green" : "status-gray"}">${u.active ? "فعال" : "معطل"}</span></td></tr>
-    `).join("");
+    const list = CLOUD.on ? adminUsers : users;
+    document.getElementById("usersTableBody").innerHTML = list.length ? list.map(u => {
+        const st = ROLE_STYLE[u.role] || ROLE_STYLE.data;
+        return `<tr>
+            <td class="font-mono font-bold" dir="ltr">${escapeHtml(u.username)}</td>
+            <td class="font-bold">${escapeHtml(u.displayName)}${currentUser && u.username === currentUser.username ? ` <span class="pill status-gray !py-0.5 !px-2 !text-[10px]">أنت</span>` : ""}</td>
+            <td><span class="pill ${st.pill}">${roleName(u.role)}</span></td>
+            <td><span class="pill ${u.active ? "status-green" : "status-gray"}">${u.active ? "فعال" : "معطل"}</span></td>
+            <td class="text-[11px]">${u.mustChange ? `<span class="text-amber-700 font-bold">مؤقتة — بانتظار التغيير</span>` : `<span class="text-slate-500">محدثة</span>`}</td>
+            <td>${can("users") ? `<button onclick="openUserModal('${escapeAttr(u.username)}')" class="btn btn-secondary text-[11px] py-1 px-2.5">تعديل</button>` : ""}</td>
+        </tr>`;
+    }).join("") : `<tr><td colspan="6" class="text-center py-6 text-slate-400">لا يوجد مستخدمون</td></tr>`;
+}
+
+function openUserModal(username){
+    if(!can("users")){ showToast("إدارة المستخدمين لمدير النظام فقط."); return; }
+    const list = CLOUD.on ? adminUsers : users;
+    const u = username ? list.find(x => x.username === username) : null;
+    document.getElementById("userEditing").value = u ? u.username : "";
+    document.getElementById("userModalTitle").textContent = u ? "تعديل مستخدم" : "إضافة مستخدم";
+    const un = document.getElementById("userUsername");
+    un.value = u?.username || ""; un.disabled = !!u; un.classList.toggle("readonly", !!u);
+    document.getElementById("userDisplayName").value = u?.displayName || "";
+    document.getElementById("userRole").value = u?.role || "data";
+    document.getElementById("userActive").value = String(u ? u.active !== false : true);
+    document.getElementById("userPassword").value = "";
+    document.getElementById("userPasswordLabel").textContent = u ? "إعادة تعيين كلمة المرور (اختياري)" : "كلمة مرور مؤقتة";
+    document.getElementById("userPasswordHint").textContent = u ? "اتركه فارغاً لإبقاء كلمة المرور الحالية. عند التعيين يُطلب من المستخدم تغييرها عند الدخول." : "سيُطلب من المستخدم تغييرها عند أول دخول.";
+    document.getElementById("userModal").classList.remove("hidden");
+    (u ? document.getElementById("userDisplayName") : un).focus();
+}
+
+function closeUserModal(){ document.getElementById("userModal").classList.add("hidden"); }
+
+async function saveUser(){
+    if(!can("users")) return;
+    const editing = document.getElementById("userEditing").value;
+    const username = (editing || document.getElementById("userUsername").value).trim().toLowerCase();
+    const displayName = document.getElementById("userDisplayName").value.trim();
+    const role = document.getElementById("userRole").value;
+    const active = document.getElementById("userActive").value === "true";
+    const password = document.getElementById("userPassword").value;
+    if(!/^[a-z0-9._-]{3,32}$/.test(username)){ showToast(CLOUD_ERRORS.app_users_username_check); return; }
+    if(!displayName){ showToast(CLOUD_ERRORS.NAME_REQUIRED); return; }
+    if(!editing && !password){ showToast(CLOUD_ERRORS.PASSWORD_REQUIRED); return; }
+    if(password && password.length < 8){ showToast(CLOUD_ERRORS.WEAK_PASSWORD); return; }
+    if(username === currentUser.username && (!active || role !== "admin")){ showToast("لا يمكنك تعطيل حسابك أو إزالة صلاحية مدير النظام عن نفسك."); return; }
+    const list = CLOUD.on ? adminUsers : users;
+    if(!editing && list.some(u => u.username === username)){ showToast("اسم الدخول مستخدم مسبقاً."); return; }
+    const btn = document.getElementById("userSaveBtn"); btn.disabled = true;
+    try{
+        if(CLOUD.on){
+            await rpc("save_user", withToken({ p_username: username, p_display_name: displayName, p_role: role, p_active: active, p_password: password || null }));
+            await loadUsers();
+            users = (await rpc("public_users")).map(u => ({ ...u, active:true }));
+        } else {
+            const i = users.findIndex(u => u.username === username);
+            const next = { ...(i >= 0 ? users[i] : {}), username, displayName, role, active, ...(password ? { password } : {}) };
+            if(i >= 0) users[i] = next; else users.push(next);
+            save(STORAGE.users, users);
+            addAudit(editing ? "EDIT_USER" : "ADD_USER", username, "", roleName(role), editing ? "تعديل مستخدم" : "إضافة مستخدم");
+            loadUsers();
+        }
+        closeUserModal();
+        showToast(editing ? "تم حفظ بيانات المستخدم." : `تمت إضافة المستخدم ${displayName}.`);
+    }catch(e){ showToast(e.message); }
+    finally{ btn.disabled = false; }
+}
+
+// ---- Password ----
+function openPasswordModal(forced){
+    if(!currentUser?.username) return;
+    ["pwOld","pwNew","pwNew2"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("passwordForced").classList.toggle("hidden", !forced);
+    document.getElementById("passwordCloseBtn").classList.toggle("hidden", !!forced);
+    document.getElementById("passwordCancelBtn").classList.toggle("hidden", !!forced);
+    document.getElementById("passwordModal").dataset.forced = forced ? "1" : "";
+    document.getElementById("passwordModal").classList.remove("hidden");
+    document.getElementById("pwOld").focus();
+}
+
+function closePasswordModal(){
+    if(document.getElementById("passwordModal").dataset.forced) return;
+    document.getElementById("passwordModal").classList.add("hidden");
+}
+
+async function changePassword(){
+    const oldPw = document.getElementById("pwOld").value, pw = document.getElementById("pwNew").value, pw2 = document.getElementById("pwNew2").value;
+    if(pw.length < 8){ showToast(CLOUD_ERRORS.WEAK_PASSWORD); return; }
+    if(pw !== pw2){ showToast("تأكيد كلمة المرور غير مطابق."); return; }
+    if(pw === oldPw){ showToast("اختر كلمة مرور مختلفة عن الحالية."); return; }
+    try{
+        if(CLOUD.on) await rpc("change_password", withToken({ p_old: oldPw, p_new: pw }));
+        else {
+            const u = users.find(x => x.username === currentUser.username);
+            if(!u || u.password !== oldPw){ showToast(CLOUD_ERRORS.BAD_CREDENTIALS); return; }
+            u.password = pw; save(STORAGE.users, users);
+            addAudit("CHANGE_PASSWORD", u.username, "", "", "تغيير كلمة المرور");
+        }
+        currentUser.mustChange = false;
+        document.getElementById("passwordModal").dataset.forced = "";
+        document.getElementById("passwordModal").classList.add("hidden");
+        showToast("تم تغيير كلمة المرور.");
+    }catch(e){ showToast(e.message); }
 }
 
 function renderAudit(){
@@ -2957,9 +3454,20 @@ function renderAudit(){
 }
 
 function addAudit(action, item, oldValue, newValue, reason){
-    auditLogs.unshift({ timestamp:new Date().toISOString(), username:currentUser.username, displayName:currentUser.displayName, action, item, oldValue, newValue, reason });
-    save(STORAGE.audit, auditLogs);
+    const entry = { timestamp:new Date().toISOString(), username:currentUser.username, displayName:currentUser.displayName, action, item,
+                    oldValue: oldValue == null ? "" : String(oldValue), newValue: newValue == null ? "" : String(newValue), reason };
+    auditLogs.unshift(entry);
+    if(CLOUD.on){
+        auditQueue.push(entry);
+        clearTimeout(window.auditTimer); window.auditTimer = setTimeout(flushAudit, 300);
+    } else save(STORAGE.audit, auditLogs);
     renderAudit();
+}
+
+async function loadAudit(){
+    if(!CLOUD.on || !can("audit")) return;
+    flushAudit();
+    try{ auditLogs = await rpc("list_audit", withToken({ p_limit: 2000 })); renderAudit(); }catch(e){ showToast(e.message); }
 }
 
 function exportDashboard(){
@@ -3014,7 +3522,7 @@ function exportAudit(){
 function frequencyName(f){ return { daily:"يومي", weekly:"أسبوعي", monthly:"شهري", quarterly:"ربع سنوي", annual:"سنوي" }[f] || f || "—"; }
 function aggregationName(a){ return { SUM:"مجموع", AVERAGE:"متوسط", WEIGHTED_AVERAGE:"متوسط موزون", RATIO:"بسط/مقام", LAST_VALUE:"آخر قيمة" }[a] || a || "—"; }
 function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف", none:"يحتاج مراجعة" }[d] || d || "—"; }
-function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
+function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_USER:"إضافة مستخدم", EDIT_USER:"تعديل مستخدم", CHANGE_PASSWORD:"تغيير كلمة المرور", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 function pad2(n){ return String(n).padStart(2, "0"); }
 // Local-date formatting/parsing: toISOString() would shift dates by the UTC offset.

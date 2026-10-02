@@ -64,6 +64,10 @@ create table if not exists public.records (
     deleted      boolean not null default false
 );
 create index if not exists records_updated_idx on public.records (updated_at);
+-- Change cursor for the dashboards: every insert/update/delete takes a new rev, and pages pull rev > last seen.
+create sequence if not exists public.records_rev_seq;
+alter table public.records add column if not exists rev bigint not null default nextval('public.records_rev_seq');
+create index if not exists records_rev_idx on public.records (rev);
 create index if not exists records_kpi_year_idx on public.records (kpi_code, year);
 
 create table if not exists public.target_years (
@@ -260,7 +264,7 @@ begin
             notes = excluded.notes, dq = excluded.dq, approved = excluded.approved,
             created_by = case when t.deleted then excluded.created_by else t.created_by end,
             created_user = case when t.deleted then excluded.created_user else t.created_user end,
-            updated_by = me.display_name, updated_at = clock_timestamp(), deleted = false,
+            updated_by = me.display_name, updated_at = clock_timestamp(), deleted = false, rev = nextval('public.records_rev_seq'),
             approved_by = case when excluded.approved and not t.approved then me.display_name when excluded.approved then t.approved_by end,
             approved_at = case when excluded.approved and not t.approved then now() when excluded.approved then t.approved_at end;
         saved := saved + 1;
@@ -274,7 +278,7 @@ returns jsonb language plpgsql security definer set search_path = public as $$
 declare me public.app_users; n int;
 begin
     me := public.app_require(p_token, array['admin','manager','data']);
-    update public.records set deleted = true, updated_at = clock_timestamp(), updated_by = me.display_name
+    update public.records set deleted = true, updated_at = clock_timestamp(), updated_by = me.display_name, rev = nextval('public.records_rev_seq')
      where id = any(p_ids) and not deleted
        and (me.role in ('admin','manager') or (not approved and created_user = me.username));
     get diagnostics n = row_count;
@@ -289,7 +293,7 @@ declare me public.app_users; removed int := 0; res jsonb;
 begin
     me := public.app_require(p_token, array['admin','manager','data']);
     if p_replace_codes is not null and array_length(p_replace_codes, 1) > 0 and me.role in ('admin','manager') then
-        update public.records set deleted = true, updated_at = clock_timestamp(), updated_by = me.display_name
+        update public.records set deleted = true, updated_at = clock_timestamp(), updated_by = me.display_name, rev = nextval('public.records_rev_seq')
          where kpi_code = any(p_replace_codes) and not deleted;
         get diagnostics removed = row_count;
     end if;
@@ -297,7 +301,7 @@ begin
     return res || jsonb_build_object('removed', removed);
 end $$;
 
--- ---------- KPI definitions and targets (admin only) ----------
+-- ---------- KPI definitions (admin only) ----------
 -- p_replace: the list becomes the official list; KPIs not in it (and their readings) are removed.
 create or replace function public.save_kpis(p_token uuid, p_kpis jsonb, p_replace boolean)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -312,7 +316,7 @@ begin
     end loop;
     if p_replace then
         delete from public.kpis where not (code = any(codes));
-        update public.records set deleted = true, updated_at = clock_timestamp(), updated_by = me.display_name
+        update public.records set deleted = true, updated_at = clock_timestamp(), updated_by = me.display_name, rev = nextval('public.records_rev_seq')
          where not deleted and not (kpi_code = any(codes));
     end if;
     perform public.app_bump('kpis', me.username);
@@ -328,11 +332,29 @@ begin
     perform public.app_bump('kpis', me.username);
 end $$;
 
+-- Targets and directions (admin and performance manager). Only those two fields of existing KPIs change;
+-- a KPI not yet in the table (fresh database) is stored as sent.
+create or replace function public.save_kpi_targets(p_token uuid, p_kpis jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare me public.app_users; k jsonb; n int := 0;
+begin
+    me := public.app_require(p_token, array['admin','manager']);
+    for k in select * from jsonb_array_elements(p_kpis) loop
+        insert into public.kpis(code, data, updated_at) values (k->>'code', k, clock_timestamp())
+        on conflict (code) do update set
+            data = public.kpis.data || jsonb_build_object('targets', coalesce(k->'targets', '{}'::jsonb), 'direction', k->'direction'),
+            updated_at = clock_timestamp();
+        n := n + 1;
+    end loop;
+    perform public.app_bump('kpis', me.username);
+    return jsonb_build_object('saved', n);
+end $$;
+
 create or replace function public.save_target_year(p_token uuid, p_year int, p_data jsonb)
 returns void language plpgsql security definer set search_path = public as $$
 declare me public.app_users;
 begin
-    me := public.app_require(p_token, array['admin']);
+    me := public.app_require(p_token, array['admin','manager']);
     insert into public.target_years(year, data, updated_at) values (p_year, p_data, clock_timestamp())
     on conflict (year) do update set data = excluded.data, updated_at = clock_timestamp();
     perform public.app_bump('targets', me.username);
@@ -364,7 +386,7 @@ grant select on public.kpis, public.records, public.target_years, public.app_eve
 grant execute on function public.public_users(), public.login(text, text), public.logout(uuid), public.whoami(uuid),
     public.change_password(uuid, text, text), public.list_users(uuid), public.save_user(uuid, text, text, text, boolean, text),
     public.upsert_records(uuid, jsonb), public.delete_records(uuid, text[]), public.import_records(uuid, jsonb, text[]),
-    public.save_kpis(uuid, jsonb, boolean), public.delete_kpi(uuid, text), public.save_target_year(uuid, int, jsonb),
+    public.save_kpis(uuid, jsonb, boolean), public.save_kpi_targets(uuid, jsonb), public.delete_kpi(uuid, text), public.save_target_year(uuid, int, jsonb),
     public.add_audit(uuid, jsonb), public.list_audit(uuid, int) to anon, authenticated;
 revoke execute on function public.app_session_user(uuid), public.app_require(uuid, text[]), public.app_bump(text, text) from public, anon, authenticated;
 
