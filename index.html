@@ -173,6 +173,33 @@
         .login-password { margin-top: 16px; padding: 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; animation: slideIn .2s ease; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 
+        /* ---------- KPI board ---------- */
+        .modal-box.modal-wide { width: min(1120px, 100%); }
+        .view-toggle { display: inline-flex; background: #eef2f6; border-radius: 12px; padding: 3px; }
+        .view-toggle button { font-size: 11px; font-weight: 700; color: #475569; padding: 6px 12px; border-radius: 9px; white-space: nowrap; }
+        .view-toggle button.on { background: #fff; color: #0b1f33; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 12px; }
+        .kpi-card {
+            position: relative; text-align: right; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+            padding: 14px 16px 12px; cursor: pointer; transition: all .18s ease; display: flex; flex-direction: column; gap: 8px; min-height: 172px;
+        }
+        .kpi-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; border-radius: 16px 16px 0 0; background: var(--status, #cbd5e1); }
+        .kpi-card:hover { border-color: #94a3b8; box-shadow: 0 8px 22px rgba(15,23,42,.08); transform: translateY(-2px); }
+        .kpi-card:focus-visible { outline: 3px solid rgba(2,132,199,.35); outline-offset: 2px; }
+        .kpi-card .kpi-title { font-size: 12.5px; font-weight: 800; color: #0f172a; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 36px; }
+        .kpi-card .kpi-value { font-size: 26px; font-weight: 900; color: #0f172a; line-height: 1; }
+        .kpi-card .kpi-unit { font-size: 11px; font-weight: 700; color: #64748b; margin-right: 4px; }
+        .kpi-card .kpi-meta { font-size: 11px; color: #64748b; display: flex; justify-content: space-between; gap: 8px; }
+        .kpi-card .kpi-meta b { color: #0f172a; }
+        .cat-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .cat-head h4 { font-size: 13px; font-weight: 900; color: #0b1f33; }
+        .detail-tile { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; }
+        .detail-tile .t-label { font-size: 11px; font-weight: 700; color: #64748b; }
+        .detail-tile .t-value { font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 4px; }
+        .detail-tile .t-sub { font-size: 10.5px; color: #64748b; margin-top: 2px; }
+        #detailDefinition dt { color: #64748b; font-weight: 700; }
+        #detailDefinition dd { grid-column: span 2; color: #0f172a; font-weight: 600; }
+
         /* ---------- Import steps ---------- */
         .step { display: flex; gap: 12px; padding: 16px; border-radius: 14px; background: #f8fafc; border: 1px solid #e2e8f0; }
         .step-num { width: 28px; height: 28px; border-radius: 999px; background: #0b1f33; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -296,6 +323,7 @@
                 <button data-section="dashboard" onclick="showSection('dashboard')" class="tab-btn active px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-chart-pie ml-1"></i> اللوحة</button>
                 <button data-section="data" onclick="showSection('data')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-pen-to-square ml-1"></i> إدخال واستيراد</button>
                 <button data-section="kpis" onclick="showSection('kpis')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-bullseye ml-1"></i> المؤشرات</button>
+                <button data-section="targets" onclick="showSection('targets')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-flag-checkered ml-1"></i> المستهدفات</button>
                 <button data-section="quality" onclick="showSection('quality')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-shield-halved ml-1"></i> الجودة</button>
                 <button data-section="users" onclick="showSection('users')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-users-gear ml-1"></i> المستخدمين</button>
                 <button data-section="audit" onclick="showSection('audit')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left ml-1"></i> التدقيق</button>
@@ -316,6 +344,7 @@
         <button data-section="dashboard" onclick="showSection('dashboard')" class="tab-btn active px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">اللوحة</button>
         <button data-section="data" onclick="showSection('data')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">إدخال البيانات</button>
         <button data-section="kpis" onclick="showSection('kpis')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">المؤشرات</button>
+        <button data-section="targets" onclick="showSection('targets')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">المستهدفات</button>
         <button data-section="quality" onclick="showSection('quality')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">الجودة</button>
         <button data-section="users" onclick="showSection('users')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">المستخدمين</button>
         <button data-section="audit" onclick="showSection('audit')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">التدقيق</button>
@@ -364,24 +393,24 @@
             </div>
 
             <!-- KPI METRICS SUMMARY CARDS -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div class="card p-5 border-r-4 border-r-slate-800">
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                <div class="card p-5 border-r-4 border-r-slate-800 cursor-pointer" onclick="filterByStatus('ALL')" title="عرض كل المؤشرات">
                     <div class="text-xs text-slate-500 font-bold">إجمالي المؤشرات</div>
                     <div id="summaryTotal" class="text-3xl font-black text-slate-900 mt-2">0</div>
                 </div>
-                <div class="card p-5 border-r-4 border-r-emerald-500">
+                <div class="card p-5 border-r-4 border-r-emerald-500 cursor-pointer" onclick="filterByStatus('green')" title="عرض المؤشرات المحققة">
                     <div class="text-xs text-emerald-600 font-bold">محقق (أخضر)</div>
                     <div id="summaryGreen" class="text-3xl font-black text-emerald-600 mt-2">0</div>
                 </div>
-                <div class="card p-5 border-r-4 border-r-amber-500">
+                <div class="card p-5 border-r-4 border-r-amber-500 cursor-pointer" onclick="filterByStatus('yellow')" title="عرض مؤشرات التحذير">
                     <div class="text-xs text-amber-600 font-bold">يحتاج متابعة (تحذير)</div>
                     <div id="summaryYellow" class="text-3xl font-black text-amber-600 mt-2">0</div>
                 </div>
-                <div class="card p-5 border-r-4 border-r-rose-500">
+                <div class="card p-5 border-r-4 border-r-rose-500 cursor-pointer" onclick="filterByStatus('red')" title="عرض المؤشرات غير المحققة">
                     <div class="text-xs text-rose-600 font-bold">لم يتحقق (أحمر)</div>
                     <div id="summaryRed" class="text-3xl font-black text-rose-600 mt-2">0</div>
                 </div>
-                <div class="card p-5 border-r-4 border-r-sky-600 sm:col-span-2 lg:col-span-1">
+                <div class="card p-5 border-r-4 border-r-sky-600 col-span-2 lg:col-span-1">
                     <div class="text-xs text-sky-700 font-bold">متوسط الإنجاز العام</div>
                     <div id="summaryAchievement" class="text-3xl font-black text-sky-700 mt-2">—</div>
                 </div>
@@ -393,10 +422,13 @@
                 <div id="executiveSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </div>
 
-            <!-- MAIN TABLE -->
+            <!-- PERFORMANCE BOARD -->
             <div class="card overflow-hidden">
                 <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
-                    <h3 class="font-bold text-sm text-slate-900">جدول أداء المؤشرات التنفيذية المعتمدة <span id="tableCount" class="text-[11px] font-semibold text-slate-400 mr-1"></span></h3>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900">لوحة أداء المؤشرات <span id="tableCount" class="text-[11px] font-semibold text-slate-400 mr-1"></span></h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">اضغط على أي مؤشر لعرض تفاصيله الكاملة</p>
+                    </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <div class="relative">
                             <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -407,12 +439,17 @@
                             <option value="green">محقق</option>
                             <option value="yellow">تحذير</option>
                             <option value="red">غير محقق</option>
-                            <option value="gray">بدون بيانات</option>
+                            <option value="gray">بدون حالة</option>
                         </select>
-                    <button id="exportDashboardBtn" onclick="exportDashboard()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير البيانات إلى Excel</button>
+                        <div class="view-toggle" role="group" aria-label="طريقة العرض">
+                            <button id="viewCardsBtn" onclick="setDashboardView('cards')" title="بطاقات"><i class="fa-solid fa-grip"></i> بطاقات</button>
+                            <button id="viewTableBtn" onclick="setDashboardView('table')" title="جدول"><i class="fa-solid fa-table-list"></i> جدول</button>
+                        </div>
+                        <button id="exportDashboardBtn" onclick="exportDashboard()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير Excel</button>
                     </div>
                 </div>
-                <div class="overflow-auto max-h-[500px]">
+                <div id="kpiCards" class="p-4 space-y-6"></div>
+                <div id="kpiTableWrap" class="overflow-auto max-h-[560px] hidden">
                     <table>
                         <thead>
                             <tr>
@@ -436,33 +473,21 @@
             <!-- CHARTS -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="card p-5">
-                    <h3 class="font-bold text-sm text-slate-900 mb-4">توزيع حالة المؤشرات التنفيذية</h3>
+                    <h3 class="font-bold text-sm text-slate-900 mb-4">توزيع حالة المؤشرات</h3>
                     <div style="height:280px"><canvas id="statusChart"></canvas></div>
                 </div>
-                <div class="card p-5">
-                    <h3 class="font-bold text-sm text-slate-900 mb-4">نسبة الإنجاز حسب المؤشر</h3>
-                    <div id="achievementWrap" class="overflow-y-auto" style="max-height:400px"><div id="achievementBox" style="height:280px"><canvas id="achievementChart"></canvas></div></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="card p-5">
                     <div class="mb-4">
                         <h3 class="font-bold text-sm text-slate-900">مقارنة الأداء عبر الأرباع</h3>
                         <p class="text-[11px] text-slate-500 mt-0.5">متوسط نسبة الإنجاز لكل ربع — السنة المختارة مقابل السنة السابقة</p>
                     </div>
-                    <div style="height:300px"><canvas id="quarterChart"></canvas></div>
+                    <div style="height:260px"><canvas id="quarterChart"></canvas></div>
                 </div>
-                <div id="trendCard" class="card p-5">
-                    <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-                        <div>
-                            <h3 class="font-bold text-sm text-slate-900">اتجاه المؤشر ربعياً</h3>
-                            <p class="text-[11px] text-slate-500 mt-0.5">القيمة الفعلية لكل ربع مقابل المستهدف</p>
-                        </div>
-                        <select id="trendKpi" class="!py-2 !text-xs !w-56" onchange="renderTrendChart()"></select>
-                    </div>
-                    <div style="height:300px"><canvas id="trendChart"></canvas></div>
-                </div>
+            </div>
+            <div class="card p-5">
+                <h3 class="font-bold text-sm text-slate-900 mb-1">نسبة الإنجاز حسب المؤشر</h3>
+                <p class="text-[11px] text-slate-500 mb-4">المؤشرات التي لها مستهدف أو عتبات ألوان فقط — اضغط على العمود لعرض التفاصيل</p>
+                <div id="achievementWrap" class="overflow-y-auto" style="max-height:400px"><div id="achievementBox" style="height:280px"><canvas id="achievementChart"></canvas></div></div>
             </div>
         </section>
 
@@ -597,6 +622,40 @@
             </div>
         </section>
 
+        <!-- ================= SECTION: TARGETS ================= -->
+        <section id="sectionTargets" class="hidden space-y-6">
+            <div class="card p-5 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900">مستهدفات المؤشرات لسنة <span id="targetYearLabel"></span></h3>
+                    <p class="text-xs text-slate-500 mt-0.5">مستهدف واحد لكل مؤشر في السنة. يحفظه مدير النظام كمسودة ثم يعتمده، وبعد الاعتماد يُقفل.</p>
+                    <p class="text-[11px] text-slate-400 mt-1">المستهدف ربع سنوي: للنسب والمتوسطات هو القيمة المطلوبة، ولمؤشرات العدد (مجموع) هو المطلوب في كل ربع — وفي العرض السنوي يُضرب في عدد الأرباع.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label for="targetYear" class="text-xs font-bold text-slate-600 whitespace-nowrap">السنة</label>
+                    <select id="targetYear" class="!w-28" onchange="renderTargets()"></select>
+                    <span id="targetYearStatus"></span>
+                </div>
+            </div>
+            <div id="targetsNotice"></div>
+            <div class="card overflow-auto max-h-[620px]">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المؤشر</th>
+                            <th>الفئة</th>
+                            <th>الوحدة</th>
+                            <th>اتجاه الأداء</th>
+                            <th>المستهدف <span id="targetYearHead"></span></th>
+                            <th>مرجع</th>
+                            <th>الفعلي <span id="targetPrevHead"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="targetsTableBody"></tbody>
+                </table>
+            </div>
+            <div id="targetsActions" class="card p-4 flex flex-wrap items-center justify-between gap-3"></div>
+        </section>
+
         <!-- ================= SECTION: QUALITY ================= -->
         <section id="sectionQuality" class="hidden space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -684,7 +743,7 @@
                 <select id="kpiAggregation"><option value="SUM">مجموع (SUM)</option><option value="AVERAGE">متوسط (AVERAGE)</option><option value="WEIGHTED_AVERAGE">متوسط موزون</option><option value="RATIO">نسبة مئوية (بسط/مقام)</option><option value="LAST_VALUE">آخر قيمة مسجلة</option></select>
             </div>
             <div>
-                <label class="block font-bold text-slate-700 mb-1">المستهدف الرسمي</label>
+                <label class="block font-bold text-slate-700 mb-1">مستهدف الملف (افتراضي)</label>
                 <input id="kpiTarget" type="number" step="any" oninput="toggleTargetReason()">
                 <p id="targetLockMessage" class="text-[10px] text-slate-400 mt-1"></p>
             </div>
@@ -704,6 +763,57 @@
         <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button onclick="closeKpiModal()" class="btn btn-secondary text-xs">إلغاء</button>
             <button onclick="saveKpi()" class="btn btn-primary text-xs">حفظ التغييرات</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: KPI DETAIL ================= -->
+<div id="kpiDetailModal" class="modal hidden" onclick="if(event.target === this) closeKpiDetail()">
+    <div class="modal-box modal-wide space-y-5" role="dialog" aria-modal="true" aria-labelledby="detailName">
+        <div class="flex justify-between items-start gap-4 border-b border-slate-200 pb-4">
+            <div class="min-w-0">
+                <div id="detailMeta" class="text-[11px] text-sky-700 font-bold"></div>
+                <h3 id="detailName" class="text-lg font-black text-slate-900 mt-1"></h3>
+                <div id="detailCode" class="text-[11px] text-slate-400 font-mono mt-0.5"></div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span id="detailStatus"></span>
+                <button onclick="closeKpiDetail()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none" aria-label="إغلاق">&times;</button>
+            </div>
+        </div>
+        <div id="detailTiles" class="grid grid-cols-2 lg:grid-cols-5 gap-3"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="rounded-2xl border border-slate-200 p-4">
+                <h4 class="font-bold text-xs text-slate-900 mb-3">الأداء الربعي عبر السنوات</h4>
+                <div style="height:240px"><canvas id="detailQuarterChart"></canvas></div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 p-4">
+                <h4 id="detailMonthTitle" class="font-bold text-xs text-slate-900 mb-3">الأداء الشهري</h4>
+                <div style="height:240px"><canvas id="detailMonthChart"></canvas></div>
+            </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 overflow-auto">
+            <table>
+                <thead id="detailQuarterHead"></thead>
+                <tbody id="detailQuarterBody"></tbody>
+            </table>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="rounded-2xl border border-slate-200 p-4">
+                <h4 class="font-bold text-xs text-slate-900 mb-3">تعريف المؤشر</h4>
+                <dl id="detailDefinition" class="grid grid-cols-3 gap-x-3 gap-y-2 text-xs"></dl>
+            </div>
+            <div class="rounded-2xl border border-slate-200 p-4">
+                <h4 class="font-bold text-xs text-slate-900 mb-3">آخر القراءات المسجلة</h4>
+                <div class="overflow-auto max-h-[260px]">
+                    <table><thead><tr><th>التاريخ</th><th>القيمة</th><th>البسط/المقام</th><th>ملاحظة</th></tr></thead><tbody id="detailReadings"></tbody></table>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-wrap justify-end gap-3 pt-3 border-t border-slate-200">
+            <button id="detailEnterBtn" onclick="enterReadingFor()" class="btn btn-secondary text-xs"><i class="fa-solid fa-pen-to-square ml-1"></i> إدخال قراءة لهذا المؤشر</button>
+            <button id="detailExportBtn" onclick="exportKpiDetail()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير تفاصيل المؤشر</button>
+            <button onclick="closeKpiDetail()" class="btn btn-primary text-xs">إغلاق</button>
         </div>
     </div>
 </div>
@@ -755,13 +865,13 @@
 
 <!-- ================= SCRIPT ================= -->
 <script>
-const STORAGE = { users: "ASEER_USERS_V5", kpis: "ASEER_KPIS_V5", records: "ASEER_RECORDS_V5", audit: "ASEER_AUDIT_V5", session: "ASEER_SESSION_V5" };
+const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V5", users: "ASEER_USERS_V5", kpis: "ASEER_KPIS_V5", records: "ASEER_RECORDS_V5", audit: "ASEER_AUDIT_V5", session: "ASEER_SESSION_V5" };
 // Keys used by the previous version, so existing data entries are carried over.
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 2.1 — 2026-10-02";
-const SECTIONS = ["dashboard", "data", "kpis", "quality", "users", "audit"];
+const APP_VERSION = "الإصدار 2.2 — 2026-10-02";
+const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
     { username: "admin", password: "admin123", displayName: "عبدالعزيز عبدالله ال زربه", role: "admin", active: true },
@@ -770,10 +880,10 @@ const defaultUsers = [
 ];
 
 const permissions = {
-    admin: { dashboard:true, data:true, kpis:true, quality:true, users:true, audit:true, import:true, approve:true, editTarget:true, editKpi:true, deleteKpi:true, export:true },
-    manager: { dashboard:true, data:true, kpis:false, quality:true, users:false, audit:false, import:true, approve:true, editTarget:false, editKpi:false, deleteKpi:false, export:true },
-    data: { dashboard:true, data:true, kpis:false, quality:true, users:false, audit:false, import:true, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false },
-    visitor: { dashboard:true, data:false, kpis:false, quality:false, users:false, audit:false, import:false, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false }
+    admin: { dashboard:true, data:true, kpis:true, targets:true, quality:true, users:true, audit:true, import:true, approve:true, editTarget:true, editKpi:true, deleteKpi:true, export:true },
+    manager: { dashboard:true, data:true, kpis:false, targets:true, quality:true, users:false, audit:false, import:true, approve:true, editTarget:false, editKpi:false, deleteKpi:false, export:true },
+    data: { dashboard:true, data:true, kpis:false, targets:false, quality:true, users:false, audit:false, import:true, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false },
+    visitor: { dashboard:true, data:false, kpis:false, targets:false, quality:false, users:false, audit:false, import:false, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false }
 };
 
 // Official KPI list from KPI_Dashboard_Ready.xlsx (03_KPI_MASTER); percentages are stored on a 0-100 scale.
@@ -889,7 +999,8 @@ function kpiFromMaster(m){
 }
 
 let users = [], kpis = [], records = [], auditLogs = [], currentUser = null;
-let statusChart = null, achievementChart = null, quarterChart = null, trendChart = null;
+let statusChart = null, achievementChart = null, quarterChart = null, detailQuarterChart = null, detailMonthChart = null;
+let dashboardView = "cards", detailCode = null;
 
 // Chart palette: series colors (categorical slots 1-2) and a neutral target reference.
 const CHART = { current:"#2a78d6", previous:"#eb6834", target:"#64748b", grid:"#eef2f6", tick:"#64748b" };
@@ -917,6 +1028,8 @@ function init(){
     }
     records = unpackRecords(load(STORAGE.records, null) || load(LEGACY_STORAGE.records, []));
     auditLogs = load(STORAGE.audit, null) || load(LEGACY_STORAGE.audit, []);
+    targetYears = load(STORAGE.targetYears, {});
+    try{ dashboardView = localStorage.getItem(STORAGE.view) === "table" ? "table" : "cards"; }catch(e){}
 
     document.querySelectorAll(".app-version").forEach(e => e.textContent = APP_VERSION);
     renderLoginUsers();
@@ -1103,13 +1216,15 @@ function showSection(section){
     const titles = {
         dashboard:["لوحة مؤشرات الأداء التنفيذية", "نظرة شاملة وتحليل دقيق لعمليات المستشفى الإكلينيكية والتشغيلية"],
         data:["إدخال واستيراد البيانات", "إدخال القراءات يدوياً أو استيرادها من ملفات Excel"],
-        kpis:["تعريف مؤشرات الأداء", "إدارة المؤشرات المعتمدة ومستهدفاتها الرسمية"],
+        kpis:["تعريف مؤشرات الأداء", "إدارة المؤشرات المعتمدة وتعريفاتها"],
+        targets:["المستهدفات السنوية", "يحددها مدير النظام مرة واحدة لكل سنة وتُقفل بعد الاعتماد"],
         quality:["فحص جودة البيانات", "اكتشاف القيم المفقودة والمكررة والسجلات غير المكتملة"],
         users:["إدارة المستخدمين", "الحسابات المعتمدة وصلاحياتها"],
         audit:["سجل التدقيق", "توثيق زمني لكافة العمليات الحساسة"]
     };
     // Charts drawn while the dashboard was hidden (e.g. after an import) have zero size; redraw on show.
     if(section === "dashboard" && currentUser) renderDashboard();
+    if(section === "targets" && currentUser) renderTargets();
     document.getElementById("pageTitle").textContent = titles[section][0];
     document.getElementById("pageSubtitle").textContent = titles[section][1];
 }
@@ -1317,8 +1432,33 @@ function getSameQPrevYear(code, year, q){
 
 const isNum = v => v != null && v !== "" && Number.isFinite(Number(v));
 
-// The official target, or the green threshold when a KPI only has color thresholds.
-function effectiveTarget(kpi){ return isNum(kpi.target) ? Number(kpi.target) : isNum(kpi.greenMin) ? Number(kpi.greenMin) : null; }
+// Annual targets live in kpi.targets = { "2026": { value, setBy, setAt } }, set by the admin once per year.
+// Without one, the standing target from the KPI file (kpi.target) applies.
+function thisYear(){ return Number(document.getElementById("filterYear")?.value) || new Date().getFullYear(); }
+function targetFor(kpi, year){
+    const t = kpi.targets && kpi.targets[year];
+    if(t && isNum(t.value)) return Number(t.value);
+    return isNum(kpi.target) ? Number(kpi.target) : null;
+}
+function targetSource(kpi, year){
+    const t = kpi.targets && kpi.targets[year];
+    if(t && isNum(t.value)) return `مستهدف ${year} المعتمد`;
+    if(isNum(kpi.target)) return "مستهدف الملف";
+    if(isNum(kpi.greenMin)) return "حد الأخضر";
+    return "";
+}
+// Targets are per quarter. A summed KPI's full-year actual is compared with the target times the quarters with data.
+function periodTarget(kpi, year, q, base){
+    if(base == null || kpi.aggregation !== "SUM" || q !== "ALL") return base;
+    const n = QUARTERS.filter(qq => getPeriodValue(kpi.code, year, qq) != null).length;
+    return n ? base * n : base;
+}
+
+// The target used for achievement: the year's target, or the green threshold when a KPI only has thresholds.
+function effectiveTarget(kpi, year){
+    const t = targetFor(kpi, year ?? thisYear());
+    return t != null ? t : isNum(kpi.greenMin) ? Number(kpi.greenMin) : null;
+}
 
 function calcAchievement(act, target, dir){
     if(!isNum(act) || !isNum(target)) return null;
@@ -1331,7 +1471,7 @@ function calcAchievement(act, target, dir){
     return null;
 }
 
-function getStatus(kpi, act, ach){
+function getStatus(kpi, act, ach, target){
     if(act == null) return { key:"gray", label:"بدون بيانات" };
     if(kpi.direction === "none") return { key:"gray", label:"يحتاج تحديد الاتجاه" };
     if(isNum(kpi.greenMin)){
@@ -1342,7 +1482,7 @@ function getStatus(kpi, act, ach){
         if(isNum(kpi.yellowMin) && meets(kpi.yellowMin)) return { key:"yellow", label:"تحذير" };
         return { key:"red", label:"غير محقق" };
     }
-    if(!isNum(kpi.target)) return { key:"gray", label:"بلا مستهدف" };
+    if(!isNum(target)) return { key:"gray", label:"بلا مستهدف" };
     if(ach == null) return { key:"gray", label:"غير متاح" };
     // A "target" KPI is never above 100%, so allow a 2% tolerance band around the exact target.
     const greenAt = kpi.direction === "target" ? 98 : 100;
@@ -1351,7 +1491,7 @@ function getStatus(kpi, act, ach){
     return { key:"red", label:"غير محقق" };
 }
 
-function calcTrend(act, prev, kpi){
+function calcTrend(act, prev, kpi, target){
     if(act == null || prev == null) return { key:"stable", label:"—" };
     const a = Number(act), p = Number(prev);
     const tol = Math.max(Math.abs(p)*0.01, 0.0001);
@@ -1359,7 +1499,7 @@ function calcTrend(act, prev, kpi){
     if(kpi.direction === "none") return a > p ? { key:"neutral", label:"ارتفاع ↑" } : { key:"neutral", label:"انخفاض ↓" };
     let better;
     if(kpi.direction === "lower") better = a < p;
-    else if(kpi.direction === "target") better = Math.abs(a - kpi.target) < Math.abs(p - kpi.target);
+    else if(kpi.direction === "target") better = isNum(target) ? Math.abs(a - target) < Math.abs(p - target) : a > p;
     else better = a > p;
     return better ? { key:"up", label:"تحسن ↗" } : { key:"down", label:"تراجع ↘" };
 }
@@ -1384,10 +1524,11 @@ function computeResults(year, q, cat){
         const act = getPeriodValue(kpi.code, year, q);
         const prev = getPrevValue(kpi.code, year, q);
         const sameY = getSameQPrevYear(kpi.code, year, q);
-        const ach = calcAchievement(act, effectiveTarget(kpi), kpi.direction);
-        const status = getStatus(kpi, act, ach);
-        const trend = calcTrend(act, prev, kpi);
-        return { kpi, act, prev, sameY, ach, status, trend };
+        const target = periodTarget(kpi, year, q, targetFor(kpi, year));
+        const ach = calcAchievement(act, periodTarget(kpi, year, q, effectiveTarget(kpi, year)), kpi.direction);
+        const status = getStatus(kpi, act, ach, target);
+        const trend = calcTrend(act, prev, kpi, target);
+        return { kpi, act, prev, sameY, ach, status, trend, target, year };
     });
 }
 
@@ -1413,11 +1554,249 @@ function renderDashboard(){
         (st === "ALL" || r.status.key === st) &&
         (!term || normalizeName(r.kpi.name).includes(term) || r.kpi.code.toLowerCase().includes(term)));
     document.getElementById("tableCount").textContent = `(${tableRows.length} من ${results.length})`;
-    renderTable(tableRows);
+    applyDashboardView();
+    if(dashboardView === "cards") renderKpiCards(tableRows, year); else renderTable(tableRows);
     renderCharts(results);
     renderQuarterChart(year, cat);
-    populateTrendKpis();
-    renderTrendChart();
+}
+
+function filterByStatus(key){
+    document.getElementById("tableStatus").value = key;
+    renderDashboard();
+    document.getElementById("kpiCards").closest(".card").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function setDashboardView(view){
+    dashboardView = view;
+    try{ localStorage.setItem(STORAGE.view, view); }catch(e){}
+    renderDashboard();
+}
+
+function applyDashboardView(){
+    document.getElementById("kpiCards").classList.toggle("hidden", dashboardView !== "cards");
+    document.getElementById("kpiTableWrap").classList.toggle("hidden", dashboardView !== "table");
+    document.getElementById("viewCardsBtn").classList.toggle("on", dashboardView === "cards");
+    document.getElementById("viewTableBtn").classList.toggle("on", dashboardView === "table");
+}
+
+// Quarterly values ending at the selected year, oldest first (for card sparklines).
+function quarterSeries(code, year){
+    const out = [];
+    [year - 1, year].forEach(y => QUARTERS.forEach(q => out.push(getPeriodValue(code, y, q))));
+    while(out.length && out[0] == null) out.shift();
+    while(out.length && out[out.length - 1] == null) out.pop();
+    return out;
+}
+
+// Inline SVG sparkline; time runs right-to-left to match the page direction.
+function sparkline(values, color){
+    const pts = values.map((v, i) => [i, v]).filter(p => p[1] != null);
+    if(pts.length < 2) return `<div class="h-7 text-[10px] text-slate-300 flex items-center">لا توجد سلسلة كافية</div>`;
+    const W = 120, H = 28, n = values.length - 1 || 1;
+    const vs = pts.map(p => p[1]), min = Math.min(...vs), max = Math.max(...vs), span = max - min || 1;
+    const xy = pts.map(([i, v]) => [W - (i / n) * W, H - 3 - ((v - min) / span) * (H - 6)]);
+    const last = xy[xy.length - 1];
+    return `<svg viewBox="-3 0 ${W + 6} ${H}" class="w-full h-7" preserveAspectRatio="none" aria-hidden="true">
+        <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" points="${xy.map(p => p.map(c => c.toFixed(1)).join(",")).join(" ")}"/>
+        <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
+}
+
+function trendPill(t){
+    const cls = t.key === "up" ? "bg-emerald-50 text-emerald-700" : t.key === "down" ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600";
+    return `<span class="pill ${cls} !py-0.5 !px-2 !text-[10px]">${t.label}</span>`;
+}
+
+function renderKpiCards(results, year){
+    const box = document.getElementById("kpiCards");
+    if(!results.length){ box.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">لا توجد مؤشرات مطابقة للبحث أو الفلتر</div>`; return; }
+    const groups = new Map();
+    results.forEach(r => { const c = r.kpi.category || "أخرى"; if(!groups.has(c)) groups.set(c, []); groups.get(c).push(r); });
+    box.innerHTML = [...groups.entries()].map(([cat, rows]) => {
+        const counts = { green:0, yellow:0, red:0 };
+        rows.forEach(r => { if(counts[r.status.key] != null) counts[r.status.key]++; });
+        return `
+        <div>
+            <div class="cat-head">
+                <h4>${escapeHtml(cat)} <span class="text-[11px] font-semibold text-slate-400">(${rows.length})</span></h4>
+                <div class="flex gap-1.5 text-[10px] font-bold">
+                    ${counts.green ? `<span class="pill status-green !py-0.5 !px-2">${counts.green} محقق</span>` : ""}
+                    ${counts.yellow ? `<span class="pill status-yellow !py-0.5 !px-2">${counts.yellow} تحذير</span>` : ""}
+                    ${counts.red ? `<span class="pill status-red !py-0.5 !px-2">${counts.red} غير محقق</span>` : ""}
+                </div>
+            </div>
+            <div class="kpi-grid">${rows.map(r => kpiCard(r, year)).join("")}</div>
+        </div>`;
+    }).join("");
+}
+
+function kpiCard(r, year){
+    const k = r.kpi, color = statusColor(r.status.key);
+    const unit = k.unit && k.unit !== "%" ? `<span class="kpi-unit">${escapeHtml(k.unit)}</span>` : "";
+    const tgt = r.target != null ? r.target : periodTarget(k, year, getFilters().q, effectiveTarget(k, year));
+    return `
+    <button type="button" class="kpi-card" style="--status:${color}" onclick="openKpiDetail('${escapeAttr(k.code)}')" aria-label="تفاصيل ${escapeAttr(k.name)}">
+        <div class="flex items-start justify-between gap-2">
+            <div class="kpi-title">${escapeHtml(k.name)}</div>
+            <span class="pill status-${r.status.key} !py-0.5 !px-2 !text-[10px] shrink-0">${r.status.label}</span>
+        </div>
+        <div class="flex items-end justify-between gap-2">
+            <div><span class="kpi-value">${fmt(r.act, k)}</span>${r.act != null ? unit : ""}</div>
+            ${r.act != null && r.prev != null ? trendPill(r.trend) : ""}
+        </div>
+        <div class="kpi-meta"><span>المستهدف: <b>${tgt != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(tgt, k)}` : "غير محدد"}</b></span><span>${r.ach != null ? `الإنجاز: <b>${r.ach.toFixed(0)}%</b>` : ""}</span></div>
+        ${r.ach != null ? `<div class="progress"><div style="width:${Math.min(r.ach,100)}%;background:${color}"></div></div>` : ""}
+        <div class="mt-auto">${sparkline(quarterSeries(k.code, year), r.status.key === "gray" ? "#64748b" : color)}</div>
+        <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}${staleNote(k)}</div>
+    </button>`;
+}
+
+// ---- KPI detail view ----
+const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+function openKpiDetail(code){
+    const k = kpis.find(x => x.code === code);
+    if(!k) return;
+    detailCode = code;
+    const { year, q } = getFilters();
+    const r = computeResults(year, q, "ALL").find(x => x.kpi.code === code) || computeResults(year, q, k.category).find(x => x.kpi.code === code);
+    const tgt = r && r.target != null ? r.target : periodTarget(k, year, q, effectiveTarget(k, year));
+
+    document.getElementById("detailMeta").textContent = [k.category, k.department].filter(Boolean).join(" · ");
+    document.getElementById("detailName").textContent = k.name;
+    document.getElementById("detailCode").innerHTML = escapeHtml(k.code) + staleNote(k);
+    document.getElementById("detailStatus").innerHTML = r ? `<span class="pill status-${r.status.key}">${r.status.label}</span>` : "";
+
+    const delta = r && r.act != null && r.prev != null ? Number(r.act) - Number(r.prev) : null;
+    const tile = (label, value, sub="") => `<div class="detail-tile"><div class="t-label">${label}</div><div class="t-value">${value}</div>${sub ? `<div class="t-sub">${sub}</div>` : ""}</div>`;
+    document.getElementById("detailTiles").innerHTML = [
+        tile(`الفعلي — ${periodName(q)} ${year}`, fmt(r?.act, k), k.unit && k.unit !== "%" ? escapeHtml(k.unit) : ""),
+        tile(`المستهدف ${year}`, tgt != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(tgt, k)}` : "غير محدد", (targetSource(k, year) || "يحدده مدير النظام") + (k.aggregation === "SUM" && q === "ALL" && tgt != null ? " · مجموع الأرباع" : "")),
+        tile("نسبة الإنجاز", r?.ach != null ? r.ach.toFixed(1) + "%" : "—", r?.ach != null ? `<div class="progress mt-1"><div style="width:${Math.min(r.ach,100)}%;background:${statusColor(r.status.key)}"></div></div>` : ""),
+        tile(q === "ALL" ? "السنة السابقة" : "الفترة السابقة", fmt(r?.prev, k), delta != null ? `${delta > 0 ? "+" : ""}${fmt(delta, k)} · ${r.trend.label}` : ""),
+        tile("نفس الفترة العام الماضي", fmt(r?.sameY, k))
+    ].join("");
+
+    renderDetailQuarterChart(k);
+    renderDetailMonthChart(k, year);
+    renderDetailQuarterTable(k, year);
+
+    const def = (label, value) => `<dt>${label}</dt><dd>${value || "—"}</dd>`;
+    document.getElementById("detailDefinition").innerHTML = [
+        def("التعريف", escapeHtml(k.definition)), def("الوحدة", escapeHtml(k.unit)), def("دورية القياس", frequencyName(k.frequency)),
+        def("طريقة الحساب", aggregationName(k.aggregation) + (k.aggregation === "RATIO" ? " — مجموع البسط ÷ مجموع المقام" : "")),
+        def("اتجاه الأداء", directionName(k.direction)), def("عتبات الألوان", isNum(k.greenMin) ? `أخضر ${k.direction === "lower" ? "≤" : "≥"} ${fmt(k.greenMin, k)}${isNum(k.yellowMin) ? ` · أصفر ${k.direction === "lower" ? "≤" : "≥"} ${fmt(k.yellowMin, k)}` : ""}` : ""),
+        def("مصدر البيانات", escapeHtml(k.dataSource)), def("مالك المؤشر", escapeHtml(k.owner))
+    ].join("");
+
+    const readings = records.filter(x => x.kpiCode === code).sort((a,b) => String(b.date).localeCompare(String(a.date))).slice(0, 15);
+    document.getElementById("detailReadings").innerHTML = readings.length ? readings.map(x => `
+        <tr><td>${escapeHtml(x.date)}</td><td class="font-bold">${fmt(x.actualValue, k)}</td><td class="text-slate-500">${x.numerator != null || x.denominator != null ? `${x.numerator ?? "—"} / ${x.denominator ?? "—"}` : "—"}</td>
+        <td class="text-[11px]">${!x.approved ? `<span class="pill status-yellow !py-0.5 !px-2">بانتظار الاعتماد</span>` : x.dq ? `<span class="text-amber-600" title="${escapeAttr(x.notes)}">${escapeHtml(x.dq)}</span>` : ""}</td></tr>`).join("")
+        : `<tr><td colspan="4" class="text-center py-4 text-slate-400">لا توجد قراءات</td></tr>`;
+
+    document.getElementById("detailEnterBtn").classList.toggle("hidden", !can("data"));
+    document.getElementById("detailExportBtn").classList.toggle("hidden", !can("export"));
+    document.getElementById("kpiDetailModal").classList.remove("hidden");
+}
+
+function closeKpiDetail(){
+    document.getElementById("kpiDetailModal").classList.add("hidden");
+    [detailQuarterChart, detailMonthChart].forEach(c => c && c.destroy());
+    detailQuarterChart = detailMonthChart = null;
+}
+
+// Every quarter from the first year with data up to the selected year, with the per-year target as a step line.
+function detailQuarterPoints(k){
+    const years = [...new Set(records.filter(r => r.kpiCode === k.code && r.year).map(r => Number(r.year)))].sort();
+    const { year } = getFilters();
+    if(!years.includes(year)) years.push(year);
+    const first = Math.max(years[0], year - 2);
+    const pts = [];
+    for(let y = first; y <= year; y++) QUARTERS.forEach((q, i) => pts.push({ label: `ر${i + 1} ${y}`, y, q, v: round(getPeriodValue(k.code, y, q)), t: effectiveTarget(k, y) }));
+    while(pts.length && pts[0].v == null) pts.shift();
+    while(pts.length > 1 && pts[pts.length-1].v == null && pts[pts.length-1].y === year) pts.pop();
+    return pts;
+}
+
+function renderDetailQuarterChart(k){
+    if(detailQuarterChart) detailQuarterChart.destroy();
+    const pts = detailQuarterPoints(k);
+    const datasets = [{ label:"الفعلي", data: pts.map(p => p.v), borderColor:CHART.current, backgroundColor:CHART.current, borderWidth:2, pointRadius:4, pointHoverRadius:6, tension:.25, spanGaps:true }];
+    if(pts.some(p => p.t != null)) datasets.push({ label:"المستهدف", data: pts.map(p => p.t), borderColor:CHART.target, borderWidth:1.5, borderDash:[5,4], pointRadius:0, pointHitRadius:0, stepped:true });
+    detailQuarterChart = new Chart(document.getElementById("detailQuarterChart"), {
+        type:"line", data:{ labels: pts.map(p => p.label), datasets },
+        options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:12 } }, interaction:{ mode:"index", intersect:false },
+            scales:{ y:{ position:"right", beginAtZero: k.unit !== "%", ticks:{ callback:v => fmt(v, k) } }, x:{ reverse:true, offset:true, grid:{ display:false } } },
+            plugins:{ legend:{ position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : fmt(c.raw, k)}` } } } }
+    });
+}
+
+function renderDetailMonthChart(k, year){
+    if(detailMonthChart) detailMonthChart.destroy();
+    const rows = indexedRecords(k.code, year);
+    const months = MONTHS_AR.map((name, i) => {
+        const m = rows.filter(r => Number(String(r.date).slice(5,7)) === i + 1);
+        return round(aggregateRows(m, k));
+    });
+    document.getElementById("detailMonthTitle").textContent = `الأداء الشهري — ${year}`;
+    const tgt = effectiveTarget(k, year);
+    // A monthly target is only comparable for rates/averages; a quarterly SUM target is not a monthly one.
+    const showTarget = tgt != null && k.aggregation !== "SUM";
+    detailMonthChart = new Chart(document.getElementById("detailMonthChart"), {
+        data:{ labels: MONTHS_AR, datasets: [
+            { type:"bar", label:"الفعلي", data: months, backgroundColor:CHART.current, borderRadius:4, maxBarThickness:22, order:2 },
+            ...(showTarget ? [{ type:"line", label:"المستهدف", data: MONTHS_AR.map(() => tgt), borderColor:CHART.target, borderWidth:1.5, borderDash:[5,4], pointRadius:0, pointHitRadius:0, order:1 }] : [])
+        ] },
+        options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:12 } }, interaction:{ mode:"index", intersect:false },
+            scales:{ y:{ position:"right", beginAtZero:true, ticks:{ callback:v => fmt(v, k) } }, x:{ reverse:true, grid:{ display:false } } },
+            plugins:{ legend:{ display: showTarget, position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : fmt(c.raw, k)}` } } } }
+    });
+}
+
+function detailCell(k, y, q){
+    const act = getPeriodValue(k.code, y, q);
+    const target = periodTarget(k, y, q, targetFor(k, y));
+    const ach = calcAchievement(act, periodTarget(k, y, q, effectiveTarget(k, y)), k.direction);
+    const st = getStatus(k, act, ach, target);
+    return { act, ach, st };
+}
+
+function renderDetailQuarterTable(k, year){
+    const cols = [...QUARTERS, "ALL"];
+    document.getElementById("detailQuarterHead").innerHTML = `<tr><th>السنة</th>${QUARTER_LABELS.map(l => `<th>${l}</th>`).join("")}<th>السنة كاملة</th><th>المستهدف الربعي</th></tr>`;
+    document.getElementById("detailQuarterBody").innerHTML = [year, year - 1].map(y => {
+        const tgt = effectiveTarget(k, y);
+        return `<tr><td class="font-black">${y}</td>${cols.map(q => {
+            const c = detailCell(k, y, q);
+            return `<td><div class="font-bold text-slate-900">${fmt(c.act, k)}</div>${c.ach != null ? `<div class="text-[10px] font-bold" style="color:${statusColor(c.st.key)}">${c.ach.toFixed(0)}% · ${c.st.label}</div>` : ""}</td>`;
+        }).join("")}<td class="text-xs">${tgt != null ? fmt(tgt, k) : "—"}<div class="text-[10px] text-slate-400">${targetSource(k, y)}</div></td></tr>`;
+    }).join("");
+}
+
+function enterReadingFor(){
+    const code = detailCode;
+    closeKpiDetail();
+    showSection("data");
+    document.getElementById("recordKpi").value = code;
+    document.getElementById("recordValue").focus();
+}
+
+function exportKpiDetail(){
+    const k = kpis.find(x => x.code === detailCode);
+    if(!k || !can("export")) return;
+    const { year } = getFilters();
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: true }, { RTL: true }] };
+    const qRows = [];
+    [year, year - 1].forEach(y => [...QUARTERS, "ALL"].forEach(q => {
+        const c = detailCell(k, y, q);
+        qRows.push({ "السنة": y, "الفترة": periodName(q), "الفعلي": round(c.act), "المستهدف": effectiveTarget(k, y), "الإنجاز %": round(c.ach), "الحالة": c.st.label });
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(qRows), "الأداء الربعي");
+    const rRows = records.filter(r => r.kpiCode === k.code).sort((a,b) => String(a.date).localeCompare(String(b.date)))
+        .map(r => ({ "التاريخ": r.date, "القيمة": r.actualValue, "البسط": r.numerator, "المقام": r.denominator, "المصدر": r.dataSource, "ملاحظة": r.dq || r.notes }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rRows.length ? rRows : [{}]), "القراءات");
+    XLSX.writeFile(wb, `KPI_${k.code}_${year}.xlsx`);
 }
 
 function avgAchievement(year, q, cat){
@@ -1449,56 +1828,11 @@ function renderQuarterChart(year, cat){
     });
 }
 
-function populateTrendKpis(){
-    const sel = document.getElementById("trendKpi");
-    const current = sel.value;
-    const list = activeKpis();
-    sel.innerHTML = list.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("");
-    if(list.some(k => k.code === current)) sel.value = current;
-    else {
-        // Default to the first KPI that has data this year.
-        const { year } = getFilters();
-        const withData = list.find(k => QUARTERS.some(q => getPeriodValue(k.code, year, q) != null));
-        if(withData) sel.value = withData.code;
-    }
-}
-
-function renderTrendChart(){
-    const code = document.getElementById("trendKpi").value;
-    const kpi = kpis.find(k => k.code === code);
-    if(trendChart) trendChart.destroy();
-    if(!kpi) return;
-    const { year } = getFilters();
-    const cur = QUARTERS.map(q => round(getPeriodValue(code, year, q)));
-    const prev = QUARTERS.map(q => round(getPeriodValue(code, year-1, q)));
-    const datasets = [
-        { label:String(year), data:cur, borderColor:CHART.current, backgroundColor:CHART.current, borderWidth:2, pointRadius:4, pointHoverRadius:6, tension:.25, spanGaps:true },
-        { label:String(year-1), data:prev, borderColor:CHART.previous, backgroundColor:CHART.previous, borderWidth:2, pointRadius:4, pointHoverRadius:6, tension:.25, spanGaps:true }
-    ];
-    const tgt = effectiveTarget(kpi);
-    if(tgt != null) datasets.push({ label:`${isNum(kpi.target) ? "المستهدف" : "حد الأخضر"} (${fmt(tgt, kpi)})`, data:QUARTERS.map(() => tgt), borderColor:CHART.target, borderWidth:1.5, borderDash:[5,4], pointRadius:0, pointHitRadius:0 });
-    trendChart = new Chart(document.getElementById("trendChart"), {
-        type:"line",
-        data:{ labels:QUARTER_LABELS, datasets },
-        options:{
-            responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:16 } }, interaction:{ mode:"index", intersect:false },
-            scales:{ y:{ position:"right", beginAtZero: kpi.unit !== "%", ticks:{ callback:v => fmt(v, kpi) } }, x:{ reverse:true, offset:true, grid:{ display:false } } },
-            plugins:{ legend:{ position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : fmt(c.raw, kpi)}` } } }
-        }
-    });
-}
-
-function focusTrend(code){
-    document.getElementById("trendKpi").value = code;
-    renderTrendChart();
-    document.getElementById("trendCard").scrollIntoView({ behavior:"smooth", block:"center" });
-}
-
 function periodName(q){ return { ALL:"السنة كاملة", Q1:"الربع الأول", Q2:"الربع الثاني", Q3:"الربع الثالث", Q4:"الربع الرابع" }[q] || q; }
 
 function renderExecInsights(results, year, q){
     const noData = results.filter(r=>r.act==null).length;
-    const noTarget = results.filter(r => effectiveTarget(r.kpi) == null || r.kpi.direction === "none").length;
+    const noTarget = results.filter(r => effectiveTarget(r.kpi, year) == null || r.kpi.direction === "none").length;
     const down = results.filter(r=>r.trend.key==="down");
     const red = results.filter(r=>r.status.key==="red");
     const attention = [...new Set([...red, ...down])];
@@ -1506,7 +1840,7 @@ function renderExecInsights(results, year, q){
     document.getElementById("executiveSummary").innerHTML = `
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500 font-bold">فترة التقرير</div><div class="font-black text-sm text-slate-900 mt-1">${year} — ${periodName(q)}</div></div>
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500 font-bold">مؤشرات تتطلب تدخلاً</div><div class="font-black text-sm text-rose-600 mt-1">${attention.length} مؤشرات (${red.length} غير محققة، ${down.length} متراجعة)</div>${names ? `<div class="text-[11px] text-slate-500 mt-1 truncate">${names}${attention.length > 3 ? "…" : ""}</div>` : ""}</div>
-        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500 font-bold">اكتمال البيانات والمستهدفات</div><div class="font-black text-sm text-amber-600 mt-1">${noData} بلا قراءات · ${noTarget} بلا مستهدف معتمد</div>${noTarget ? `<div class="text-[11px] text-slate-500 mt-1">تُحدَّد المستهدفات والاتجاهات من صفحة المؤشرات (مدير النظام)</div>` : ""}</div>
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500 font-bold">اكتمال البيانات والمستهدفات</div><div class="font-black text-sm text-amber-600 mt-1">${noData} بلا قراءات · ${noTarget} بلا مستهدف معتمد</div>${noTarget ? `<div class="text-[11px] text-slate-500 mt-1">تُحدَّد المستهدفات والاتجاهات من صفحة «المستهدفات» (مدير النظام)</div>` : ""}</div>
     `;
 }
 
@@ -1521,8 +1855,8 @@ function staleNote(k){
     return days > STALE_DAYS ? ` <span class="font-sans text-amber-600 font-semibold" title="لا توجد قراءات أحدث">· آخر قراءة ${last}</span>` : "";
 }
 
-function targetLabel(k){
-    if(isNum(k.target)) return fmt(k.target, k);
+function targetLabel(k, target){
+    if(isNum(target)) return fmt(target, k);
     if(isNum(k.greenMin)) return `<span title="عتبات الألوان الرسمية">${k.direction === "lower" ? "≤" : "≥"} ${fmt(k.greenMin, k)}</span>`;
     return `<span class="text-slate-400">غير محدد</span>`;
 }
@@ -1535,13 +1869,13 @@ function renderTable(results){
     tbody.innerHTML = results.map(r => {
         const k = r.kpi;
         const achStr = r.ach == null ? "—" : r.ach.toFixed(1) + "%";
-        const varNum = r.act == null || !isNum(k.target) ? "—" : (Number(r.act)-Number(k.target)).toLocaleString("en-US",{maximumFractionDigits:2,signDisplay:"exceptZero"});
+        const varNum = r.act == null || !isNum(r.target) ? "—" : (Number(r.act)-Number(r.target)).toLocaleString("en-US",{maximumFractionDigits:2,signDisplay:"exceptZero"});
         return `
-            <tr class="cursor-pointer" title="عرض اتجاه المؤشر" onclick="focusTrend('${escapeAttr(k.code)}')">
+            <tr class="cursor-pointer" title="عرض تفاصيل المؤشر" onclick="openKpiDetail('${escapeAttr(k.code)}')">
                 <td class="kpi-name-cell"><div class="font-bold text-slate-900">${escapeHtml(k.name)}</div><div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}${staleNote(k)}</div></td>
                 <td>${frequencyName(k.frequency)}</td>
                 <td class="font-extrabold text-slate-900">${fmt(r.act, k)}</td>
-                <td>${targetLabel(k)}</td>
+                <td>${targetLabel(k, r.target)}</td>
                 <td><div class="font-bold">${achStr}</div>${r.ach!=null?`<div class="progress mt-1 w-20"><div style="width:${Math.min(r.ach,100)}%;background:${statusColor(r.status.key)}"></div></div>`:""}</td>
                 <td>${varNum}</td>
                 <td>${fmt(r.prev, k)}</td>
@@ -1570,7 +1904,10 @@ function renderCharts(results){
     achievementChart = new Chart(document.getElementById("achievementChart"), {
         type: 'bar',
         data: { labels: active.map(r => shorten(r.kpi.name, 28)), datasets:[{ label:'الإنجاز %', data:active.map(r=>Number(r.ach.toFixed(1))), backgroundColor:active.map(r=>statusColor(r.status.key)), borderRadius:4, maxBarThickness:18 }] },
-        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, scales:{ x:{ beginAtZero:true, suggestedMax:120, reverse:true, ticks:{ callback:v => v + "%" } }, y:{ position:'right', grid:{ display:false } } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ title: items => active[items[0].dataIndex].kpi.name } } } }
+        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+            onClick: (e, els) => { if(els.length) openKpiDetail(active[els[0].index].kpi.code); },
+            onHover: (e, els) => { e.native.target.style.cursor = els.length ? "pointer" : "default"; },
+            scales:{ x:{ beginAtZero:true, suggestedMax:120, reverse:true, ticks:{ callback:v => v + "%" } }, y:{ position:'right', grid:{ display:false } } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ title: items => active[items[0].dataIndex].kpi.name } } } }
     });
 }
 
@@ -1615,9 +1952,9 @@ function renderKpis(){
             <td>${escapeHtml(k.category || "—")}</td>
             <td>${frequencyName(k.frequency)}</td>
             <td>${aggregationName(k.aggregation)}</td>
-            <td><span class="pill ${effectiveTarget(k) == null ? "status-yellow" : "status-green"}">${effectiveTarget(k) == null ? "غير محدد" : targetLabel(k)}</span></td>
+            <td><span class="pill ${effectiveTarget(k, thisYear()) == null ? "status-yellow" : "status-green"}">${effectiveTarget(k, thisYear()) == null ? "غير محدد" : targetLabel(k, targetFor(k, thisYear()))}</span></td>
             <td>${directionName(k.direction)}</td>
-            <td class="text-xs text-slate-400">${k.targetLastUpdated ? new Date(k.targetLastUpdated).toLocaleDateString("ar-SA") : "—"}</td>
+            <td class="text-xs text-slate-400">${k.targets?.[thisYear()]?.setAt ? new Date(k.targets[thisYear()].setAt).toLocaleDateString("ar-SA") : "—"}</td>
             <td class="space-x-1 space-x-reverse">
                 ${can("editKpi") ? `<button onclick="openKpiModal('${escapeAttr(k.code)}')" class="btn btn-secondary text-[11px] py-1 px-2.5">تعديل</button>` : ""}
                 ${can("deleteKpi") ? `<button onclick="deleteKpi('${escapeAttr(k.code)}')" class="btn btn-danger text-[11px] py-1 px-2.5">حذف</button>` : ""}
@@ -1643,10 +1980,11 @@ function openKpiModal(code){
     document.getElementById("targetChangeReason").value = "";
     document.getElementById("targetReasonBox").classList.add("hidden");
 
+    // Targets are set per year on the targets page; this field only shows the file's standing target.
     const tInput = document.getElementById("kpiTarget");
-    tInput.disabled = !can("editTarget");
-    tInput.classList.toggle("readonly", !can("editTarget"));
-    document.getElementById("targetLockMessage").textContent = can("editTarget") ? "🔓 تعديل المستهدف يتطلب ذكر السبب ويُسجل في سجل التدقيق." : "🔒 المستهدف مقفل ولا يمكن تعديله إلا من قبل مدير النظام.";
+    tInput.disabled = true;
+    tInput.classList.add("readonly");
+    document.getElementById("targetLockMessage").textContent = "🔒 المستهدفات السنوية تُحدد من صفحة «المستهدفات».";
 }
 
 function toggleTargetReason(){
@@ -1788,7 +2126,7 @@ function downloadTemplate(){
     const kpiRows = kpis.map(k => ({
         "كود المؤشر": k.code, "اسم المؤشر": k.name, "الفئة": k.category, "الوحدة": k.unit,
         "دورية القياس": frequencyName(k.frequency), "طريقة الحساب": aggregationName(k.aggregation),
-        "يتطلب بسط/مقام": k.aggregation === "RATIO" ? "نعم" : "لا", "المستهدف": k.target
+        "يتطلب بسط/مقام": k.aggregation === "RATIO" ? "نعم" : "لا", "المستهدف": targetFor(k, thisYear())
     }));
     const ks = XLSX.utils.json_to_sheet(kpiRows);
     ks["!cols"] = [16, 34, 14, 10, 12, 14, 14, 10].map(wch => ({ wch }));
@@ -2091,7 +2429,7 @@ function runQualityCheck(manual){
         if(r.dq) issues.push({ type:"ملاحظة من الملف المصدر", kpi:label, date:r.date, desc:`${r.dq}${r.notes ? " — " + r.notes : ""}`, sev:"MEDIUM" });
     });
     const active = activeKpis();
-    const noTarget = active.filter(k => effectiveTarget(k) == null);
+    const noTarget = active.filter(k => effectiveTarget(k, thisYear()) == null);
     active.filter(k => k.direction === "none").forEach(k => issues.push({ type:"اتجاه غير محدد", kpi:k.name, date:"—", desc:"لم يُحدد هل الأعلى أفضل أم الأقل — لا تُحسب حالته حتى يحدده مدير النظام", sev:"MEDIUM" }));
     noTarget.forEach(k => issues.push({ type:"بدون مستهدف", kpi:k.name, date:"—", desc:"المؤشر ليس له مستهدف رسمي أو عتبات ألوان", sev:"MEDIUM" }));
     const sevOrder = { HIGH:0, MEDIUM:1, LOW:2 };
@@ -2110,6 +2448,126 @@ function runQualityCheck(manual){
         : `<tr><td colspan="5" class="text-center py-6 text-emerald-600 font-bold">✓ كافة بيانات النظام سليمة وتجتاز الفحص الآلي.</td></tr>`;
     if(issues.length > MAX_ROWS) document.getElementById("qualityTableBody").insertAdjacentHTML("beforeend", `<tr><td colspan="5" class="text-center py-3 text-slate-400 text-xs">يُعرض أول ${MAX_ROWS} من ${issues.length} ملاحظة (الأعلى خطورة أولاً)</td></tr>`);
     if(manual) showToast(`اكتمل الفحص: ${issues.length} ملاحظة.`);
+}
+
+// ---- Annual targets ----
+let targetYears = {};
+
+function targetYearState(year){ return targetYears[year] || { status:"draft" }; }
+
+function renderTargets(){
+    const sel = document.getElementById("targetYear");
+    const now = new Date().getFullYear();
+    const years = new Set([now - 1, now, now + 1]);
+    records.forEach(r => { if(r.year) years.add(Number(r.year)); });
+    Object.keys(targetYears).forEach(y => years.add(Number(y)));
+    const current = Number(sel.value) || thisYear();
+    sel.innerHTML = [...years].sort((a,b) => b-a).map(y => `<option value="${y}">${y}</option>`).join("");
+    sel.value = years.has(current) ? current : now;
+    const year = Number(sel.value);
+    const state = targetYearState(year);
+    const locked = state.status === "approved";
+    const editable = can("editTarget") && !locked;
+
+    document.getElementById("targetYearLabel").textContent = year;
+    document.getElementById("targetYearHead").textContent = year;
+    document.getElementById("targetPrevHead").textContent = year - 1;
+    document.getElementById("targetYearStatus").innerHTML = locked
+        ? `<span class="pill status-green"><i class="fa-solid fa-lock ml-1"></i> معتمدة ومقفلة</span>`
+        : `<span class="pill status-yellow"><i class="fa-solid fa-pen ml-1"></i> مسودة</span>`;
+    document.getElementById("targetsNotice").innerHTML = locked
+        ? `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-3 text-xs font-semibold">اعتمد ${escapeHtml(state.by || "")} مستهدفات ${year} بتاريخ ${formatDateTime(state.at)}. لا يمكن تعديلها إلا بفتحها مع ذكر السبب.</div>`
+        : (!can("editTarget") ? `<div class="bg-slate-50 border border-slate-200 text-slate-600 rounded-xl p-3 text-xs font-semibold">عرض فقط — يحدد المستهدفات مدير النظام.</div>` : "");
+
+    const dirOptions = d => ["higher","lower","target","none"].map(v => `<option value="${v}" ${d === v ? "selected" : ""}>${directionName(v)}</option>`).join("");
+    const sorted = [...kpis].sort((a,b) => String(a.category).localeCompare(String(b.category), "ar"));
+    let lastCat = null;
+    document.getElementById("targetsTableBody").innerHTML = sorted.map(k => {
+        const t = k.targets?.[year];
+        const prevActual = getPeriodValue(k.code, year - 1, "ALL");
+        const ref = isNum(k.target) ? `مستهدف الملف: ${fmt(k.target, k)}` : isNum(k.greenMin) ? `حد الأخضر: ${fmt(k.greenMin, k)}` : (k.targets?.[year-1] && isNum(k.targets[year-1].value) ? `مستهدف ${year-1}: ${fmt(k.targets[year-1].value, k)}` : "—");
+        const catRow = k.category !== lastCat ? `<tr><td colspan="7" class="!bg-slate-50 !py-2 text-[11px] font-black text-slate-500">${escapeHtml(k.category || "بدون فئة")}</td></tr>` : "";
+        lastCat = k.category;
+        return `${catRow}
+        <tr>
+            <td class="kpi-name-cell"><div class="font-bold text-slate-900">${escapeHtml(k.name)}</div><div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}</div></td>
+            <td class="text-xs">${escapeHtml(k.category || "—")}</td>
+            <td class="text-xs">${escapeHtml(k.unit || "—")}</td>
+            <td><select data-dir="${escapeAttr(k.code)}" class="!py-1.5 !text-xs !w-36 ${editable ? "" : "readonly"}" ${editable ? "" : "disabled"}>${dirOptions(k.direction || "none")}</select></td>
+            <td><input data-target="${escapeAttr(k.code)}" type="number" step="any" class="!py-1.5 !text-xs !w-28 ${editable ? "" : "readonly"}" ${editable ? "" : "disabled"} value="${t && isNum(t.value) ? t.value : ""}" placeholder="${isNum(k.target) ? k.target : ""}"></td>
+            <td class="text-[11px] text-slate-500">${ref}</td>
+            <td class="text-xs font-semibold">${fmt(prevActual, k)}</td>
+        </tr>`;
+    }).join("");
+
+    const set = kpis.filter(k => k.targets?.[year] && isNum(k.targets[year].value)).length;
+    const actions = document.getElementById("targetsActions");
+    actions.innerHTML = `
+        <div class="text-xs text-slate-600"><b class="text-slate-900">${set}</b> من ${kpis.length} مؤشراً لها مستهدف معتمد لسنة ${year}</div>
+        <div class="flex gap-2">
+            ${editable ? `<button onclick="saveTargets(false)" class="btn btn-secondary text-xs">حفظ كمسودة</button>
+                <button onclick="saveTargets(true)" class="btn btn-primary text-xs"><i class="fa-solid fa-lock ml-1"></i> اعتماد وقفل مستهدفات ${year}</button>` : ""}
+            ${locked && can("editTarget") ? `<button onclick="unlockTargets()" class="btn btn-secondary text-xs"><i class="fa-solid fa-lock-open ml-1"></i> فتح للتعديل (مع ذكر السبب)</button>` : ""}
+        </div>`;
+}
+
+function saveTargets(approve){
+    if(!can("editTarget")){ showToast("تحديد المستهدفات متاح لمدير النظام فقط."); return; }
+    const year = Number(document.getElementById("targetYear").value);
+    if(targetYearState(year).status === "approved"){ showToast(`مستهدفات ${year} معتمدة ومقفلة.`); return; }
+    const inputs = [...document.querySelectorAll("[data-target]")];
+    const bad = inputs.find(i => i.value !== "" && !Number.isFinite(Number(i.value)));
+    if(bad){ bad.focus(); showToast("قيمة مستهدف غير صالحة."); return; }
+
+    const changes = [];
+    const now = new Date().toISOString();
+    inputs.forEach(input => {
+        const k = kpis.find(x => x.code === input.dataset.target);
+        if(!k) return;
+        const old = k.targets?.[year]?.value ?? null;
+        const val = input.value === "" ? null : Number(input.value);
+        if(old !== val){
+            k.targets = { ...(k.targets || {}) };
+            if(val == null) delete k.targets[year];
+            else k.targets[year] = { value: val, setBy: currentUser.displayName, setAt: now };
+            changes.push({ k, old, val });
+        }
+    });
+    let dirChanges = 0;
+    document.querySelectorAll("[data-dir]").forEach(sel => {
+        const k = kpis.find(x => x.code === sel.dataset.dir);
+        if(k && k.direction !== sel.value){
+            addAudit("EDIT_KPI", k.code, directionName(k.direction), directionName(sel.value), "تحديد اتجاه الأداء");
+            k.direction = sel.value; dirChanges++;
+        }
+    });
+
+    if(approve){
+        const missing = kpis.filter(k => !(k.targets?.[year] && isNum(k.targets[year].value))).length;
+        const msg = `اعتماد مستهدفات ${year} وقفلها؟` + (missing ? `\n\nتنبيه: ${missing} مؤشراً بدون مستهدف لهذه السنة.` : "") + `\n\nبعد الاعتماد لا يمكن التعديل إلا بفتح السنة مع ذكر السبب.`;
+        if(!confirm(msg)) approve = false;  // keep the edits as a draft
+    }
+    changes.forEach(c => addAudit("CHANGE_TARGET", c.k.code, c.old == null ? "" : c.old, c.val == null ? "" : c.val, `مستهدف ${year}`));
+    if(approve){
+        targetYears[year] = { status:"approved", by: currentUser.displayName, at: now };
+        save(STORAGE.targetYears, targetYears);
+        addAudit("APPROVE_TARGETS", String(year), "", `${kpis.filter(k => k.targets?.[year]).length} مستهدف`, "اعتماد وقفل المستهدفات السنوية");
+    }
+    save(STORAGE.kpis, kpis);
+    renderTargets(); renderKpis(); renderDashboard(); runQualityCheck();
+    showToast(approve ? `تم اعتماد وقفل مستهدفات ${year}.` : `تم حفظ المسودة (${changes.length} تعديل).`);
+}
+
+function unlockTargets(){
+    if(!can("editTarget")) return;
+    const year = Number(document.getElementById("targetYear").value);
+    const reason = (prompt(`سبب فتح مستهدفات ${year} للتعديل (يُسجل في سجل التدقيق):`) || "").trim();
+    if(!reason){ showToast("لم يتم الفتح: السبب مطلوب."); return; }
+    targetYears[year] = { status:"draft", reopenedBy: currentUser.displayName, reopenedAt: new Date().toISOString() };
+    save(STORAGE.targetYears, targetYears);
+    addAudit("UNLOCK_TARGETS", String(year), "معتمدة", "مسودة", reason);
+    renderTargets();
+    showToast(`تم فتح مستهدفات ${year} للتعديل.`);
 }
 
 function renderUsers(){
@@ -2135,7 +2593,7 @@ function exportDashboard(){
     const { year, q, cat } = getFilters();
     const rows = computeResults(year, q, cat).map(r => ({
         "الكود": r.kpi.code, "المؤشر": r.kpi.name, "الفئة": r.kpi.category, "الوحدة": r.kpi.unit,
-        "الفعلي": round(r.act), "المستهدف": r.kpi.target, "نسبة الإنجاز %": round(r.ach),
+        "الفعلي": round(r.act), "المستهدف": r.target, "نسبة الإنجاز %": round(r.ach),
         "الفترة السابقة": round(r.prev), "نفس الفترة العام الماضي": round(r.sameY),
         "الاتجاه": r.trend.label, "الحالة": r.status.label
     }));
@@ -2149,7 +2607,7 @@ function exportDashboard(){
     addSheet(rows, "ملخص الأداء");
 
     const quarterly = activeKpis().filter(k => cat === "ALL" || k.category === cat).map(k => {
-        const row = { "الكود": k.code, "المؤشر": k.name, "المستهدف": k.target };
+        const row = { "الكود": k.code, "المؤشر": k.name, "المستهدف": targetFor(k, year) };
         QUARTERS.forEach((qq, i) => { row[`${QUARTER_LABELS[i]} ${year}`] = round(getPeriodValue(k.code, year, qq)); });
         QUARTERS.forEach((qq, i) => { row[`${QUARTER_LABELS[i]} ${year-1}`] = round(getPeriodValue(k.code, year-1, qq)); });
         return row;
@@ -2182,7 +2640,7 @@ function exportAudit(){
 function frequencyName(f){ return { daily:"يومي", weekly:"أسبوعي", monthly:"شهري", quarterly:"ربع سنوي", annual:"سنوي" }[f] || f || "—"; }
 function aggregationName(a){ return { SUM:"مجموع", AVERAGE:"متوسط", WEIGHTED_AVERAGE:"متوسط موزون", RATIO:"بسط/مقام", LAST_VALUE:"آخر قيمة" }[a] || a || "—"; }
 function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف", none:"يحتاج مراجعة" }[d] || d || "—"; }
-function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
+function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 function pad2(n){ return String(n).padStart(2, "0"); }
 // Local-date formatting/parsing: toISOString() would shift dates by the UTC offset.
@@ -2202,6 +2660,8 @@ function showToast(msg){
     const t = document.getElementById("toast"); t.textContent = msg; t.classList.remove("hidden");
     clearTimeout(window.tTimer); window.tTimer = setTimeout(()=>t.classList.add("hidden"), 3500);
 }
+
+document.addEventListener("keydown", e => { if(e.key === "Escape" && !document.getElementById("kpiDetailModal").classList.contains("hidden")) closeKpiDetail(); });
 
 init();
 </script>
