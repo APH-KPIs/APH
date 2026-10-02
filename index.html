@@ -102,10 +102,42 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
-        .login-bg {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #04101d 0%, #0b1f33 50%, #102a43 100%);
+        /* ---------- Login ---------- */
+        .login-shell { min-height: 100vh; display: grid; grid-template-columns: 1fr; background: #f8fafc; }
+        @media (min-width: 1024px) { .login-shell { grid-template-columns: 5fr 6fr; } }
+        .login-brand {
+            display: none; position: relative; overflow: hidden; padding: 40px 48px;
+            background: radial-gradient(circle at 15% 85%, rgba(2,132,199,.35), transparent 45%),
+                        radial-gradient(circle at 90% 10%, rgba(16,185,129,.18), transparent 40%),
+                        linear-gradient(160deg, #04101d 0%, #0b1f33 55%, #102a43 100%);
         }
+        @media (min-width: 1024px) { .login-brand { display: block; } }
+        .login-brand-grid {
+            position: absolute; inset: 0; opacity: .07;
+            background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+        .login-feature { display: flex; gap: 14px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); }
+        .login-feature i { color: #38bdf8; font-size: 15px; margin-top: 3px; width: 18px; text-align: center; }
+        .login-feature b { display: block; color: #fff; font-size: 13px; }
+        .login-feature span { display: block; color: #94a3b8; font-size: 11px; margin-top: 2px; }
+        .login-panel { display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+
+        .user-card {
+            display: flex; align-items: center; gap: 14px; padding: 14px 16px; text-align: right;
+            background: #fff; border: 1.5px solid #e2e8f0; border-radius: 16px; cursor: pointer; transition: all .18s ease;
+        }
+        .user-card:hover { border-color: #94a3b8; box-shadow: 0 4px 14px rgba(15,23,42,.06); transform: translateY(-1px); }
+        .user-card.selected { border-color: #0284c7; background: #f0f9ff; box-shadow: 0 0 0 4px rgba(2,132,199,.1); }
+        .user-card .check { width: 20px; height: 20px; border-radius: 999px; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 10px; color: transparent; flex-shrink: 0; }
+        .user-card.selected .check { background: #0284c7; border-color: #0284c7; color: #fff; }
+        .avatar { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+        .login-password { margin-top: 16px; padding: 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; animation: slideIn .2s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+        /* ---------- Import steps ---------- */
+        .step { display: flex; gap: 12px; padding: 16px; border-radius: 14px; background: #f8fafc; border: 1px solid #e2e8f0; }
+        .step-num { width: 28px; height: 28px; border-radius: 999px; background: #0b1f33; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
         .pill { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
         .progress { height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
@@ -124,39 +156,78 @@
 <body class="min-h-screen flex flex-col">
 
 <!-- ================= LOGIN SCREEN ================= -->
-<div id="loginScreen" class="login-bg flex items-center justify-center p-6">
-    <div class="w-full max-w-md">
-        <div class="card p-8 shadow-2xl border-slate-700/50">
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 mx-auto rounded-2xl bg-white/10 backdrop-blur-md p-2 flex items-center justify-center border border-white/20 shadow-inner mb-4">
-                    <img src="logo.png" alt="شعار المستشفى" class="w-full h-full object-contain filter drop-shadow-md">
-                </div>
-                <h1 class="text-lg font-black text-slate-900 tracking-wide">لوحة مؤشرات الأداء التنفيذية</h1>
-                <p class="text-xs text-sky-700 font-bold mt-1">مستشفى إرادة والصحة النفسية بأبها</p>
-            </div>
-
-            <div id="loginError" class="hidden bg-rose-50 text-rose-700 border border-rose-200 rounded-xl p-3 mb-4 text-xs font-bold text-center"></div>
-
-            <div class="space-y-4 text-right">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المستخدم</label>
-                    <input id="loginUsername" type="text" placeholder="أدخل اسم المستخدم" autocomplete="username">
+<div id="loginScreen" class="login-shell">
+    <!-- Brand panel -->
+    <aside class="login-brand">
+        <div class="login-brand-grid"></div>
+        <div class="relative z-10 flex flex-col h-full">
+            <div class="flex items-center gap-3">
+                <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md p-2 flex items-center justify-center border border-white/20 shrink-0">
+                    <img src="logo.png" alt="شعار المستشفى" class="w-full h-full object-contain">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور</label>
-                    <input id="loginPassword" type="password" placeholder="أدخل كلمة المرور" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()">
+                    <div class="text-sm font-bold text-white">مستشفى إرادة والصحة النفسية بأبها</div>
+                    <div class="text-[11px] text-sky-300 font-medium">تجمع عسير الصحي</div>
                 </div>
-                <button onclick="login()" class="btn btn-primary w-full py-3">تسجيل الدخول للنظام</button>
-                <div class="flex items-center gap-3 my-3">
-                    <div class="h-px bg-slate-200 flex-1"></div>
-                    <span class="text-xs text-slate-400 font-semibold">أو</span>
-                    <div class="h-px bg-slate-200 flex-1"></div>
-                </div>
-                <button onclick="guestLogin()" class="btn btn-secondary w-full py-3">دخول كزائر (عرض بيانات فقط)</button>
             </div>
-            <div class="mt-8 text-xs text-slate-400 text-center font-medium">تجمع عسير الصحي © 2026</div>
+
+            <div class="my-auto py-10">
+                <div class="inline-flex items-center gap-2 text-[11px] font-bold text-sky-200 bg-sky-400/10 border border-sky-300/20 rounded-full px-3 py-1 mb-5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> نظام إدارة الأداء المؤسسي
+                </div>
+                <h1 class="text-3xl xl:text-4xl font-black text-white leading-snug">لوحة مؤشرات<br>الأداء التنفيذية</h1>
+                <p class="text-sm text-slate-300 mt-4 max-w-sm leading-7">متابعة دقيقة لمؤشرات الأداء الإكلينيكية والتشغيلية والمالية، مع مستهدفات معتمدة وسجل تدقيق كامل.</p>
+
+                <div class="mt-8 space-y-3 max-w-sm">
+                    <div class="login-feature"><i class="fa-solid fa-chart-line"></i><div><b>قراءة تنفيذية فورية</b><span>حالة كل مؤشر مقابل مستهدفه واتجاهه</span></div></div>
+                    <div class="login-feature"><i class="fa-solid fa-file-excel"></i><div><b>استيراد البيانات السابقة</b><span>عبر قالب Excel جاهز داخل النظام</span></div></div>
+                    <div class="login-feature"><i class="fa-solid fa-shield-halved"></i><div><b>صلاحيات وتدقيق</b><span>كل تعديل موثق باسم المستخدم ووقته</span></div></div>
+                </div>
+            </div>
+
+            <div class="text-[11px] text-slate-400">تجمع عسير الصحي © 2026 — جميع الحقوق محفوظة</div>
         </div>
-    </div>
+    </aside>
+
+    <!-- Account picker -->
+    <section class="login-panel">
+        <div class="w-full max-w-md">
+            <div class="lg:hidden flex items-center gap-3 mb-8">
+                <div class="w-12 h-12 rounded-xl bg-slate-900 p-1.5 flex items-center justify-center shrink-0"><img src="logo.png" alt="شعار المستشفى" class="w-full h-full object-contain"></div>
+                <div>
+                    <div class="text-sm font-bold text-slate-900">مستشفى إرادة والصحة النفسية بأبها</div>
+                    <div class="text-[11px] text-sky-700 font-semibold">لوحة مؤشرات الأداء التنفيذية</div>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-black text-slate-900">مرحباً بك</h2>
+            <p class="text-sm text-slate-500 mt-1 mb-6">اختر حسابك للمتابعة إلى النظام</p>
+
+            <div id="loginUserList" class="space-y-3" role="radiogroup" aria-label="الحسابات"></div>
+
+            <div id="loginPasswordBox" class="login-password hidden">
+                <input type="hidden" id="loginUsername">
+                <label for="loginPassword" class="block text-xs font-bold text-slate-700 mb-1.5">كلمة المرور لحساب <span id="loginSelectedName" class="text-sky-700"></span></label>
+                <div class="relative">
+                    <input id="loginPassword" type="password" placeholder="أدخل كلمة المرور" autocomplete="current-password" class="pl-11" onkeydown="if(event.key==='Enter') login()">
+                    <button type="button" onclick="togglePassword()" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700" title="إظهار/إخفاء كلمة المرور"><i id="loginEye" class="fa-regular fa-eye"></i></button>
+                </div>
+                <div id="loginError" class="hidden text-rose-600 text-xs font-bold mt-2"><i class="fa-solid fa-circle-exclamation ml-1"></i><span></span></div>
+                <button onclick="login()" class="btn btn-primary w-full py-3 mt-4">تسجيل الدخول <i class="fa-solid fa-arrow-left mr-1"></i></button>
+            </div>
+
+            <div class="flex items-center gap-3 my-6">
+                <div class="h-px bg-slate-200 flex-1"></div>
+                <span class="text-[11px] text-slate-400 font-semibold">أو</span>
+                <div class="h-px bg-slate-200 flex-1"></div>
+            </div>
+            <button onclick="guestLogin()" class="user-card w-full">
+                <span class="avatar bg-slate-100 text-slate-500"><i class="fa-solid fa-eye"></i></span>
+                <span class="flex-1 text-right"><span class="block text-sm font-bold text-slate-900">الدخول كزائر</span><span class="block text-[11px] text-slate-500">عرض لوحة المؤشرات فقط دون تعديل</span></span>
+                <i class="fa-solid fa-chevron-left text-slate-300 text-xs"></i>
+            </button>
+        </div>
+    </section>
 </div>
 
 <!-- ================= MAIN APP ================= -->
@@ -320,7 +391,7 @@
         <section id="sectionData" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="card p-6 lg:col-span-1 space-y-4">
-                    <h3 class="font-bold text-sm text-slate-900 border-b pb-3">إدخال سجل بيانات جديد</h3>
+                    <h3 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-3">إدخال سجل بيانات جديد</h3>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">تاريخ السجل</label>
                         <input type="date" id="recordDate">
@@ -359,16 +430,39 @@
                 </div>
 
                 <div class="card p-6 lg:col-span-2 space-y-4">
-                    <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
-                        <div>
-                            <h3 class="font-bold text-sm text-slate-900">استيراد بيانات جماعي من ملف Excel</h3>
-                            <p class="text-[11px] text-slate-500 mt-0.5">يجب أن يحتوي الملف على أعمدة التاريخ والقيمة، وكود المؤشر أو اسمه.</p>
-                        </div>
-                        <label id="importBtn" class="btn btn-primary cursor-pointer inline-block text-xs">
-                            <i class="fa-solid fa-file-arrow-up ml-1"></i> تحميل ملف Excel
-                            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(event)">
-                        </label>
+                    <div class="border-b border-slate-200 pb-3">
+                        <h3 class="font-bold text-sm text-slate-900">استيراد البيانات السابقة من Excel</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">استخدم القالب الجاهز لإدخال القراءات التاريخية لجميع المؤشرات دفعة واحدة.</p>
                     </div>
+                    <div id="importSteps" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="step">
+                            <span class="step-num">1</span>
+                            <div class="flex-1">
+                                <div class="text-xs font-bold text-slate-900">حمّل القالب</div>
+                                <div class="text-[11px] text-slate-500 mt-0.5 mb-3">ملف Excel يحتوي الأعمدة المطلوبة وقائمة أكواد المؤشرات.</div>
+                                <button onclick="downloadTemplate()" class="btn btn-secondary text-[11px] py-2 px-3 w-full"><i class="fa-solid fa-download text-emerald-600 ml-1"></i> تحميل قالب Excel</button>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-num">2</span>
+                            <div class="flex-1">
+                                <div class="text-xs font-bold text-slate-900">عبّئ البيانات السابقة</div>
+                                <div class="text-[11px] text-slate-500 mt-0.5">سطر لكل قراءة: التاريخ، كود المؤشر، القيمة. البسط والمقام لمؤشرات النسب.</div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <span class="step-num">3</span>
+                            <div class="flex-1">
+                                <div class="text-xs font-bold text-slate-900">ارفع الملف</div>
+                                <div class="text-[11px] text-slate-500 mt-0.5 mb-3">راجع مطابقة الأعمدة ثم اعتمد الاستيراد.</div>
+                                <label id="importBtn" class="btn btn-primary cursor-pointer inline-block text-[11px] py-2 px-3 w-full text-center">
+                                    <i class="fa-solid fa-file-arrow-up ml-1"></i> رفع ملف Excel
+                                    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(event)">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-700 pt-2">آخر السجلات المدخلة</h4>
                     <div class="overflow-auto max-h-[450px]">
                         <table>
                             <thead>
@@ -427,7 +521,7 @@
                 <div class="card p-5"><div class="text-xs text-orange-600 font-bold">مؤشرات بلا مستهدف</div><div id="qualityNoTarget" class="text-2xl font-black text-orange-600 mt-2">0</div></div>
             </div>
             <div class="card p-6 space-y-4">
-                <div class="flex justify-between items-center border-b pb-3">
+                <div class="flex justify-between items-center border-b border-slate-200 pb-3">
                     <h3 class="font-bold text-sm text-slate-900">سجل فحص جودة البيانات وتدقيق الأخطاء</h3>
                     <button onclick="runQualityCheck(true)" class="btn btn-primary text-xs">إعادة الفحص الآلي</button>
                 </div>
@@ -461,7 +555,7 @@
         <!-- ================= SECTION: AUDIT ================= -->
         <section id="sectionAudit" class="hidden space-y-6">
             <div class="card p-6 space-y-4">
-                <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+                <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-200 pb-3">
                     <div>
                         <h3 class="font-bold text-sm text-slate-900">سجل التدقيق والمراقبة التلقائية (Audit Log)</h3>
                         <p class="text-xs text-slate-500">توثيق زمني لكافة التعديلات، إدخال البيانات، وتحديث المستهدفات.</p>
@@ -484,7 +578,7 @@
 <!-- ================= MODAL: KPI ================= -->
 <div id="kpiModal" class="modal hidden">
     <div class="modal-box space-y-4">
-        <div class="flex justify-between items-center border-b pb-3">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3">
             <h3 id="kpiModalTitle" class="text-base font-bold text-slate-900">إضافة مؤشر جديد</h3>
             <button onclick="closeKpiModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
         </div>
@@ -519,7 +613,7 @@
         <div id="targetReasonBox" class="hidden mt-3 text-xs">
             <label class="block font-bold text-rose-600 mb-1">سبب تعديل المستهدف الرسمي</label><textarea id="targetChangeReason" rows="2" placeholder="اكتب مبرر تعديل المستهدف..."></textarea>
         </div>
-        <div class="flex justify-end gap-3 pt-3 border-t">
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button onclick="closeKpiModal()" class="btn btn-secondary text-xs">إلغاء</button>
             <button onclick="saveKpi()" class="btn btn-primary text-xs">حفظ التغييرات</button>
         </div>
@@ -529,12 +623,12 @@
 <!-- ================= MODAL: IMPORT ================= -->
 <div id="importModal" class="modal hidden">
     <div class="modal-box space-y-4">
-        <div class="flex justify-between items-center border-b pb-3">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-3">
             <h3 class="text-base font-bold text-slate-900">مطابقة أعمدة ملف Excel المستورد</h3>
             <button onclick="closeImportModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
         </div>
         <div id="importMappingFields" class="space-y-3"></div>
-        <div class="flex justify-end gap-3 pt-3 border-t">
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button onclick="closeImportModal()" class="btn btn-secondary text-xs">إلغاء</button>
             <button onclick="confirmImport()" class="btn btn-primary text-xs">اعتماد واستيراد البيانات</button>
         </div>
@@ -592,6 +686,7 @@ function init(){
     records = load(STORAGE.records, null) || load(LEGACY_STORAGE.records, []);
     auditLogs = load(STORAGE.audit, null) || load(LEGACY_STORAGE.audit, []);
 
+    renderLoginUsers();
     const session = sessionStorage.getItem(STORAGE.session);
     if(session){
         try{ currentUser = JSON.parse(session); showApp(); }
@@ -603,10 +698,12 @@ function load(key, fallback){ try{ const d = localStorage.getItem(key); return d
 function save(key, data){ try{ localStorage.setItem(key, JSON.stringify(data)); }catch(e){ showToast("تعذر حفظ البيانات في المتصفح."); } }
 
 function login(){
-    const u = document.getElementById("loginUsername").value.trim();
+    const u = document.getElementById("loginUsername").value;
     const p = document.getElementById("loginPassword").value;
+    if(!u){ showToast("اختر الحساب أولاً."); return; }
+    if(!p){ showLoginError("أدخل كلمة المرور."); return; }
     const user = users.find(x => x.username === u && x.password === p && x.active);
-    if(!user){ showLoginError("اسم المستخدم أو كلمة المرور غير صحيحة."); return; }
+    if(!user){ showLoginError("كلمة المرور غير صحيحة."); document.getElementById("loginPassword").select(); return; }
     currentUser = { username:user.username, displayName:user.displayName, role:user.role };
     sessionStorage.setItem(STORAGE.session, JSON.stringify(currentUser));
     hideLoginError(); showApp();
@@ -625,9 +722,60 @@ function logout(){
     document.getElementById("loginScreen").classList.remove("hidden");
     document.getElementById("loginUsername").value = "";
     document.getElementById("loginPassword").value = "";
+    document.getElementById("loginPasswordBox").classList.add("hidden");
+    hideLoginError();
+    renderLoginUsers();
 }
 
-function showLoginError(msg){ const b = document.getElementById("loginError"); b.textContent = msg; b.classList.remove("hidden"); }
+const ROLE_STYLE = {
+    admin:   { bg:"bg-sky-100",     fg:"text-sky-700",     pill:"bg-sky-50 text-sky-700" },
+    manager: { bg:"bg-emerald-100", fg:"text-emerald-700", pill:"bg-emerald-50 text-emerald-700" },
+    data:    { bg:"bg-amber-100",   fg:"text-amber-700",   pill:"bg-amber-50 text-amber-700" }
+};
+
+function initials(name){
+    const parts = String(name || "").trim().split(/\s+/).filter(w => !["ال","آل","بن","عبد"].includes(w));
+    if(!parts.length) return "؟";
+    return (parts[0][0] + (parts.length > 1 ? " " + parts[parts.length-1].replace(/^ال/, "")[0] : "")).trim();
+}
+
+function renderLoginUsers(){
+    const selected = document.getElementById("loginUsername").value;
+    document.getElementById("loginUserList").innerHTML = users.filter(u => u.active).map(u => {
+        const st = ROLE_STYLE[u.role] || ROLE_STYLE.data;
+        const isSel = u.username === selected;
+        return `
+        <button type="button" role="radio" aria-checked="${isSel}" onclick="selectLoginUser('${escapeAttr(u.username)}')" class="user-card w-full ${isSel ? "selected" : ""}">
+            <span class="avatar ${st.bg} ${st.fg}">${escapeHtml(initials(u.displayName))}</span>
+            <span class="flex-1 min-w-0 text-right">
+                <span class="block text-sm font-bold text-slate-900 truncate">${escapeHtml(u.displayName)}</span>
+                <span class="pill ${st.pill} mt-1 !py-0.5 !px-2 !text-[10px]">${roleName(u.role)}</span>
+            </span>
+            <span class="check"><i class="fa-solid fa-check"></i></span>
+        </button>`;
+    }).join("");
+}
+
+function selectLoginUser(username){
+    const user = users.find(u => u.username === username);
+    if(!user) return;
+    document.getElementById("loginUsername").value = username;
+    document.getElementById("loginSelectedName").textContent = user.displayName;
+    document.getElementById("loginPasswordBox").classList.remove("hidden");
+    hideLoginError();
+    renderLoginUsers();
+    const pw = document.getElementById("loginPassword");
+    pw.value = ""; pw.focus();
+}
+
+function togglePassword(){
+    const pw = document.getElementById("loginPassword");
+    const show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    document.getElementById("loginEye").className = show ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
+}
+
+function showLoginError(msg){ const b = document.getElementById("loginError"); b.querySelector("span").textContent = msg; b.classList.remove("hidden"); }
 function hideLoginError(){ document.getElementById("loginError").classList.add("hidden"); }
 
 function showApp(){
@@ -657,7 +805,7 @@ function updatePermissions(){
     });
     document.getElementById("exportDashboardBtn").classList.toggle("hidden", !can("export"));
     document.getElementById("addKpiBtn").classList.toggle("hidden", !can("editKpi"));
-    document.getElementById("importBtn").classList.toggle("hidden", !can("import"));
+    document.getElementById("importSteps").classList.toggle("hidden", !can("import"));
 }
 
 function roleName(r){ return { admin:"مدير النظام (Admin)", manager:"مدير الأداء", data:"مدخل بيانات", visitor:"زائر (عرض فقط)" }[r] || r; }
@@ -1098,7 +1246,9 @@ async function handleExcelUpload(event){
         const workbook = XLSX.read(await file.arrayBuffer(), { type:"array", cellDates:true });
         importedRows = [];
         importWorkbookInfo = { fileName: file.name, sheets: workbook.SheetNames };
-        workbook.SheetNames.forEach(sheetName => {
+        // A filled-in template: read only its data sheet, not the KPI list or instructions.
+        const sheetNames = workbook.SheetNames.includes(TEMPLATE_SHEETS.data) ? [TEMPLATE_SHEETS.data] : workbook.SheetNames;
+        sheetNames.forEach(sheetName => {
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header:1, defval:null, raw:true });
             if(!rows.length) return;
             const headerIdx = detectHeaderRow(rows);
@@ -1111,7 +1261,7 @@ async function handleExcelUpload(event){
                 importedRows.push(obj);
             }
         });
-        if(!importedRows.length){ showToast("لم يتم العثور على بيانات صالحة للاستيراد."); return; }
+        if(!importedRows.length){ showToast("الملف لا يحتوي على بيانات. عبّئ ورقة «البيانات» ثم أعد الرفع."); return; }
         showImportModal();
     } catch(e){
         showToast("حدث خطأ أثناء قراءة ملف Excel.");
@@ -1139,8 +1289,51 @@ const IMPORT_FIELDS = [
     ["value","القيمة الفعلية",true,["value","actual","القيمة","الفعلي"]],
     ["numerator","البسط",false,["numerator","البسط"]],
     ["denominator","المقام",false,["denominator","المقام"]],
-    ["weight","الوزن",false,["weight","الوزن"]]
+    ["weight","الوزن",false,["weight","الوزن"]],
+    ["dataSource","مصدر البيانات",false,["source","المصدر","مصدر"]],
+    ["notes","ملاحظات",false,["notes","note","ملاحظات","ملاحظة"]]
 ];
+
+// Sheet names used by the template; only the data sheet is read on import.
+const TEMPLATE_SHEETS = { data:"البيانات", kpis:"المؤشرات", help:"التعليمات" };
+const TEMPLATE_HEADERS = ["التاريخ", "كود المؤشر", "اسم المؤشر", "القيمة الفعلية", "البسط", "المقام", "الوزن", "المصدر", "ملاحظات"];
+
+function downloadTemplate(){
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: true }] };
+
+    const data = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
+    data["!cols"] = [14, 16, 34, 14, 10, 10, 10, 20, 30].map(wch => ({ wch }));
+    XLSX.utils.book_append_sheet(wb, data, TEMPLATE_SHEETS.data);
+
+    const kpiRows = kpis.map(k => ({
+        "كود المؤشر": k.code, "اسم المؤشر": k.name, "الفئة": k.category, "الوحدة": k.unit,
+        "دورية القياس": frequencyName(k.frequency), "طريقة الحساب": aggregationName(k.aggregation),
+        "يتطلب بسط/مقام": k.aggregation === "RATIO" ? "نعم" : "لا", "المستهدف": k.target
+    }));
+    const ks = XLSX.utils.json_to_sheet(kpiRows);
+    ks["!cols"] = [16, 34, 14, 10, 12, 14, 14, 10].map(wch => ({ wch }));
+    XLSX.utils.book_append_sheet(wb, ks, TEMPLATE_SHEETS.kpis);
+
+    const sample = kpis[0];
+    const help = XLSX.utils.aoa_to_sheet([
+        ["تعليمات تعبئة قالب استيراد البيانات السابقة"],
+        [],
+        ["1", `أدخل البيانات في ورقة «${TEMPLATE_SHEETS.data}» فقط، سطر واحد لكل قراءة.`],
+        ["2", "التاريخ بصيغة YYYY-MM-DD (مثال: 2025-03-31) أو DD/MM/YYYY أو كتاريخ Excel."],
+        ["3", `اكتب كود المؤشر كما هو في ورقة «${TEMPLATE_SHEETS.kpis}». يمكن كتابة الاسم بدلاً من الكود.`],
+        ["4", "القيمة الفعلية رقم فقط بدون رموز (مثال: 92.5 وليس 92.5%)."],
+        ["5", "لمؤشرات النسب (يتطلب بسط/مقام = نعم) أدخل البسط والمقام ليتم الحساب بدقة."],
+        ["6", "السجل المكرر لنفس المؤشر ونفس التاريخ يُتجاهل تلقائياً."],
+        [],
+        ["مثال", sample ? `2025-01-31 | ${sample.code} | ${sample.name} | 91` : ""]
+    ]);
+    help["!cols"] = [{ wch: 8 }, { wch: 90 }];
+    XLSX.utils.book_append_sheet(wb, help, TEMPLATE_SHEETS.help);
+
+    XLSX.writeFile(wb, "APH_KPI_Import_Template.xlsx");
+    showToast("تم تحميل القالب. عبّئ ورقة «البيانات» ثم ارفع الملف.");
+}
 
 function showImportModal(){
     const keys = [...new Set(importedRows.flatMap(r => Object.keys(r)))].filter(k => !k.startsWith("__"));
@@ -1151,7 +1344,7 @@ function showImportModal(){
         return k || "";
     };
     // Guess the specific columns first so e.g. "كود المؤشر" is not taken by the name field.
-    const order = ["date","kpiCode","value","numerator","denominator","weight","kpiName"];
+    const order = ["date","kpiCode","value","numerator","denominator","weight","dataSource","notes","kpiName"];
     const guesses = {};
     order.forEach(f => guesses[f] = guess(IMPORT_FIELDS.find(x => x[0] === f)[3]));
 
@@ -1190,7 +1383,8 @@ function confirmImport(){
             numerator: m.numerator ? toNumberOrNull(row[m.numerator]) : null,
             denominator: m.denominator ? toNumberOrNull(row[m.denominator]) : null,
             weight: m.weight ? toNumberOrNull(row[m.weight]) : null,
-            dataSource: `Excel: ${importWorkbookInfo.fileName}`,
+            dataSource: (m.dataSource && normalizeText(row[m.dataSource])) || `Excel: ${importWorkbookInfo.fileName}`,
+            notes: m.notes ? normalizeText(row[m.notes]) : "",
             approved: can("approve"), createdBy: currentUser.displayName, createdAt: new Date().toISOString()
         });
         if(records.some(r => r.date === record.date && r.kpiCode === record.kpiCode)){ duplicates++; return; }
