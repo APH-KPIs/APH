@@ -200,6 +200,17 @@
         #detailDefinition dt { color: #64748b; font-weight: 700; }
         #detailDefinition dd { grid-column: span 2; color: #0f172a; font-weight: 600; }
 
+        /* ---------- Entry form ---------- */
+        .entry-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #eef2f6; border-radius: 12px; padding: 4px; }
+        .entry-tabs button { font-size: 11.5px; font-weight: 800; color: #475569; padding: 8px 4px; border-radius: 9px; }
+        .entry-tabs button span { font-size: 10px; font-weight: 700; color: #94a3b8; }
+        .entry-tabs button.on { background: #0b1f33; color: #fff; }
+        .entry-tabs button.on span { color: #7dd3fc; }
+        .entry-tabs button:disabled { opacity: .4; cursor: not-allowed; }
+        .entry-hint { background: #f0f9ff; border: 1px solid #bae6fd; color: #075985; border-radius: 12px; padding: 10px 12px; font-size: 11.5px; line-height: 1.8; }
+        .entry-warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 12px; padding: 10px 12px; font-size: 11.5px; font-weight: 600; }
+        .entry-block { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 12px; padding: 10px 12px; font-size: 11.5px; font-weight: 600; }
+
         /* ---------- Import steps ---------- */
         .step { display: flex; gap: 12px; padding: 16px; border-radius: 14px; background: #f8fafc; border: 1px solid #e2e8f0; }
         .step-num { width: 28px; height: 28px; border-radius: 999px; background: #0b1f33; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -365,19 +376,24 @@
         <section id="sectionDashboard" class="space-y-6">
             <!-- FILTERS -->
             <div class="card p-4">
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">السنة المالية</label>
-                        <select id="filterYear" onchange="renderDashboard()"></select>
+                        <select id="filterYear" onchange="populatePeriodOptions(); renderDashboard()"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">نوع الفترة</label>
+                        <select id="filterPeriodType" onchange="populatePeriodOptions(true); renderDashboard()">
+                            <option value="year">سنوي</option>
+                            <option value="quarter">ربع سنوي</option>
+                            <option value="month">شهري</option>
+                            <option value="week">أسبوعي</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">الفترة الزمنية</label>
                         <select id="filterQuarter" onchange="renderDashboard()">
-                            <option value="ALL">السنة كاملة (ملخص سنوي)</option>
-                            <option value="Q1">الربع الأول (Q1)</option>
-                            <option value="Q2">الربع الثاني (Q2)</option>
-                            <option value="Q3">الربع الثالث (Q3)</option>
-                            <option value="Q4">الربع الرابع (Q4)</option>
+                            <option value="ALL">السنة كاملة</option>
                         </select>
                     </div>
                     <div>
@@ -494,43 +510,59 @@
         <!-- ================= SECTION: DATA ENTRY ================= -->
         <section id="sectionData" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="card p-6 lg:col-span-1 space-y-4">
-                    <h3 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-3">إدخال سجل بيانات جديد</h3>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">تاريخ السجل</label>
-                        <input type="date" id="recordDate">
+                <div id="entryCard" class="card p-6 lg:col-span-1 space-y-4">
+                    <div class="border-b border-slate-200 pb-3">
+                        <h3 class="font-bold text-sm text-slate-900">إدخال قراءة من المنصة</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">اختر دورية القياس ثم المؤشر، وتتحدث اللوحة فور الحفظ.</p>
+                    </div>
+                    <div class="entry-tabs" role="tablist" aria-label="دورية الإدخال">
+                        <button type="button" data-freq="daily" onclick="setEntryFreq('daily')">يومي <span></span></button>
+                        <button type="button" data-freq="weekly" onclick="setEntryFreq('weekly')">أسبوعي <span></span></button>
+                        <button type="button" data-freq="monthly" onclick="setEntryFreq('monthly')">شهري <span></span></button>
+                        <button type="button" data-freq="quarterly" onclick="setEntryFreq('quarterly')">ربع سنوي <span></span></button>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">المؤشر المستهدف</label>
-                        <select id="recordKpi"></select>
+                        <label for="recordKpi" class="block text-xs font-bold text-slate-600 mb-1">المؤشر</label>
+                        <select id="recordKpi" onchange="onEntryKpiChange()"></select>
                     </div>
+                    <div id="entryHint" class="entry-hint hidden"></div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">القيمة الفعلية (Actual)</label>
-                        <input type="number" step="any" id="recordValue" placeholder="مثال: 92.5">
+                        <label id="recordDateLabel" for="recordDate" class="block text-xs font-bold text-slate-600 mb-1">تاريخ القياس</label>
+                        <input type="date" id="recordDate" onchange="snapEntryDate(); onEntryKpiChange()">
+                        <p id="recordPeriodText" class="text-[11px] text-sky-700 font-semibold mt-1"></p>
                     </div>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">البسط</label>
-                            <input type="number" step="any" id="recordNumerator" placeholder="اختياري">
+                    <div id="entryValueRow">
+                        <label for="recordValue" class="block text-xs font-bold text-slate-600 mb-1">القيمة الفعلية <span id="recordValueUnit" class="text-slate-400"></span></label>
+                        <input type="number" step="any" id="recordValue" placeholder="مثال: 62">
+                    </div>
+                    <div id="entryRatioRow" class="hidden space-y-2">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="recordNumerator" class="block text-xs font-bold text-slate-600 mb-1">البسط</label>
+                                <input type="number" step="any" min="0" id="recordNumerator" oninput="updateRatioPreview()">
+                            </div>
+                            <div>
+                                <label for="recordDenominator" class="block text-xs font-bold text-slate-600 mb-1">المقام</label>
+                                <input type="number" step="any" min="0" id="recordDenominator" oninput="updateRatioPreview()">
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">المقام</label>
-                            <input type="number" step="any" id="recordDenominator" placeholder="اختياري">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">الوزن</label>
-                            <input type="number" step="any" id="recordWeight" placeholder="اختياري">
-                        </div>
+                        <div id="ratioPreview" class="text-xs text-slate-600"></div>
+                    </div>
+                    <div id="entryWeightRow" class="hidden">
+                        <label for="recordWeight" class="block text-xs font-bold text-slate-600 mb-1">عدد البلاغات في الأسبوع (الوزن)</label>
+                        <input type="number" step="any" min="0" id="recordWeight">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">مصدر البيانات</label>
+                        <label for="recordSource" class="block text-xs font-bold text-slate-600 mb-1">مصدر البيانات <span class="text-slate-400">(اختياري)</span></label>
                         <input type="text" id="recordSource" placeholder="اسم النظام أو الإدارة المصدرة">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات إضافية</label>
-                        <textarea id="recordNotes" rows="2" placeholder="ملاحظات أو توصيات إدارية..."></textarea>
+                        <label for="recordNotes" class="block text-xs font-bold text-slate-600 mb-1">ملاحظات <span class="text-slate-400">(اختياري)</span></label>
+                        <textarea id="recordNotes" rows="2"></textarea>
                     </div>
-                    <button onclick="addRecord()" class="btn btn-primary w-full text-xs py-3">حفظ السجل وتحديث النظام</button>
+                    <div id="entryExisting" class="hidden"></div>
+                    <button id="entrySaveBtn" onclick="addRecord()" class="btn btn-primary w-full text-xs py-3"><i class="fa-solid fa-floppy-disk ml-1"></i> حفظ القراءة</button>
+                    <p id="entryDerivedNote" class="text-[10.5px] text-slate-400 leading-5"></p>
                 </div>
 
                 <div class="card p-6 lg:col-span-2 space-y-4">
@@ -568,9 +600,12 @@
                     </div>
                     <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
                         <h4 class="text-xs font-bold text-slate-700">السجلات المدخلة <span id="recordsCount" class="text-slate-400 font-semibold mr-1"></span></h4>
-                        <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <input id="recordSearch" type="search" placeholder="بحث بالمؤشر أو التاريخ..." class="!py-2 !pr-9 !text-xs w-56" oninput="renderRecords()">
+                        <div class="flex items-center gap-2">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input id="recordSearch" type="search" placeholder="بحث بالمؤشر أو التاريخ..." class="!py-2 !pr-9 !text-xs w-56" oninput="renderRecords()">
+                            </div>
+                            <button id="exportRecordsBtn" onclick="exportRecords()" class="btn btn-secondary text-xs whitespace-nowrap"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير Excel</button>
                         </div>
                     </div>
                     <div class="overflow-auto max-h-[450px]">
@@ -627,8 +662,8 @@
             <div class="card p-5 flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h3 class="font-bold text-sm text-slate-900">مستهدفات المؤشرات لسنة <span id="targetYearLabel"></span></h3>
-                    <p class="text-xs text-slate-500 mt-0.5">مستهدف واحد لكل مؤشر في السنة. يحفظه مدير النظام كمسودة ثم يعتمده، وبعد الاعتماد يُقفل.</p>
-                    <p class="text-[11px] text-slate-400 mt-1">المستهدف ربع سنوي: للنسب والمتوسطات هو القيمة المطلوبة، ولمؤشرات العدد (مجموع) هو المطلوب في كل ربع — وفي العرض السنوي يُضرب في عدد الأرباع.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">مستهدف واحد لكل مؤشر في السنة. يحفظه مدير النظام أو مدير الأداء كمسودة ثم يعتمده، وبعد الاعتماد يُقفل. كل تعديل يتطلب ذكر السبب ويُسجل في سجل التدقيق.</p>
+                    <p class="text-[11px] text-slate-400 mt-1">المستهدف ربع سنوي: للنسب والمتوسطات هو القيمة المطلوبة في أي فترة، ولمؤشرات العدد (مجموع) هو المطلوب في الربع، ويُوزَّع تلقائياً على السنة والشهر والأسبوع حسب الأيام أو الأسابيع المسجلة.</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <label for="targetYear" class="text-xs font-bold text-slate-600 whitespace-nowrap">السنة</label>
@@ -870,19 +905,19 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 2.2 — 2026-10-02";
+const APP_VERSION = "الإصدار 2.3 — 2026-10-02";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
     { username: "admin", password: "admin123", displayName: "عبدالعزيز عبدالله ال زربه", role: "admin", active: true },
     { username: "manager", password: "manager123", displayName: "لمى علي الحقباني", role: "manager", active: true },
-    { username: "data", password: "data123", displayName: "عمر هادي عسيري", role: "data", active: true }
+    { username: "data", password: "data123", displayName: "وحدة مؤشرات الأداء", role: "data", active: true }
 ];
 
 const permissions = {
-    admin: { dashboard:true, data:true, kpis:true, targets:true, quality:true, users:true, audit:true, import:true, approve:true, editTarget:true, editKpi:true, deleteKpi:true, export:true },
-    manager: { dashboard:true, data:true, kpis:false, targets:true, quality:true, users:false, audit:false, import:true, approve:true, editTarget:false, editKpi:false, deleteKpi:false, export:true },
-    data: { dashboard:true, data:true, kpis:false, targets:false, quality:true, users:false, audit:false, import:true, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false },
+    admin: { exportRecords:true, dashboard:true, data:true, kpis:true, targets:true, quality:true, users:true, audit:true, import:true, approve:true, editTarget:true, editKpi:true, deleteKpi:true, export:true },
+    manager: { exportRecords:true, dashboard:true, data:true, kpis:false, targets:true, quality:true, users:false, audit:false, import:true, approve:true, editTarget:true, editKpi:false, deleteKpi:false, export:true },
+    data: { exportRecords:true, dashboard:true, data:true, kpis:false, targets:false, quality:true, users:false, audit:false, import:true, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false },
     visitor: { dashboard:true, data:false, kpis:false, targets:false, quality:false, users:false, audit:false, import:false, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false }
 };
 
@@ -1021,6 +1056,8 @@ let importedRows = [], importWorkbookInfo = {};
 
 function init(){
     users = load(STORAGE.users, null) || defaultUsers;
+    // The data-entry account now carries the unit's official name.
+    users = users.map(u => u.username === "data" && u.displayName === "عمر هادي عسيري" ? { ...u, displayName: "وحدة مؤشرات الأداء" } : u);
     kpis = load(STORAGE.kpis, null);
     if(!kpis){
         kpis = defaultKpis.map(k => ({ ...k, targetLastUpdated:null, targetUpdatedBy:null }));
@@ -1041,7 +1078,7 @@ function init(){
 }
 
 // Records are stored packed (one array per record, no repeated keys) so ~12k rows fit in browser storage.
-const REC_COLS = ["id","date","year","quarter","kpiCode","actualValue","numerator","denominator","weight","dataSource","notes","approved","createdBy","createdAt","dq","updatedBy","updatedAt","approvedBy","approvedAt"];
+const REC_COLS = ["id","date","year","quarter","kpiCode","actualValue","numerator","denominator","weight","dataSource","notes","approved","createdBy","createdAt","dq","updatedBy","updatedAt","approvedBy","approvedAt","createdUser"];
 
 function packRecords(rs){
     return { v:2, cols:REC_COLS, rows: rs.map(r => {
@@ -1177,8 +1214,8 @@ function showApp(){
     document.getElementById("app").classList.remove("hidden");
     updatePermissions();
     populateFilters();
-    populateRecordKpis();
     document.getElementById("recordDate").value = formatDateInput(new Date());
+    populateRecordKpis();
     showSection("dashboard");
     renderDashboard();
     renderRecords();
@@ -1200,6 +1237,7 @@ function updatePermissions(){
     document.getElementById("exportDashboardBtn").classList.toggle("hidden", !can("export"));
     document.getElementById("addKpiBtn").classList.toggle("hidden", !can("editKpi"));
     document.getElementById("importSteps").classList.toggle("hidden", !can("import"));
+    document.getElementById("exportRecordsBtn").classList.toggle("hidden", !can("exportRecords"));
 }
 
 function roleName(r){ return { admin:"مدير النظام (Admin)", manager:"مدير الأداء", data:"مدخل بيانات", visitor:"زائر (عرض فقط)" }[r] || r; }
@@ -1217,7 +1255,7 @@ function showSection(section){
         dashboard:["لوحة مؤشرات الأداء التنفيذية", "نظرة شاملة وتحليل دقيق لعمليات المستشفى الإكلينيكية والتشغيلية"],
         data:["إدخال واستيراد البيانات", "إدخال القراءات يدوياً أو استيرادها من ملفات Excel"],
         kpis:["تعريف مؤشرات الأداء", "إدارة المؤشرات المعتمدة وتعريفاتها"],
-        targets:["المستهدفات السنوية", "يحددها مدير النظام مرة واحدة لكل سنة وتُقفل بعد الاعتماد"],
+        targets:["المستهدفات السنوية", "يحددها مدير النظام أو مدير الأداء مرة واحدة لكل سنة، بمبرر موثق، وتُقفل بعد الاعتماد"],
         quality:["فحص جودة البيانات", "اكتشاف القيم المفقودة والمكررة والسجلات غير المكتملة"],
         users:["إدارة المستخدمين", "الحسابات المعتمدة وصلاحياتها"],
         audit:["سجل التدقيق", "توثيق زمني لكافة العمليات الحساسة"]
@@ -1236,6 +1274,7 @@ function populateFilters(){
     records.forEach(r => { if(r.year) years.add(Number(r.year)); });
     ySel.innerHTML = [...years].sort((a,b)=>b-a).map(y => `<option value="${y}">${y}</option>`).join("");
     if(selected && years.has(Number(selected))) ySel.value = selected;
+    populatePeriodOptions();
 
     const cSel = document.getElementById("filterCategory");
     const selectedCat = cSel.value;
@@ -1244,38 +1283,208 @@ function populateFilters(){
     if(selectedCat && (selectedCat === "ALL" || cats.includes(selectedCat))) cSel.value = selectedCat;
 }
 
+// ---- Direct entry ----
+// KPIs the source workbook computes from other KPIs; they are calculated on save, never typed.
+// Formulas verified against every row of 02_NORMALIZED_DATA.
+const DERIVED_KPIS = {
+    PSY_NOSHOW_PCT:               { num:[["PSY_NOSHOW_COUNT","value"]], den:[["PSY_CLINIC_VISITS","value"]] },
+    MAINT_COMPLETION_PCT:         { num:[["MAINT_COMPLETED","value"]], den:[["MAINT_REQUESTS","value"]] },
+    APPT_CONFIRM_PCT:             { num:[["APPT_CONFIRMED","value"]], den:[["APPT_OUTGOING_CALLS","value"]] },
+    CLINIC_CONFIRM_PCT_OF_VISITS: { num:[["APPT_CONFIRMED","value"]], den:[["PSY_CLINIC_VISITS","value"]] },
+    OCC_WITH_HOME_PCT:            { num:[["INPATIENTS_WITH_HOME","value"]], denConst:153 },
+    OCC_NO_HOME_PCT:              { num:[["INPATIENTS_NO_HOME","value"]], denConst:123 },
+    READMIT30_ALL:                { num:[["READMIT30_PSY","num"],["READMIT30_DETOX","num"]], den:[["READMIT30_PSY","den"],["READMIT30_DETOX","den"]], anySource:true }
+};
+const DERIVED_SOURCE = "حساب تلقائي";
+
+// What staff enter for rate KPIs (from the workbook's LISTS sheet).
+const ENTRY_HINTS = {
+    READMIT30_PSY: "البسط = المعادون خلال 30 يوم بنفس التشخيص | المقام = المخرَّجون أحياء",
+    READMIT30_DETOX: "البسط = المعادون خلال 30 يوم بنفس التشخيص | المقام = المخرَّجون أحياء",
+    MED_ERR_REPORTING_DOCTORS: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
+    MED_ERR_REPORTING_NURSES: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
+    MED_ERR_REPORTING_PHARMACISTS: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
+    ED_REVISIT_72H: "البسط = حالات العودة غير المخططة خلال 72 ساعة | المقام = إجمالي مراجعي الطوارئ المعالجين",
+    LAB_COMPLETION_PCT: "البسط = الفحوصات المنجزة | المقام = الفحوصات المستلمة"
+};
+
+const ENTRY_FREQS = ["daily","weekly","monthly","quarterly"];
+const DATE_HINTS = {
+    daily: "اكتب يوم القياس.",
+    weekly: "اختر أي يوم في الأسبوع — يُسجل على يوم الأحد (بداية الأسبوع).",
+    monthly: "اختر أي يوم في الشهر — يُسجل على أول يوم في الشهر.",
+    quarterly: "اختر أي يوم في الربع — يُسجل على أول يوم في الربع."
+};
+let entryFreq = "daily";
+
+function entryFreqOf(k){ return ENTRY_FREQS.includes(k.frequency) ? k.frequency : (k.frequency === "annual" ? "quarterly" : "daily"); }
+function entryKpis(freq){ return activeKpis().filter(k => !DERIVED_KPIS[k.code] && (!freq || entryFreqOf(k) === freq)); }
+function entryMode(k){ return k.aggregation === "RATIO" ? "ratio" : k.aggregation === "WEIGHTED_AVERAGE" ? "weighted" : "value"; }
+
 function populateRecordKpis(){
-    document.getElementById("recordKpi").innerHTML = `<option value="">اختر المؤشر...</option>` + activeKpis().map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)} (${escapeHtml(k.unit)})</option>`).join("");
+    document.querySelectorAll(".entry-tabs button").forEach(b => {
+        const n = entryKpis(b.dataset.freq).length;
+        b.querySelector("span").textContent = `(${n})`;
+        b.disabled = n === 0;
+        b.classList.toggle("on", b.dataset.freq === entryFreq);
+    });
+    const sel = document.getElementById("recordKpi");
+    const prev = sel.value;
+    const groups = new Map();
+    entryKpis(entryFreq).forEach(k => { const c = k.category || "أخرى"; if(!groups.has(c)) groups.set(c, []); groups.get(c).push(k); });
+    sel.innerHTML = `<option value="">اختر المؤشر...</option>` + [...groups.entries()].map(([c, list]) =>
+        `<optgroup label="${escapeAttr(c)}">${list.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("")}</optgroup>`).join("");
+    if([...sel.options].some(o => o.value === prev)) sel.value = prev;
+    const derivedNames = activeKpis().filter(k => DERIVED_KPIS[k.code]).map(k => k.name);
+    document.getElementById("entryDerivedNote").textContent = derivedNames.length ? `تُحسب تلقائياً عند الحفظ ولا تحتاج إدخالاً: ${derivedNames.join("، ")}.` : "";
+    snapEntryDate();
+    onEntryKpiChange();
+}
+
+function setEntryFreq(freq){
+    entryFreq = freq;
+    document.getElementById("recordKpi").value = "";
+    populateRecordKpis();
+}
+
+// Snaps the date to the period start of the chosen frequency and shows the period it covers.
+function snapEntryDate(){
+    const input = document.getElementById("recordDate");
+    if(!input.value) input.value = formatDateInput(new Date());
+    const d = parseIsoDate(input.value);
+    let start = input.value, text = "";
+    if(entryFreq === "weekly"){ start = weekStart(input.value); text = `الأسبوع من الأحد ${shortDate(start)} إلى السبت ${shortDate(shiftDays(start, 6))} ${start.slice(0, 4)}`; }
+    else if(entryFreq === "monthly"){ start = formatDateInput(new Date(d.getFullYear(), d.getMonth(), 1)); text = `شهر ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`; }
+    else if(entryFreq === "quarterly"){ const q = Math.ceil((d.getMonth() + 1) / 3); start = formatDateInput(new Date(d.getFullYear(), (q - 1) * 3, 1)); text = `${periodName("Q" + q)} ${d.getFullYear()}`; }
+    input.value = start;
+    document.getElementById("recordDateLabel").textContent = { daily:"تاريخ القياس", weekly:"الأسبوع", monthly:"الشهر", quarterly:"الربع" }[entryFreq];
+    document.getElementById("recordPeriodText").textContent = text;
+}
+
+function onEntryKpiChange(){
+    const k = kpis.find(x => x.code === document.getElementById("recordKpi").value);
+    const hint = document.getElementById("entryHint");
+    const mode = k ? entryMode(k) : "value";
+    document.getElementById("entryValueRow").classList.toggle("hidden", mode === "ratio");
+    document.getElementById("entryRatioRow").classList.toggle("hidden", mode !== "ratio");
+    document.getElementById("entryWeightRow").classList.toggle("hidden", mode !== "weighted");
+    document.getElementById("recordValueUnit").textContent = k?.unit ? `(${k.unit === "%" ? "نسبة مئوية — اكتب 85 لـ 85%" : k.unit})` : "";
+    if(!k){ hint.classList.add("hidden"); document.getElementById("entryExisting").classList.add("hidden"); return; }
+    const what = mode === "ratio" ? (k.inputHint || ENTRY_HINTS[k.code] || "البسط والمقام — تُحسب النسبة تلقائياً")
+        : mode === "weighted" ? "النسبة الأسبوعية + عدد البلاغات (يُستخدم كوزن عند حساب الربع)"
+        : k.unit === "%" ? "النسبة كرقم (مثال 92.5)" : "القيمة فقط";
+    hint.innerHTML = `<b>ماذا أُدخل؟</b> ${escapeHtml(what)}<br><b>التاريخ:</b> ${DATE_HINTS[entryFreq]}${k.definition ? `<br><span class="text-sky-900/70">${escapeHtml(k.definition)}</span>` : ""}`;
+    hint.classList.remove("hidden");
+    updateRatioPreview();
+    showExistingReading(k);
+}
+
+function updateRatioPreview(){
+    const k = kpis.find(x => x.code === document.getElementById("recordKpi").value);
+    const box = document.getElementById("ratioPreview");
+    if(!k || entryMode(k) !== "ratio"){ box.textContent = ""; return; }
+    const n = parseNum("recordNumerator"), d = parseNum("recordDenominator");
+    box.innerHTML = n != null && d > 0 ? `النسبة المحسوبة: <b class="text-slate-900">${fmt(n / d * (k.unit === "%" ? 100 : 1), k)}</b>` : d === 0 ? `<span class="text-amber-700">المقام صفر — تُحفظ القراءة بدون نسبة</span>` : "";
+}
+
+function showExistingReading(k){
+    const box = document.getElementById("entryExisting");
+    const date = document.getElementById("recordDate").value;
+    const ex = records.find(r => r.kpiCode === k.code && r.date === date);
+    const btn = document.getElementById("entrySaveBtn");
+    btn.disabled = false;
+    if(!ex){ box.classList.add("hidden"); return; }
+    const val = ex.numerator != null || ex.denominator != null ? `${ex.numerator ?? "—"} / ${ex.denominator ?? "—"}` : fmt(ex.actualValue, k);
+    if(canEditRecord(ex)){
+        box.className = "entry-warn";
+        box.innerHTML = `توجد قراءة مسجلة لهذا التاريخ (${escapeHtml(val)} — ${ex.approved ? "معتمدة" : "بانتظار الاعتماد"}). الحفظ سيحدّثها.`;
+    } else {
+        box.className = "entry-block";
+        box.innerHTML = `توجد قراءة ${ex.approved ? "معتمدة" : "مسجلة من مستخدم آخر"} لهذا التاريخ (${escapeHtml(val)}). لتعديلها تواصل مع مدير الأداء.`;
+        btn.disabled = true;
+    }
+}
+
+// Recomputes the derived KPIs touched by the given readings (same KPI date). Returns [upserts, deletedIds].
+function deriveRecords(changed){
+    const byKey = new Map(records.map(r => [r.kpiCode + "|" + r.date, r]));
+    const part = (rec, field) => !rec ? null : field === "num" ? rec.numerator : field === "den" ? rec.denominator : rec.actualValue;
+    const upserts = [], removed = [];
+    const seen = new Set();
+    changed.forEach(src => Object.entries(DERIVED_KPIS).forEach(([code, f]) => {
+        const sources = [...f.num, ...(f.den || [])].map(s => s[0]);
+        if(!sources.includes(src.kpiCode) || !kpis.some(k => k.code === code)) return;
+        const key = code + "|" + src.date;
+        if(seen.has(key)) return;
+        seen.add(key);
+        const recs = sources.map(c => byKey.get(c + "|" + src.date));
+        const existing = byKey.get(key);
+        const complete = f.anySource ? recs.some(Boolean) : recs.every(Boolean);
+        const sum = list => list.reduce((acc, [c, field]) => { const v = part(byKey.get(c + "|" + src.date), field); return acc == null && v == null ? null : (acc || 0) + (Number(v) || 0); }, null);
+        const num = sum(f.num), den = f.denConst ?? sum(f.den);
+        if(!complete || num == null || den == null){
+            if(existing && existing.dataSource === DERIVED_SOURCE){ records = records.filter(r => r !== existing); removed.push(existing.id); }
+            return;
+        }
+        const kpi = kpis.find(k => k.code === code);
+        const rec = normalizeRecord({
+            id: existing?.id, date: src.date, year: src.year, quarter: src.quarter, kpiCode: code, kpiName: kpi.name,
+            actualValue: den > 0 ? round(num / den * 100 * 1e4) / 1e4 : null, numerator: num, denominator: den,
+            dataSource: DERIVED_SOURCE, approved: recs.filter(Boolean).every(r => r.approved),
+            createdBy: existing?.createdBy || currentUser.displayName, createdAt: existing?.createdAt
+        });
+        if(existing) records[records.indexOf(existing)] = rec; else records.push(rec);
+        byKey.set(key, rec);
+        upserts.push(rec);
+    }));
+    return [upserts, removed];
 }
 
 function addRecord(){
     if(!can("data")){ showToast("ليس لديك صلاحية لإدخال البيانات."); return; }
+    snapEntryDate();
     const date = document.getElementById("recordDate").value;
     const kpiCode = document.getElementById("recordKpi").value;
-    const value = parseFloat(document.getElementById("recordValue").value);
-    const num = parseNum("recordNumerator");
-    const den = parseNum("recordDenominator");
-    const weight = parseNum("recordWeight");
+    const kpi = kpis.find(k => k.code === kpiCode);
+    if(!kpi){ showToast("اختر المؤشر أولاً."); return; }
+    if(!date){ showToast("حدد التاريخ."); return; }
+    if(date > formatDateInput(new Date())){ showToast("لا يمكن إدخال قراءة لتاريخ مستقبلي."); return; }
+    const mode = entryMode(kpi);
+    let value = parseNum("recordValue"), num = null, den = null, weight = null;
+    if(mode === "ratio"){
+        num = parseNum("recordNumerator"); den = parseNum("recordDenominator");
+        if(num == null || den == null){ showToast("أدخل البسط والمقام."); return; }
+        if(num < 0 || den < 0){ showToast("البسط والمقام لا يكونان بالسالب."); return; }
+        value = den > 0 ? round(num / den * (kpi.unit === "%" ? 100 : 1) * 1e4) / 1e4 : null;
+    } else {
+        if(value == null){ showToast("أدخل القيمة الفعلية."); return; }
+        if(mode === "weighted"){ weight = parseNum("recordWeight"); if(weight == null){ showToast("أدخل عدد البلاغات (الوزن)."); return; } }
+    }
     const source = document.getElementById("recordSource").value.trim();
     const notes = document.getElementById("recordNotes").value.trim();
 
-    if(!date || !kpiCode || Number.isNaN(value)){ showToast("يرجى ملء تاريخ السجل والمؤشر والقيمة الفعلية."); return; }
-    const kpi = kpis.find(k => k.code === kpiCode);
-    if(!kpi){ showToast("المؤشر المحدد غير موجود."); return; }
-    if(kpi.aggregation === "RATIO" && den === 0){ showToast("لا يمكن أن يكون المقام صفراً."); return; }
-
+    const existing = records.find(r => r.kpiCode === kpiCode && r.date === date);
+    if(existing && !canEditRecord(existing)){ showToast("توجد قراءة معتمدة لهذا التاريخ — تعديلها لمدير الأداء."); return; }
     const record = normalizeRecord({
-        date, kpiCode, kpiName:kpi.name, actualValue:value, numerator:num, denominator:den, weight,
+        id: existing?.id, date, kpiCode, kpiName:kpi.name, actualValue:value, numerator:num, denominator:den, weight,
         dataSource:source, notes, approved:can("approve"),
-        createdBy:currentUser.displayName, createdAt:new Date().toISOString()
+        createdBy: existing?.createdBy || currentUser.displayName, createdAt: existing?.createdAt || new Date().toISOString()
     });
-
-    records.push(record);
+    if(existing){
+        record.updatedBy = currentUser.displayName; record.updatedAt = new Date().toISOString();
+        records[records.indexOf(existing)] = record;
+    } else records.push(record);
+    const [derived] = deriveRecords([record]);
     saveRecords();
-    addAudit("ADD_RECORD", kpi.name, "", value, notes || "إدخال يدوي");
-    ["recordValue","recordNumerator","recordDenominator","recordWeight","recordSource","recordNotes"].forEach(id => document.getElementById(id).value = "");
+    const shown = mode === "ratio" ? `${num}/${den}` : value;
+    if(existing) addAudit("EDIT_RECORD", kpi.name, existing.actualValue, shown, `${date} — تحديث من نموذج الإدخال${notes ? " — " + notes : ""}`);
+    else addAudit("ADD_RECORD", kpi.name, "", shown, `${date}${notes ? " — " + notes : ""}`);
+    ["recordValue","recordNumerator","recordDenominator","recordWeight","recordNotes"].forEach(id => document.getElementById(id).value = "");
     refreshData();
-    showToast(record.approved ? "تم حفظ السجل واعتماده وتحديث المؤشرات بنجاح." : "تم حفظ السجل بانتظار اعتماد مدير الأداء.");
+    onEntryKpiChange();
+    document.getElementById("recordKpi").focus();
+    const extra = derived.length ? ` وتحديث ${derived.length} مؤشر محسوب` : "";
+    showToast((record.approved ? "تم حفظ القراءة واعتمادها" : "تم حفظ القراءة بانتظار اعتماد مدير الأداء") + extra + ".");
 }
 
 function approveRecord(id){
@@ -1285,6 +1494,7 @@ function approveRecord(id){
     r.approved = true;
     r.approvedBy = currentUser.displayName;
     r.approvedAt = new Date().toISOString();
+    deriveRecords([r]);
     saveRecords();
     addAudit("APPROVE_RECORD", r.kpiName, "بانتظار الاعتماد", "معتمد", r.date);
     refreshData();
@@ -1296,6 +1506,7 @@ function deleteRecord(id){
     const r = records.find(x => x.id === id);
     if(!r || !confirm("هل أنت متأكد من حذف هذا السجل؟")) return;
     records = records.filter(x => x.id !== id);
+    deriveRecords([r]);
     saveRecords();
     addAudit("DELETE_RECORD", r.kpiName, r.actualValue, "", r.date);
     refreshData();
@@ -1305,7 +1516,7 @@ function deleteRecord(id){
 // Approvers can edit any record; data entry can edit its own records until they are approved.
 function canEditRecord(r){
     if(can("approve")) return true;
-    return can("data") && !r.approved && r.createdBy === currentUser.displayName;
+    return can("data") && !r.approved && (r.createdUser ? r.createdUser === currentUser.username : r.createdBy === currentUser.displayName);
 }
 
 function openRecordModal(id){
@@ -1351,6 +1562,7 @@ function saveRecordEdit(){
     updated.updatedBy = currentUser.displayName;
     updated.updatedAt = new Date().toISOString();
     records[idx] = updated;
+    deriveRecords(date === old.date ? [updated] : [old, updated]);
     saveRecords();
     const summary = r => `${r.date}: ${r.actualValue}${r.numerator != null || r.denominator != null ? ` (${r.numerator ?? "—"}/${r.denominator ?? "—"})` : ""}`;
     addAudit("EDIT_RECORD", updated.kpiName, summary(old), summary(updated), reason);
@@ -1375,15 +1587,33 @@ function normalizeRecord(row){
         weight: row.weight == null ? null : Number(row.weight),
         dataSource: row.dataSource || "", notes: row.notes || "", dq: row.dq || "",
         approved: row.approved === true,
-        createdBy: row.createdBy || currentUser?.displayName || "", createdAt: row.createdAt || new Date().toISOString()
+        createdBy: row.createdBy || currentUser?.displayName || "", createdAt: row.createdAt || new Date().toISOString(),
+        createdUser: row.createdUser || (!row.createdBy || row.createdBy === currentUser?.displayName ? currentUser?.username : undefined) || undefined
     };
 }
 
 function getApprovedRecords(){ return records.filter(r => r.approved === true); }
 
+// Period keys: "ALL" (year), "Q1".."Q4", "M1".."M12", or "W<Sunday date>" (weeks start on Sunday, as in the KPI file).
+function weekStart(dateStr){
+    const d = parseIsoDate(dateStr);
+    d.setDate(d.getDate() - d.getDay());
+    return formatDateInput(d);
+}
+function recordWeek(r){ return r._week || (r._week = weekStart(r.date)); }
+function periodYear(year, q){ return q && q[0] === "W" ? Number(q.slice(1, 5)) : Number(year); }
+
+function inPeriod(r, q){
+    if(q === "ALL") return true;
+    if(q[0] === "Q") return r.quarter === q;
+    if(q[0] === "M") return Number(String(r.date).slice(5, 7)) === Number(q.slice(1));
+    if(q[0] === "W") return recordWeek(r) === q.slice(1);
+    return false;
+}
+
 function periodRecords(code, year, q){
-    const rows = indexedRecords(code, Number(year));
-    return q === "ALL" ? rows : rows.filter(r => r.quarter === q);
+    const rows = indexedRecords(code, periodYear(year, q));
+    return q === "ALL" ? rows : rows.filter(r => inPeriod(r, q));
 }
 
 function aggregateRows(rows, kpi){
@@ -1419,16 +1649,24 @@ function getPeriodValue(code, year, q){
     return aggregateRows(periodRecords(code, year, q), kpi);
 }
 
-function getPrevValue(code, year, q){
-    if(q === "ALL") return getPeriodValue(code, Number(year)-1, "ALL");
-    const num = Number(q.substring(1));
-    if(num === 1) return getPeriodValue(code, Number(year)-1, "Q4");
-    return getPeriodValue(code, year, "Q"+(num-1));
+function shiftDays(dateStr, days){ const d = parseIsoDate(dateStr); d.setDate(d.getDate() + days); return formatDateInput(d); }
+
+function prevPeriod(year, q){
+    year = Number(year);
+    if(q === "ALL") return [year - 1, "ALL"];
+    const n = Number(q.slice(1));
+    if(q[0] === "Q") return n === 1 ? [year - 1, "Q4"] : [year, "Q" + (n - 1)];
+    if(q[0] === "M") return n === 1 ? [year - 1, "M12"] : [year, "M" + (n - 1)];
+    const prev = shiftDays(q.slice(1), -7);
+    return [Number(prev.slice(0, 4)), "W" + prev];
+}
+function samePeriodLastYear(year, q){
+    if(q[0] === "W"){ const w = shiftDays(q.slice(1), -364); return [Number(w.slice(0, 4)), "W" + w]; }
+    return [Number(year) - 1, q];
 }
 
-function getSameQPrevYear(code, year, q){
-    return getPeriodValue(code, Number(year)-1, q);
-}
+function getPrevValue(code, year, q){ const [y, p] = prevPeriod(year, q); return getPeriodValue(code, y, p); }
+function getSameQPrevYear(code, year, q){ const [y, p] = samePeriodLastYear(year, q); return getPeriodValue(code, y, p); }
 
 const isNum = v => v != null && v !== "" && Number.isFinite(Number(v));
 
@@ -1447,11 +1685,52 @@ function targetSource(kpi, year){
     if(isNum(kpi.greenMin)) return "حد الأخضر";
     return "";
 }
-// Targets are per quarter. A summed KPI's full-year actual is compared with the target times the quarters with data.
+// Targets are quarterly. For summed (count) KPIs the target follows the period shown: for each quarter it covers,
+// the quarterly target × (reporting units with data ÷ units in that quarter). Units are days, weeks, months or
+// quarters per the KPI's frequency, so a complete quarter compares with exactly its target and a partial month,
+// week or year with its pro-rata share. Rates and averages keep the same target in every period.
+function quarterBounds(year, q){
+    const n = Number(q.slice(1));
+    return [new Date(year, (n - 1) * 3, 1), new Date(year, n * 3, 0)];
+}
+function unitsInQuarter(year, q, frequency){
+    const [from, to] = quarterBounds(year, q);
+    const days = Math.round((to - from) / 86400000) + 1;
+    if(frequency === "weekly"){ let n = 0; for(let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) if(d.getDay() === 0) n++; return n; }
+    if(frequency === "monthly") return 3;
+    if(frequency === "quarterly" || frequency === "annual") return 1;
+    return days;
+}
+function unitKey(r, frequency){
+    if(frequency === "weekly") return recordWeek(r);
+    if(frequency === "monthly") return String(r.date).slice(0, 7);
+    if(frequency === "quarterly" || frequency === "annual") return r.quarter;
+    return r.date;
+}
 function periodTarget(kpi, year, q, base){
-    if(base == null || kpi.aggregation !== "SUM" || q !== "ALL") return base;
-    const n = QUARTERS.filter(qq => getPeriodValue(kpi.code, year, qq) != null).length;
-    return n ? base * n : base;
+    if(base == null || kpi.aggregation !== "SUM") return base;
+    const y = periodYear(year, q);
+    const rows = periodRecords(kpi.code, y, q).filter(r => isNum(r.actualValue));
+    const byQuarter = new Map();
+    rows.forEach(r => {
+        const key = r.year + "|" + r.quarter;
+        if(!byQuarter.has(key)) byQuarter.set(key, new Set());
+        byQuarter.get(key).add(unitKey(r, kpi.frequency));
+    });
+    if(!byQuarter.size){
+        // No readings yet: use the calendar share of the period.
+        if(q === "ALL") return base * 4;
+        if(q[0] === "Q") return base;
+        const qOf = m => "Q" + Math.ceil(m / 3);
+        if(q[0] === "M"){ const m = Number(q.slice(1)); const qq = qOf(m); return base * new Date(y, m, 0).getDate() / unitsInQuarter(y, qq, "daily"); }
+        const m = Number(q.slice(6, 8)); return base * 7 / unitsInQuarter(y, qOf(m), "daily");
+    }
+    let share = 0;
+    byQuarter.forEach((units, key) => {
+        const [qy, qq] = key.split("|");
+        share += units.size / unitsInQuarter(Number(qy), qq, kpi.frequency);
+    });
+    return base * share;
 }
 
 // The target used for achievement: the year's target, or the green threshold when a KPI only has thresholds.
@@ -1670,7 +1949,7 @@ function openKpiDetail(code){
     const tile = (label, value, sub="") => `<div class="detail-tile"><div class="t-label">${label}</div><div class="t-value">${value}</div>${sub ? `<div class="t-sub">${sub}</div>` : ""}</div>`;
     document.getElementById("detailTiles").innerHTML = [
         tile(`الفعلي — ${periodName(q)} ${year}`, fmt(r?.act, k), k.unit && k.unit !== "%" ? escapeHtml(k.unit) : ""),
-        tile(`المستهدف ${year}`, tgt != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(tgt, k)}` : "غير محدد", (targetSource(k, year) || "يحدده مدير النظام") + (k.aggregation === "SUM" && q === "ALL" && tgt != null ? " · مجموع الأرباع" : "")),
+        tile(`المستهدف ${year}`, tgt != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(tgt, k)}` : "غير محدد", (targetSource(k, year) || "يحدده مدير النظام أو مدير الأداء") + (k.aggregation === "SUM" && tgt != null && !/^Q/.test(q) ? " · متناسب مع الفترة" : "")),
         tile("نسبة الإنجاز", r?.ach != null ? r.ach.toFixed(1) + "%" : "—", r?.ach != null ? `<div class="progress mt-1"><div style="width:${Math.min(r.ach,100)}%;background:${statusColor(r.status.key)}"></div></div>` : ""),
         tile(q === "ALL" ? "السنة السابقة" : "الفترة السابقة", fmt(r?.prev, k), delta != null ? `${delta > 0 ? "+" : ""}${fmt(delta, k)} · ${r.trend.label}` : ""),
         tile("نفس الفترة العام الماضي", fmt(r?.sameY, k))
@@ -1740,12 +2019,13 @@ function renderDetailMonthChart(k, year){
     });
     document.getElementById("detailMonthTitle").textContent = `الأداء الشهري — ${year}`;
     const tgt = effectiveTarget(k, year);
-    // A monthly target is only comparable for rates/averages; a quarterly SUM target is not a monthly one.
-    const showTarget = tgt != null && k.aggregation !== "SUM";
+    const showTarget = tgt != null;
+    // Count KPIs get each month's pro-rata share of the quarterly target.
+    const monthTargets = MONTHS_AR.map((_, i) => tgt == null ? null : round(periodTarget(k, year, "M" + (i + 1), tgt)));
     detailMonthChart = new Chart(document.getElementById("detailMonthChart"), {
         data:{ labels: MONTHS_AR, datasets: [
             { type:"bar", label:"الفعلي", data: months, backgroundColor:CHART.current, borderRadius:4, maxBarThickness:22, order:2 },
-            ...(showTarget ? [{ type:"line", label:"المستهدف", data: MONTHS_AR.map(() => tgt), borderColor:CHART.target, borderWidth:1.5, borderDash:[5,4], pointRadius:0, pointHitRadius:0, order:1 }] : [])
+            ...(showTarget ? [{ type:"line", label:"المستهدف", data: monthTargets, borderColor:CHART.target, borderWidth:1.5, borderDash:[5,4], pointRadius:0, pointHitRadius:0, order:1 }] : [])
         ] },
         options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:12 } }, interaction:{ mode:"index", intersect:false },
             scales:{ y:{ position:"right", beginAtZero:true, ticks:{ callback:v => fmt(v, k) } }, x:{ reverse:true, grid:{ display:false } } },
@@ -1777,8 +2057,13 @@ function enterReadingFor(){
     const code = detailCode;
     closeKpiDetail();
     showSection("data");
+    const k = kpis.find(x => x.code === code);
+    if(k && DERIVED_KPIS[code]){ showToast("هذا المؤشر يُحسب تلقائياً من مؤشرات أخرى — أدخل قراءات مصادره."); return; }
+    if(k) entryFreq = entryFreqOf(k);
+    populateRecordKpis();
     document.getElementById("recordKpi").value = code;
-    document.getElementById("recordValue").focus();
+    onEntryKpiChange();
+    document.getElementById(k && entryMode(k) === "ratio" ? "recordNumerator" : "recordValue").focus();
 }
 
 function exportKpiDetail(){
@@ -1828,7 +2113,56 @@ function renderQuarterChart(year, cat){
     });
 }
 
-function periodName(q){ return { ALL:"السنة كاملة", Q1:"الربع الأول", Q2:"الربع الثاني", Q3:"الربع الثالث", Q4:"الربع الرابع" }[q] || q; }
+const MONTH_NAMES = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+function shortDate(dateStr){ const d = parseIsoDate(dateStr); return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`; }
+function periodName(q){
+    if(q === "ALL") return "السنة كاملة";
+    if(q[0] === "Q") return { Q1:"الربع الأول", Q2:"الربع الثاني", Q3:"الربع الثالث", Q4:"الربع الرابع" }[q] || q;
+    if(q[0] === "M") return "شهر " + MONTH_NAMES[Number(q.slice(1)) - 1];
+    if(q[0] === "W") return `أسبوع ${shortDate(q.slice(1))} – ${shortDate(shiftDays(q.slice(1), 6))}`;
+    return q;
+}
+
+// Fills the period select for the chosen type; defaults to the latest period that has readings.
+function populatePeriodOptions(typeChanged){
+    const type = document.getElementById("filterPeriodType").value;
+    const sel = document.getElementById("filterQuarter");
+    const year = Number(document.getElementById("filterYear").value) || new Date().getFullYear();
+    const prev = sel.value;
+    let opts = [];
+    if(type === "year") opts = [["ALL", "السنة كاملة"]];
+    else if(type === "quarter") opts = QUARTERS.map(q => [q, periodName(q)]);
+    else if(type === "month") opts = MONTH_NAMES.map((m, i) => ["M" + (i + 1), m]);
+    else {
+        const d = new Date(year, 0, 1); d.setDate(d.getDate() + ((7 - d.getDay()) % 7));
+        let n = 1;
+        for(; d.getFullYear() === year; d.setDate(d.getDate() + 7), n++){
+            const key = formatDateInput(d);
+            opts.push(["W" + key, `الأسبوع ${n}: ${shortDate(key)} – ${shortDate(shiftDays(key, 6))}`]);
+        }
+    }
+    sel.innerHTML = opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+    if(!typeChanged && opts.some(o => o[0] === prev)){ sel.value = prev; return; }
+    let latest = "";
+    records.forEach(r => { if(Number(r.year) === year && r.approved && r.date > latest) latest = r.date; });
+    if(!latest) return;
+    let key = type === "quarter" ? "Q" + Math.ceil(Number(latest.slice(5, 7)) / 3)
+        : type === "month" ? "M" + Number(latest.slice(5, 7))
+        : type === "week" ? "W" + weekStart(latest) : "ALL";
+    // Prefer the latest complete period: a week or month that has only just started is mostly empty.
+    if(key !== "ALL" && periodEnd(year, key) >= formatDateInput(new Date())){
+        const [py, pk] = prevPeriod(year, key);
+        if(py === year && records.some(r => r.approved && Number(r.year) === py && inPeriod(r, pk))) key = pk;
+    }
+    if(opts.some(o => o[0] === key)) sel.value = key;
+}
+
+function periodEnd(year, q){
+    if(q[0] === "W") return shiftDays(q.slice(1), 6);
+    if(q[0] === "M") return formatDateInput(new Date(year, Number(q.slice(1)), 0));
+    if(q[0] === "Q") return formatDateInput(quarterBounds(year, q)[1]);
+    return `${year}-12-31`;
+}
 
 function renderExecInsights(results, year, q){
     const noData = results.filter(r=>r.act==null).length;
@@ -1911,13 +2245,36 @@ function renderCharts(results){
     });
 }
 
-function renderRecords(){
-    const tbody = document.getElementById("recordsTableBody");
+function matchedRecords(){
     const term = normalizeName(document.getElementById("recordSearch").value);
     const kpiName = r => kpis.find(x => x.code === r.kpiCode)?.name || r.kpiName || r.kpiCode;
-    const matched = [...records]
+    return [...records]
         .filter(r => !term || normalizeName(kpiName(r)).includes(term) || String(r.date).includes(term) || String(r.kpiCode).toLowerCase().includes(term))
         .sort((a,b)=>String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+
+// Readings as shown in the table (all, or the current search), oldest first.
+function exportRecords(){
+    if(!can("exportRecords")){ showToast("ليس لديك صلاحية التصدير."); return; }
+    const rows = matchedRecords().reverse().map(r => {
+        const k = kpis.find(x => x.code === r.kpiCode);
+        return { "التاريخ": r.date, "السنة": r.year, "الربع": r.quarter, "الكود": r.kpiCode, "المؤشر": k?.name || r.kpiName, "الفئة": k?.category, "الوحدة": k?.unit,
+            "القيمة": r.actualValue, "البسط": r.numerator, "المقام": r.denominator, "الوزن": r.weight,
+            "الحالة": r.approved ? "معتمد" : "بانتظار الاعتماد", "المصدر": r.dataSource, "أدخله": r.createdBy, "اعتمده": r.approvedBy,
+            "ملاحظات": [r.dq, r.notes].filter(Boolean).join(" — ") };
+    });
+    if(!rows.length){ showToast("لا توجد سجلات للتصدير."); return; }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = Object.keys(rows[0]).map(h => ({ wch: h === "المؤشر" ? 40 : 14 }));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "السجلات");
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.writeFile(wb, `APH_KPI_Readings_${formatDateInput(new Date())}.xlsx`);
+    showToast(`تم تصدير ${rows.length.toLocaleString("en-US")} سجل.`);
+}
+
+function renderRecords(){
+    const tbody = document.getElementById("recordsTableBody");
+    const matched = matchedRecords();
     const LIMIT = 200;
     const rows = matched.slice(0, LIMIT);
     document.getElementById("recordsCount").textContent = matched.length > LIMIT ? `(أحدث ${LIMIT} من ${matched.length})` : `(${matched.length})`;
@@ -1932,7 +2289,7 @@ function renderRecords(){
         return `
         <tr>
             <td>${escapeHtml(r.date)}</td>
-            <td class="font-bold text-slate-900">${escapeHtml(k?.name || r.kpiName || r.kpiCode)}</td>
+            <td class="kpi-name-cell font-bold text-slate-900">${escapeHtml(k?.name || r.kpiName || r.kpiCode)}${r.dataSource === DERIVED_SOURCE ? ` <span class="pill status-gray !py-0.5 !px-1.5 !text-[9px]">محسوب</span>` : ""}</td>
             <td>${r.actualValue == null ? "—" : Number(r.actualValue).toLocaleString("en-US")}</td>
             <td>${r.numerator ?? "—"}</td>
             <td>${r.denominator ?? "—"}</td>
@@ -2360,6 +2717,7 @@ function confirmImport(){
     if(!m.kpiCode && !m.kpiName){ showToast("حدد عمود كود المؤشر أو اسمه."); return; }
 
     let added = 0, duplicates = 0, invalid = 0, unknown = 0;
+    const addedRecords = [];
     const existing = new Set(records.map(r => r.kpiCode + "|" + r.date));
     importedRows.forEach(row => {
         const date = parseExcelDate(row[m.date]);
@@ -2384,7 +2742,9 @@ function confirmImport(){
         if(existing.has(key)){ duplicates++; return; }
         existing.add(key);
         records.push(record); added++;
+        addedRecords.push(record);
     });
+    deriveRecords(addedRecords);
     saveRecords();
     addAudit("IMPORT_EXCEL", importWorkbookInfo.fileName, "", `${added} سجل`, `مكرر: ${duplicates}، غير صالح: ${invalid}، مؤشر غير معروف: ${unknown}`);
     closeImportModal(); refreshData();
@@ -2477,7 +2837,7 @@ function renderTargets(){
         : `<span class="pill status-yellow"><i class="fa-solid fa-pen ml-1"></i> مسودة</span>`;
     document.getElementById("targetsNotice").innerHTML = locked
         ? `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-3 text-xs font-semibold">اعتمد ${escapeHtml(state.by || "")} مستهدفات ${year} بتاريخ ${formatDateTime(state.at)}. لا يمكن تعديلها إلا بفتحها مع ذكر السبب.</div>`
-        : (!can("editTarget") ? `<div class="bg-slate-50 border border-slate-200 text-slate-600 rounded-xl p-3 text-xs font-semibold">عرض فقط — يحدد المستهدفات مدير النظام.</div>` : "");
+        : (!can("editTarget") ? `<div class="bg-slate-50 border border-slate-200 text-slate-600 rounded-xl p-3 text-xs font-semibold">عرض فقط — يحدد المستهدفات مدير النظام أو مدير الأداء.</div>` : "");
 
     const dirOptions = d => ["higher","lower","target","none"].map(v => `<option value="${v}" ${d === v ? "selected" : ""}>${directionName(v)}</option>`).join("");
     const sorted = [...kpis].sort((a,b) => String(a.category).localeCompare(String(b.category), "ar"));
@@ -2504,6 +2864,10 @@ function renderTargets(){
     const actions = document.getElementById("targetsActions");
     actions.innerHTML = `
         <div class="text-xs text-slate-600"><b class="text-slate-900">${set}</b> من ${kpis.length} مؤشراً لها مستهدف معتمد لسنة ${year}</div>
+        ${editable ? `<div class="w-full md:w-auto md:flex-1 md:max-w-md">
+            <label for="targetsReason" class="block text-[11px] font-bold text-rose-600 mb-1">سبب تعديل المستهدفات <span aria-hidden="true">*</span> (إلزامي — يُسجل في سجل التدقيق)</label>
+            <input id="targetsReason" type="text" class="!py-2 !text-xs" placeholder="مثال: اعتماد مستهدفات ${year} حسب خطة التجمع">
+        </div>` : ""}
         <div class="flex gap-2">
             ${editable ? `<button onclick="saveTargets(false)" class="btn btn-secondary text-xs">حفظ كمسودة</button>
                 <button onclick="saveTargets(true)" class="btn btn-primary text-xs"><i class="fa-solid fa-lock ml-1"></i> اعتماد وقفل مستهدفات ${year}</button>` : ""}
@@ -2512,7 +2876,7 @@ function renderTargets(){
 }
 
 function saveTargets(approve){
-    if(!can("editTarget")){ showToast("تحديد المستهدفات متاح لمدير النظام فقط."); return; }
+    if(!can("editTarget")){ showToast("تحديد المستهدفات متاح لمدير النظام ومدير الأداء فقط."); return; }
     const year = Number(document.getElementById("targetYear").value);
     if(targetYearState(year).status === "approved"){ showToast(`مستهدفات ${year} معتمدة ومقفلة.`); return; }
     const inputs = [...document.querySelectorAll("[data-target]")];
@@ -2527,31 +2891,41 @@ function saveTargets(approve){
         const old = k.targets?.[year]?.value ?? null;
         const val = input.value === "" ? null : Number(input.value);
         if(old !== val){
+            const prevTargets = k.targets;
             k.targets = { ...(k.targets || {}) };
             if(val == null) delete k.targets[year];
             else k.targets[year] = { value: val, setBy: currentUser.displayName, setAt: now };
-            changes.push({ k, old, val });
+            changes.push({ k, old, val, prevTargets });
         }
     });
-    let dirChanges = 0;
+    const dirChanges = [];
     document.querySelectorAll("[data-dir]").forEach(sel => {
         const k = kpis.find(x => x.code === sel.dataset.dir);
-        if(k && k.direction !== sel.value){
-            addAudit("EDIT_KPI", k.code, directionName(k.direction), directionName(sel.value), "تحديد اتجاه الأداء");
-            k.direction = sel.value; dirChanges++;
-        }
+        if(k && k.direction !== sel.value){ dirChanges.push({ k, old: k.direction }); k.direction = sel.value; }
     });
+
+    // Every change to an official target or direction needs a recorded reason.
+    const reasonInput = document.getElementById("targetsReason");
+    const reason = (reasonInput?.value || "").trim();
+    if((changes.length || dirChanges.length) && !reason){
+        changes.forEach(c => { c.k.targets = c.prevTargets; });
+        dirChanges.forEach(c => { c.k.direction = c.old; });
+        reasonInput?.focus();
+        showToast("اكتب سبب تعديل المستهدفات أولاً — الحقل إلزامي.");
+        return;
+    }
+    dirChanges.forEach(c => addAudit("EDIT_KPI", c.k.code, directionName(c.old), directionName(c.k.direction), `اتجاه الأداء — ${reason}`));
 
     if(approve){
         const missing = kpis.filter(k => !(k.targets?.[year] && isNum(k.targets[year].value))).length;
         const msg = `اعتماد مستهدفات ${year} وقفلها؟` + (missing ? `\n\nتنبيه: ${missing} مؤشراً بدون مستهدف لهذه السنة.` : "") + `\n\nبعد الاعتماد لا يمكن التعديل إلا بفتح السنة مع ذكر السبب.`;
         if(!confirm(msg)) approve = false;  // keep the edits as a draft
     }
-    changes.forEach(c => addAudit("CHANGE_TARGET", c.k.code, c.old == null ? "" : c.old, c.val == null ? "" : c.val, `مستهدف ${year}`));
+    changes.forEach(c => addAudit("CHANGE_TARGET", c.k.code, c.old == null ? "" : c.old, c.val == null ? "" : c.val, `مستهدف ${year} — ${reason}`));
     if(approve){
         targetYears[year] = { status:"approved", by: currentUser.displayName, at: now };
         save(STORAGE.targetYears, targetYears);
-        addAudit("APPROVE_TARGETS", String(year), "", `${kpis.filter(k => k.targets?.[year]).length} مستهدف`, "اعتماد وقفل المستهدفات السنوية");
+        addAudit("APPROVE_TARGETS", String(year), "", `${kpis.filter(k => k.targets?.[year]).length} مستهدف`, reason || "اعتماد وقفل المستهدفات السنوية");
     }
     save(STORAGE.kpis, kpis);
     renderTargets(); renderKpis(); renderDashboard(); runQualityCheck();
@@ -2615,7 +2989,7 @@ function exportDashboard(){
     addSheet(quarterly, "المقارنة الربعية");
 
     const raw = getApprovedRecords()
-        .filter(r => Number(r.year) === year && (q === "ALL" || r.quarter === q))
+        .filter(r => Number(r.year) === periodYear(year, q) && inPeriod(r, q))
         .filter(r => { const k = kpis.find(x => x.code === r.kpiCode); return k && (cat === "ALL" || k.category === cat); })
         .sort((a,b) => String(a.date).localeCompare(String(b.date)))
         .map(r => ({ "التاريخ": r.date, "الكود": r.kpiCode, "المؤشر": r.kpiName, "القيمة": r.actualValue, "البسط": r.numerator, "المقام": r.denominator, "المصدر": r.dataSource, "أدخله": r.createdBy }));
