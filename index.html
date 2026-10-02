@@ -15,661 +15,541 @@
         @import url('https://fonts.cdnfonts.com/css/janna-lt');
         body {
             font-family: 'Janna LT', 'Tajawal', Tahoma, Arial, sans-serif;
-            background: #f1f5f9;
+            background: #f8fafc;
+            color: #0f172a;
         }
+
+        .hidden { display: none !important; }
 
         .executive-header {
             background: linear-gradient(135deg, #0b1f33 0%, #102a43 100%);
+            box-shadow: 0 4px 20px -2px rgba(11, 31, 51, 0.15);
         }
-
-        .hidden { display:none !important; }
 
         .card {
             background: white;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.01);
+            transition: all 0.2s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
 
-        .nav-btn {
-            transition: .2s;
+        /* Not Tailwind's hidden/lg:flex: the .hidden !important override above would win at every width. */
+        .desktop-nav { display: none; }
+        .mobile-nav { display: flex; }
+        @media (min-width: 1024px) {
+            .desktop-nav { display: flex; }
+            .mobile-nav { display: none; }
         }
 
-        .nav-btn.active {
-            background: #0f766e;
-            color: white;
+        .tab-btn {
+            transition: all 0.2s ease;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .tab-btn:hover { color: #e0f2fe; }
+        .tab-btn.active {
+            color: #ffffff;
+            background: #0284c7;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
         }
 
-        .nav-btn:hover {
-            background: #e6fffb;
-            color: #0f766e;
-        }
+        .status-green { background: #dcfce7; color: #166534; }
+        .status-yellow { background: #fef3c7; color: #92400e; }
+        .status-red { background: #fee2e2; color: #991b1b; }
+        .status-gray { background: #f1f5f9; color: #475569; }
 
-        .nav-btn.active:hover {
-            background: #0f766e;
-            color: white;
-        }
-
-        .status-green {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .status-yellow {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-red {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-gray {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        .metric-number {
-            font-size: 28px;
-            font-weight: 800;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #f8fafc;
-            font-weight: 700;
-            color: #374151;
-        }
-
-        th, td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #e2e8f0;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        tr:hover td {
-            background: #fafafa;
-        }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8fafc; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; position: sticky; top: 0; z-index: 1; }
+        th, td { padding: 14px 18px; border-bottom: 1px solid #f1f5f9; text-align: right; white-space: nowrap; font-size: 13px; }
+        tr:hover td { background: #fafafa; }
 
         input, select, textarea {
             width: 100%;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            padding: 9px 11px;
-            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px 14px;
+            background: #ffffff;
             outline: none;
+            font-size: 13px;
+            transition: all 0.2s;
         }
-
         input:focus, select:focus, textarea:focus {
-            border-color: #0f766e;
-            box-shadow: 0 0 0 3px rgba(15,118,110,.08);
+            border-color: #0284c7;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
         }
+        .readonly { background: #f1f5f9 !important; cursor: not-allowed; }
 
-        button {
-            transition: .15s;
-        }
-
-        .btn {
-            border-radius: 10px;
-            padding: 9px 15px;
-            font-weight: 700;
-        }
-
-        .btn-primary {
-            background: #0f766e;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #115e59;
-        }
-
-        .btn-secondary {
-            background: #e5e7eb;
-            color: #1f2937;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-        }
-
-        .small-label {
-            font-size: 12px;
-            color: #6b7280;
-            margin-bottom: 5px;
-            display: block;
-        }
+        .btn { border-radius: 12px; padding: 10px 18px; font-weight: 700; font-size: 13px; transition: all 0.2s; }
+        .btn-primary { background: #0b1f33; color: white; }
+        .btn-primary:hover { background: #102a43; }
+        .btn-secondary { background: #f1f5f9; color: #334155; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
 
         .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(15,23,42,.65);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            padding: 20px;
-            backdrop-filter: blur(4px);
+            position: fixed; inset: 0; background: rgba(11, 31, 51, 0.7);
+            display: flex; align-items: center; justify-content: center; z-index: 100;
+            padding: 20px; backdrop-filter: blur(6px);
         }
-
         .modal-box {
-            width: min(700px, 100%);
-            max-height: 90vh;
-            overflow: auto;
-            background: white;
-            border-radius: 18px;
-            padding: 24px;
+            width: min(700px, 100%); max-height: 90vh; overflow: auto;
+            background: white; border-radius: 20px; padding: 28px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
         .login-bg {
             min-height: 100vh;
-            background:
-                radial-gradient(circle at 20% 20%, rgba(20,184,166,.18), transparent 30%),
-                radial-gradient(circle at 80% 80%, rgba(11,31,51,.14), transparent 30%),
-                #0b1f33;
+            background: linear-gradient(135deg, #04101d 0%, #0b1f33 50%, #102a43 100%);
         }
 
-        .readonly {
-            background: #f3f4f6 !important;
-            cursor: not-allowed;
-        }
-
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 9px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .sidebar {
-            width: 260px;
-        }
-
-        @media(max-width: 900px) {
-            .sidebar {
-                width: 100%;
-            }
-            .layout {
-                flex-direction: column;
-            }
-        }
-
-        .progress {
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 99px;
-            overflow: hidden;
-        }
-
-        .progress > div {
-            height: 100%;
-            border-radius: 99px;
-        }
+        .pill { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .progress { height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+        .progress > div { height: 100%; border-radius: 99px; }
 
         .toast {
-            position: fixed;
-            left: 20px;
-            bottom: 20px;
-            z-index: 200;
-            min-width: 280px;
-            max-width: 450px;
-            background: #0b1f33;
-            color: white;
-            padding: 14px 18px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.2);
-            border: 1px solid rgba(255,255,255,0.1);
+            position: fixed; left: 24px; bottom: 24px; z-index: 200;
+            min-width: 300px; max-width: 450px; background: #0b1f33; color: white;
+            padding: 16px 20px; border-radius: 14px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 600;
         }
     </style>
 </head>
 
-<body>
+<body class="min-h-screen flex flex-col">
 
-<!-- =========================================================
-LOGIN
-========================================================= -->
+<!-- ================= LOGIN SCREEN ================= -->
 <div id="loginScreen" class="login-bg flex items-center justify-center p-6">
     <div class="w-full max-w-md">
         <div class="card p-8 shadow-2xl border-slate-700/50">
-            <div class="text-center mb-7">
+            <div class="text-center mb-8">
                 <div class="w-20 h-20 mx-auto rounded-2xl bg-white/10 backdrop-blur-md p-2 flex items-center justify-center border border-white/20 shadow-inner mb-4">
                     <img src="logo.png" alt="شعار المستشفى" class="w-full h-full object-contain filter drop-shadow-md">
                 </div>
-                <h1 class="text-xl font-black text-slate-900">
-                    لوحة مؤشرات الأداء التنفيذية
-                </h1>
-                <p class="text-xs text-sky-700 font-bold mt-2">
-                    مستشفى إرادة والصحة النفسية بأبها
-                </p>
+                <h1 class="text-lg font-black text-slate-900 tracking-wide">لوحة مؤشرات الأداء التنفيذية</h1>
+                <p class="text-xs text-sky-700 font-bold mt-1">مستشفى إرادة والصحة النفسية بأبها</p>
             </div>
 
-            <div id="loginError" class="hidden bg-red-50 text-red-700 border border-red-200 rounded-xl p-3 mb-4 text-xs font-bold">
-            </div>
+            <div id="loginError" class="hidden bg-rose-50 text-rose-700 border border-rose-200 rounded-xl p-3 mb-4 text-xs font-bold text-center"></div>
 
             <div class="space-y-4 text-right">
                 <div>
-                    <label class="small-label">اسم المستخدم</label>
-                    <input id="loginUsername" type="text" placeholder="أدخل اسم المستخدم">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم المستخدم</label>
+                    <input id="loginUsername" type="text" placeholder="أدخل اسم المستخدم" autocomplete="username">
                 </div>
-
                 <div>
-                    <label class="small-label">كلمة المرور</label>
-                    <input id="loginPassword" type="password" placeholder="أدخل كلمة المرور" onkeydown="if(event.key==='Enter') login()">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور</label>
+                    <input id="loginPassword" type="password" placeholder="أدخل كلمة المرور" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()">
                 </div>
-
-                <button onclick="login()" class="btn btn-primary w-full text-xs py-3">
-                    دخول الموظفين
-                </button>
-
-                <div class="flex items-center gap-3 my-2">
+                <button onclick="login()" class="btn btn-primary w-full py-3">تسجيل الدخول للنظام</button>
+                <div class="flex items-center gap-3 my-3">
                     <div class="h-px bg-slate-200 flex-1"></div>
-                    <span class="text-xs text-slate-400">أو</span>
+                    <span class="text-xs text-slate-400 font-semibold">أو</span>
                     <div class="h-px bg-slate-200 flex-1"></div>
                 </div>
-
-                <button onclick="guestLogin()" class="btn btn-secondary w-full text-xs py-3">
-                    دخول كزائر — بدون حساب (مشاهدة فقط)
-                </button>
+                <button onclick="guestLogin()" class="btn btn-secondary w-full py-3">دخول كزائر (عرض بيانات فقط)</button>
             </div>
-
-            <div class="mt-6 text-xs text-slate-400 text-center">
-                تجمع عسير الصحي © 2026
-            </div>
+            <div class="mt-8 text-xs text-slate-400 text-center font-medium">تجمع عسير الصحي © 2026</div>
         </div>
     </div>
 </div>
 
-<!-- =========================================================
-MAIN APP
-========================================================= -->
+<!-- ================= MAIN APP ================= -->
 <div id="app" class="hidden min-h-screen flex flex-col">
     <!-- EXECUTIVE HEADER -->
-    <header class="executive-header text-white border-b border-sky-950 sticky top-0 z-40 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
+    <header class="executive-header text-white sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
             <div class="flex items-center space-x-4 space-x-reverse">
-                <div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl p-2 flex items-center justify-center border border-white/20 shadow-inner">
+                <div class="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl p-1.5 flex items-center justify-center border border-white/20 shadow-inner shrink-0">
                     <img src="logo.png" alt="شعار المستشفى" class="w-full h-full object-contain filter drop-shadow-md">
                 </div>
-                <div class="border-r border-sky-800/60 pr-4 mr-1">
-                    <h2 class="text-base sm:text-lg font-bold text-white tracking-wide leading-tight">مستشفى إرادة والصحة النفسية بأبها</h2>
-                    <p class="text-xs text-sky-300 font-medium mt-0.5">تجمع عسير الصحي - لوحة مؤشرات الأداء التنفيذية</p>
+                <div>
+                    <h2 class="text-sm sm:text-base font-bold text-white tracking-wide">مستشفى إرادة والصحة النفسية بأبها</h2>
+                    <p class="text-[11px] text-sky-300 font-medium">تجمع عسير الصحي - لوحة مؤشرات الأداء التنفيذية</p>
                 </div>
             </div>
 
+            <!-- TABS NAVIGATION IN HEADER -->
+            <nav class="desktop-nav items-center gap-1 bg-sky-950/40 p-1.5 rounded-2xl border border-sky-800/50">
+                <button data-section="dashboard" onclick="showSection('dashboard')" class="tab-btn active px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-chart-pie ml-1"></i> اللوحة</button>
+                <button data-section="data" onclick="showSection('data')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-pen-to-square ml-1"></i> إدخال واستيراد</button>
+                <button data-section="kpis" onclick="showSection('kpis')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-bullseye ml-1"></i> المؤشرات</button>
+                <button data-section="quality" onclick="showSection('quality')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-shield-halved ml-1"></i> الجودة</button>
+                <button data-section="users" onclick="showSection('users')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-users-gear ml-1"></i> المستخدمين</button>
+                <button data-section="audit" onclick="showSection('audit')" class="tab-btn px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-clock-rotate-left ml-1"></i> التدقيق</button>
+            </nav>
+
             <div class="flex items-center gap-3">
-                <span id="roleBadge" class="pill bg-sky-900/80 text-sky-200 border border-sky-700"></span>
-                <button onclick="logout()" class="btn btn-secondary text-xs px-4 py-2">تسجيل الخروج</button>
+                <div class="text-left hidden sm:block">
+                    <div id="headerUserName" class="text-xs font-bold text-white"></div>
+                    <div id="headerUserRole" class="text-[10px] text-sky-300 font-semibold"></div>
+                </div>
+                <button onclick="logout()" class="btn btn-secondary text-xs px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20" title="تسجيل الخروج"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
             </div>
         </div>
     </header>
 
-    <div class="layout flex flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 gap-6">
-        <!-- SIDEBAR -->
-        <aside class="sidebar card p-4 h-fit sticky top-28">
-            <nav class="space-y-2">
-                <button id="navDashboard" onclick="showSection('dashboard')" class="nav-btn active w-full text-right p-3 rounded-xl text-xs font-bold">
-                    <i class="fa-solid fa-chart-pie ml-2"></i> لوحة المؤشرات
-                </button>
-                <button id="navData" onclick="showSection('data')" class="nav-btn w-full text-right p-3 rounded-xl text-xs font-bold">
-                    <i class="fa-solid fa-pen-to-square ml-2"></i> إدخال البيانات والاستيراد
-                </button>
-                <button id="navKpis" onclick="showSection('kpis')" class="nav-btn w-full text-right p-3 rounded-xl text-xs font-bold">
-                    <i class="fa-solid fa-bullseye ml-2"></i> تعريف المؤشرات
-                </button>
-                <button id="navQuality" onclick="showSection('quality')" class="nav-btn w-full text-right p-3 rounded-xl text-xs font-bold">
-                    <i class="fa-solid fa-shield-halved ml-2"></i> جودة البيانات
-                </button>
-                <button id="navUsers" onclick="showSection('users')" class="nav-btn w-full text-right p-3 rounded-xl text-xs font-bold">
-                    <i class="fa-solid fa-users-gear ml-2"></i> المستخدمون
-                </button>
-                <button id="navAudit" onclick="showSection('audit')" class="nav-btn w-full text-right p-3 rounded-xl text-xs font-bold">
-                    <i class="fa-solid fa-clock-rotate-left ml-2"></i> سجل التدقيق
-                </button>
-            </nav>
+    <!-- MOBILE SUBNAV -->
+    <div class="mobile-nav bg-slate-900 text-white px-4 py-2 overflow-x-auto gap-2">
+        <button data-section="dashboard" onclick="showSection('dashboard')" class="tab-btn active px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">اللوحة</button>
+        <button data-section="data" onclick="showSection('data')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">إدخال البيانات</button>
+        <button data-section="kpis" onclick="showSection('kpis')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">المؤشرات</button>
+        <button data-section="quality" onclick="showSection('quality')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">الجودة</button>
+        <button data-section="users" onclick="showSection('users')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">المستخدمين</button>
+        <button data-section="audit" onclick="showSection('audit')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">التدقيق</button>
+    </div>
 
-            <div class="mt-8 border-t border-slate-100 pt-5">
-                <div class="text-xs text-slate-400 mb-2 font-semibold">المستخدم الحالي</div>
-                <div id="currentUserBox" class="bg-slate-50 rounded-xl p-3 border border-slate-200"></div>
-                <button id="switchUserBtn" onclick="logout()" class="btn btn-secondary w-full mt-3 text-xs">تسجيل الخروج</button>
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 flex-1">
+
+        <!-- PAGE TITLE BAR -->
+        <div class="card p-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h2 id="pageTitle" class="text-lg font-black text-slate-900">لوحة مؤشرات الأداء التنفيذية</h2>
+                <p id="pageSubtitle" class="text-xs text-slate-500 mt-0.5">نظرة شاملة وتحليل دقيق لعمليات المستشفى الإكلينيكية والتشغيلية</p>
             </div>
-        </aside>
+        </div>
 
-        <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 space-y-6 overflow-auto">
+        <!-- ================= SECTION: DASHBOARD ================= -->
+        <section id="sectionDashboard" class="space-y-6">
+            <!-- FILTERS -->
+            <div class="card p-4">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">السنة المالية</label>
+                        <select id="filterYear" onchange="renderDashboard()"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">الفترة الزمنية</label>
+                        <select id="filterQuarter" onchange="renderDashboard()">
+                            <option value="ALL">السنة كاملة (ملخص سنوي)</option>
+                            <option value="Q1">الربع الأول (Q1)</option>
+                            <option value="Q2">الربع الثاني (Q2)</option>
+                            <option value="Q3">الربع الثالث (Q3)</option>
+                            <option value="Q4">الربع الرابع (Q4)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">فئة المؤشرات</label>
+                        <select id="filterCategory" onchange="renderDashboard()">
+                            <option value="ALL">جميع الفئات</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="renderDashboard()" class="btn btn-primary w-full text-xs">تحديث النتائج</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI METRICS SUMMARY CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="card p-5 border-r-4 border-r-slate-800">
+                    <div class="text-xs text-slate-500 font-bold">إجمالي المؤشرات</div>
+                    <div id="summaryTotal" class="text-3xl font-black text-slate-900 mt-2">0</div>
+                </div>
+                <div class="card p-5 border-r-4 border-r-emerald-500">
+                    <div class="text-xs text-emerald-600 font-bold">محقق (أخضر)</div>
+                    <div id="summaryGreen" class="text-3xl font-black text-emerald-600 mt-2">0</div>
+                </div>
+                <div class="card p-5 border-r-4 border-r-amber-500">
+                    <div class="text-xs text-amber-600 font-bold">يحتاج متابعة (تحذير)</div>
+                    <div id="summaryYellow" class="text-3xl font-black text-amber-600 mt-2">0</div>
+                </div>
+                <div class="card p-5 border-r-4 border-r-rose-500">
+                    <div class="text-xs text-rose-600 font-bold">لم يتحقق (أحمر)</div>
+                    <div id="summaryRed" class="text-3xl font-black text-rose-600 mt-2">0</div>
+                </div>
+                <div class="card p-5 border-r-4 border-r-sky-600 sm:col-span-2 lg:col-span-1">
+                    <div class="text-xs text-sky-700 font-bold">متوسط الإنجاز العام</div>
+                    <div id="summaryAchievement" class="text-3xl font-black text-sky-700 mt-2">—</div>
+                </div>
+            </div>
+
+            <!-- EXECUTIVE INSIGHTS -->
             <div class="card p-5">
-                <h2 id="pageTitle" class="text-xl font-black text-slate-900">لوحة المؤشرات التنفيذية</h2>
-                <p class="text-xs text-slate-500 mt-1">نظام إدارة ومتابعة مؤشرات أداء المستشفى المعتمد</p>
+                <h3 class="font-bold text-sm text-slate-900 mb-3 flex items-center"><i class="fa-solid fa-chart-line text-sky-600 ml-2"></i> الملخص التنفيذي للقراءة السريعة</h3>
+                <div id="executiveSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </div>
 
-            <!-- ================= DASHBOARD ================= -->
-            <section id="sectionDashboard" class="space-y-6">
-                <div class="card p-4">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label class="small-label">السنة</label>
-                            <select id="filterYear" onchange="renderDashboard()"></select>
-                        </div>
-                        <div>
-                            <label class="small-label">الفترة</label>
-                            <select id="filterQuarter" onchange="renderDashboard()">
-                                <option value="ALL">السنة كاملة</option>
-                                <option value="Q1">Q1</option>
-                                <option value="Q2">Q2</option>
-                                <option value="Q3">Q3</option>
-                                <option value="Q4">Q4</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="small-label">الفئة</label>
-                            <select id="filterCategory" onchange="renderDashboard()">
-                                <option value="ALL">جميع الفئات</option>
-                            </select>
-                        </div>
-                        <div class="flex items-end">
-                            <button onclick="renderDashboard()" class="btn btn-primary w-full text-xs">تحديث اللوحة</button>
-                        </div>
-                    </div>
+            <!-- MAIN TABLE -->
+            <div class="card overflow-hidden">
+                <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
+                    <h3 class="font-bold text-sm text-slate-900">جدول أداء المؤشرات التنفيذية المعتمدة</h3>
+                    <button id="exportDashboardBtn" onclick="exportDashboard()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير البيانات إلى Excel</button>
                 </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-                    <div class="card p-5">
-                        <div class="text-xs text-slate-500 font-semibold">إجمالي المؤشرات</div>
-                        <div id="summaryTotal" class="metric-number mt-2 text-slate-900">0</div>
-                    </div>
-                    <div class="card p-5">
-                        <div class="text-xs text-slate-500 font-semibold">أخضر (محقق)</div>
-                        <div id="summaryGreen" class="metric-number mt-2 text-emerald-600">0</div>
-                    </div>
-                    <div class="card p-5">
-                        <div class="text-xs text-slate-500 font-semibold">تحذير</div>
-                        <div id="summaryYellow" class="metric-number mt-2 text-amber-600">0</div>
-                    </div>
-                    <div class="card p-5">
-                        <div class="text-xs text-slate-500 font-semibold">أحمر</div>
-                        <div id="summaryRed" class="metric-number mt-2 text-rose-600">0</div>
-                    </div>
-                    <div class="card p-5">
-                        <div class="text-xs text-slate-500 font-semibold">متوسط الإنجاز</div>
-                        <div id="summaryAchievement" class="metric-number mt-2 text-sky-700">—</div>
-                    </div>
-                </div>
-
-                <div class="card p-5">
-                    <h3 class="font-bold text-sm text-slate-900 mb-4">الملخص التنفيذي للقراءة السريعة</h3>
-                    <div id="executiveSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-                </div>
-
-                <div class="card p-5">
-                    <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-                        <h3 class="font-bold text-sm text-slate-900">جدول أداء المؤشرات التنفيذية المعتمدة</h3>
-                        <button id="exportDashboardBtn" onclick="exportDashboard()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير Excel</button>
-                    </div>
-                    <div class="overflow-auto">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>المؤشر</th>
-                                    <th>الدورية</th>
-                                    <th>الفعلي</th>
-                                    <th>المستهدف</th>
-                                    <th>الإنجاز</th>
-                                    <th>التباين</th>
-                                    <th>السابق</th>
-                                    <th>نفس الربع السابق</th>
-                                    <th>الاتجاه</th>
-                                    <th>الحالة</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dashboardTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    <div class="card p-5">
-                        <h3 class="font-bold text-sm text-slate-900 mb-4">توزيع حالة المؤشرات</h3>
-                        <div style="height:280px"><canvas id="statusChart"></canvas></div>
-                    </div>
-                    <div class="card p-5">
-                        <h3 class="font-bold text-sm text-slate-900 mb-4">نسبة الإنجاز حسب المؤشر</h3>
-                        <div style="height:280px"><canvas id="achievementChart"></canvas></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= DATA ENTRY ================= -->
-            <section id="sectionData" class="hidden space-y-6">
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <div class="card p-5 xl:col-span-1 space-y-4">
-                        <h3 class="font-bold text-sm text-slate-900">إضافة سجل بيانات جديد</h3>
-                        <div>
-                            <label class="small-label">التاريخ</label>
-                            <input type="date" id="recordDate">
-                        </div>
-                        <div>
-                            <label class="small-label">المؤشر</label>
-                            <select id="recordKpi"></select>
-                        </div>
-                        <div>
-                            <label class="small-label">القيمة الفعلية</label>
-                            <input type="number" step="any" id="recordValue">
-                        </div>
-                        <div>
-                            <label class="small-label">البسط — اختياري</label>
-                            <input type="number" step="any" id="recordNumerator">
-                        </div>
-                        <div>
-                            <label class="small-label">المقام — اختياري</label>
-                            <input type="number" step="any" id="recordDenominator">
-                        </div>
-                        <div>
-                            <label class="small-label">الوزن — اختياري</label>
-                            <input type="number" step="any" id="recordWeight">
-                        </div>
-                        <div>
-                            <label class="small-label">المصدر</label>
-                            <input type="text" id="recordSource">
-                        </div>
-                        <div>
-                            <label class="small-label">ملاحظات</label>
-                            <textarea id="recordNotes" rows="2"></textarea>
-                        </div>
-                        <button onclick="addRecord()" class="btn btn-primary w-full text-xs">حفظ البيانات</button>
-                    </div>
-
-                    <div class="card p-5 xl:col-span-2 space-y-4">
-                        <div class="flex flex-wrap justify-between items-center gap-3">
-                            <h3 class="font-bold text-sm text-slate-900">استيراد بيانات Excel جماعي</h3>
-                            <label class="btn btn-primary cursor-pointer inline-block text-xs">
-                                اختيار ملف Excel
-                                <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(event)">
-                            </label>
-                        </div>
-                        <div class="overflow-auto">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>التاريخ</th>
-                                        <th>المؤشر</th>
-                                        <th>القيمة</th>
-                                        <th>البسط</th>
-                                        <th>المقام</th>
-                                        <th>الحالة</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recordsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= KPI DEFINITIONS ================= -->
-            <section id="sectionKpis" class="hidden space-y-6">
-                <div class="card p-5 flex justify-between items-center">
-                    <h3 class="font-bold text-sm text-slate-900">تعريف مؤشرات الأداء الرسمية</h3>
-                    <button id="addKpiBtn" onclick="openKpiModal()" class="btn btn-primary text-xs">+ إضافة مؤشر</button>
-                </div>
-                <div class="card p-5 overflow-auto">
+                <div class="overflow-auto max-h-[500px]">
                     <table>
                         <thead>
                             <tr>
-                                <th>الكود</th>
-                                <th>اسم المؤشر</th>
-                                <th>الفئة</th>
+                                <th>المؤشر</th>
                                 <th>الدورية</th>
-                                <th>التقرير</th>
-                                <th>الحساب</th>
+                                <th>الفعلي</th>
                                 <th>المستهدف</th>
+                                <th>نسبة الإنجاز</th>
+                                <th>التباين</th>
+                                <th>الفترة السابقة</th>
+                                <th>نفس الفترة العام الماضي</th>
                                 <th>الاتجاه</th>
-                                <th>آخر تعديل</th>
-                                <th>إجراء</th>
+                                <th>الحالة</th>
                             </tr>
                         </thead>
-                        <tbody id="kpiTableBody"></tbody>
+                        <tbody id="dashboardTableBody"></tbody>
                     </table>
                 </div>
-            </section>
+            </div>
 
-            <!-- ================= QUALITY ================= -->
-            <section id="sectionQuality" class="hidden space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="card p-5"><div class="text-xs text-slate-500">إجمالي السجلات</div><div id="qualityRecords" class="metric-number mt-2">0</div></div>
-                    <div class="card p-5"><div class="text-xs text-slate-500">القيم المفقودة</div><div id="qualityMissing" class="metric-number mt-2 text-rose-600">0</div></div>
-                    <div class="card p-5"><div class="text-xs text-slate-500">السجلات المكررة</div><div id="qualityDuplicates" class="metric-number mt-2 text-amber-600">0</div></div>
-                    <div class="card p-5"><div class="text-xs text-slate-500">بدون مستهدف</div><div id="qualityNoTarget" class="metric-number mt-2 text-orange-600">0</div></div>
+            <!-- CHARTS -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card p-5">
+                    <h3 class="font-bold text-sm text-slate-900 mb-4">توزيع حالة المؤشرات التنفيذية</h3>
+                    <div style="height:280px"><canvas id="statusChart"></canvas></div>
                 </div>
-                <div class="card p-5 space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-sm text-slate-900">مشكلات جودة البيانات المكتشفة</h3>
-                        <button onclick="runQualityCheck()" class="btn btn-primary text-xs">فحص الآن</button>
+                <div class="card p-5">
+                    <h3 class="font-bold text-sm text-slate-900 mb-4">نسبة الإنجاز حسب المؤشر</h3>
+                    <div style="height:280px"><canvas id="achievementChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: DATA ENTRY ================= -->
+        <section id="sectionData" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card p-6 lg:col-span-1 space-y-4">
+                    <h3 class="font-bold text-sm text-slate-900 border-b pb-3">إدخال سجل بيانات جديد</h3>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">تاريخ السجل</label>
+                        <input type="date" id="recordDate">
                     </div>
-                    <div class="overflow-auto">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">المؤشر المستهدف</label>
+                        <select id="recordKpi"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">القيمة الفعلية (Actual)</label>
+                        <input type="number" step="any" id="recordValue" placeholder="مثال: 92.5">
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">البسط</label>
+                            <input type="number" step="any" id="recordNumerator" placeholder="اختياري">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">المقام</label>
+                            <input type="number" step="any" id="recordDenominator" placeholder="اختياري">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">الوزن</label>
+                            <input type="number" step="any" id="recordWeight" placeholder="اختياري">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">مصدر البيانات</label>
+                        <input type="text" id="recordSource" placeholder="اسم النظام أو الإدارة المصدرة">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات إضافية</label>
+                        <textarea id="recordNotes" rows="2" placeholder="ملاحظات أو توصيات إدارية..."></textarea>
+                    </div>
+                    <button onclick="addRecord()" class="btn btn-primary w-full text-xs py-3">حفظ السجل وتحديث النظام</button>
+                </div>
+
+                <div class="card p-6 lg:col-span-2 space-y-4">
+                    <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-900">استيراد بيانات جماعي من ملف Excel</h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">يجب أن يحتوي الملف على أعمدة التاريخ والقيمة، وكود المؤشر أو اسمه.</p>
+                        </div>
+                        <label id="importBtn" class="btn btn-primary cursor-pointer inline-block text-xs">
+                            <i class="fa-solid fa-file-arrow-up ml-1"></i> تحميل ملف Excel
+                            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(event)">
+                        </label>
+                    </div>
+                    <div class="overflow-auto max-h-[450px]">
                         <table>
                             <thead>
-                                <tr><th>النوع</th><th>المؤشر</th><th>التاريخ</th><th>الوصف</th><th>الشدة</th></tr>
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>المؤشر</th>
+                                    <th>القيمة</th>
+                                    <th>البسط</th>
+                                    <th>المقام</th>
+                                    <th>حالة الاعتماد</th>
+                                    <th>الإجراءات</th>
+                                </tr>
                             </thead>
-                            <tbody id="qualityTableBody"></tbody>
+                            <tbody id="recordsTableBody"></tbody>
                         </table>
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- ================= USERS ================= -->
-            <section id="sectionUsers" class="hidden space-y-6">
-                <div class="card p-5">
-                    <h3 class="font-bold text-sm text-slate-900 mb-1">إدارة المستخدمين والصلاحيات</h3>
-                    <p class="text-xs text-slate-500">ثلاث حسابات رسمية ثابتة وآمنة لإدارة النظام.</p>
+        <!-- ================= SECTION: KPIS ================= -->
+        <section id="sectionKpis" class="hidden space-y-6">
+            <div class="card p-5 flex flex-wrap justify-between items-center gap-3">
+                <div>
+                    <h3 id="kpiSectionTitle" class="font-bold text-sm text-slate-900">تعريف ومؤشرات الأداء المعتمدة</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">إدارة تفاصيل المؤشرات ومستهدفاتها الرسمية</p>
                 </div>
-                <div class="card p-5 overflow-auto">
+                <button id="addKpiBtn" onclick="openKpiModal()" class="btn btn-primary text-xs"><i class="fa-solid fa-plus ml-1"></i> إضافة مؤشر جديد</button>
+            </div>
+            <div class="card overflow-auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الكود</th>
+                            <th>اسم المؤشر</th>
+                            <th>الفئة</th>
+                            <th>دورية القياس</th>
+                            <th>طريقة الحساب</th>
+                            <th>المستهدف الرسمي</th>
+                            <th>الاتجاه</th>
+                            <th>آخر تحديث للمستهدف</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kpiTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: QUALITY ================= -->
+        <section id="sectionQuality" class="hidden space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="card p-5"><div class="text-xs text-slate-500 font-bold">إجمالي السجلات المفحوصة</div><div id="qualityRecords" class="text-2xl font-black text-slate-900 mt-2">0</div></div>
+                <div class="card p-5"><div class="text-xs text-rose-600 font-bold">القيم المفقودة</div><div id="qualityMissing" class="text-2xl font-black text-rose-600 mt-2">0</div></div>
+                <div class="card p-5"><div class="text-xs text-amber-600 font-bold">السجلات المكررة</div><div id="qualityDuplicates" class="text-2xl font-black text-amber-600 mt-2">0</div></div>
+                <div class="card p-5"><div class="text-xs text-orange-600 font-bold">مؤشرات بلا مستهدف</div><div id="qualityNoTarget" class="text-2xl font-black text-orange-600 mt-2">0</div></div>
+            </div>
+            <div class="card p-6 space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="font-bold text-sm text-slate-900">سجل فحص جودة البيانات وتدقيق الأخطاء</h3>
+                    <button onclick="runQualityCheck(true)" class="btn btn-primary text-xs">إعادة الفحص الآلي</button>
+                </div>
+                <div class="overflow-auto">
                     <table>
                         <thead>
-                            <tr><th>اسم المستخدم</th><th>الاسم الرسمي</th><th>الدور</th><th>الحالة</th></tr>
+                            <tr><th>نوع المشكلة</th><th>المؤشر</th><th>التاريخ</th><th>الوصف والتفاصيل</th><th>مستوى الشدة</th></tr>
                         </thead>
-                        <tbody id="usersTableBody"></tbody>
+                        <tbody id="qualityTableBody"></tbody>
                     </table>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- ================= AUDIT ================= -->
-            <section id="sectionAudit" class="hidden space-y-6">
-                <div class="card p-5">
-                    <div class="flex justify-between items-center mb-4">
-                        <div>
-                            <h3 class="font-bold text-sm text-slate-900">سجل التدقيق (Audit Log)</h3>
-                            <p class="text-xs text-slate-500">توثيق تلقائي لكافة التعديلات الحساسة.</p>
-                        </div>
-                        <button onclick="exportAudit()" class="btn btn-secondary text-xs">تصدير السجل</button>
+        <!-- ================= SECTION: USERS ================= -->
+        <section id="sectionUsers" class="hidden space-y-6">
+            <div class="card p-6 space-y-2">
+                <h3 class="font-bold text-sm text-slate-900">إدارة المستخدمين والصلاحيات الثابتة</h3>
+                <p class="text-xs text-slate-500">حسابات الإدارة المعتمدة وصلاحياتهم داخل النظام:</p>
+            </div>
+            <div class="card overflow-auto">
+                <table>
+                    <thead>
+                        <tr><th>اسم المستخدم</th><th>الاسم الرسمي</th><th>الدور الإداري المعتمد</th><th>الحالة</th></tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: AUDIT ================= -->
+        <section id="sectionAudit" class="hidden space-y-6">
+            <div class="card p-6 space-y-4">
+                <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900">سجل التدقيق والمراقبة التلقائية (Audit Log)</h3>
+                        <p class="text-xs text-slate-500">توثيق زمني لكافة التعديلات، إدخال البيانات، وتحديث المستهدفات.</p>
                     </div>
-                    <div class="overflow-auto">
-                        <table>
-                            <thead>
-                                <tr><th>التاريخ والوقت</th><th>المستخدم</th><th>الإجراء</th><th>العنصر</th><th>القيمة السابقة</th><th>القيمة الجديدة</th><th>السبب</th></tr>
-                            </thead>
-                            <tbody id="auditTableBody"></tbody>
-                        </table>
-                    </div>
+                    <button onclick="exportAudit()" class="btn btn-secondary text-xs">تصدير سجل التدقيق Excel</button>
                 </div>
-            </section>
-        </main>
-    </div>
+                <div class="overflow-auto max-h-[450px]">
+                    <table>
+                        <thead>
+                            <tr><th>التاريخ والوقت</th><th>المستخدم</th><th>الإجراء التنفيذي</th><th>العنصر المستهدف</th><th>القيمة السابقة</th><th>القيمة الجديدة</th><th>السبب / الملاحظة</th></tr>
+                        </thead>
+                        <tbody id="auditTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
 
-<!-- ================= KPI MODAL ================= -->
+<!-- ================= MODAL: KPI ================= -->
 <div id="kpiModal" class="modal hidden">
-    <div class="modal-box">
-        <div class="flex justify-between items-center mb-4">
-            <h3 id="kpiModalTitle" class="text-lg font-bold text-slate-900">إضافة مؤشر</h3>
-            <button onclick="closeKpiModal()" class="text-slate-500 text-lg font-bold">&times;</button>
+    <div class="modal-box space-y-4">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 id="kpiModalTitle" class="text-base font-bold text-slate-900">إضافة مؤشر جديد</h3>
+            <button onclick="closeKpiModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
         </div>
         <input type="hidden" id="editKpiOriginalCode">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div><label class="small-label">KPI Code</label><input id="kpiCode"></div>
-            <div><label class="small-label">اسم المؤشر</label><input id="kpiName"></div>
-            <div><label class="small-label">الفئة</label><input id="kpiCategory"></div>
-            <div><label class="small-label">الإدارة</label><input id="kpiDepartment"></div>
-            <div><label class="small-label">الوحدة</label><input id="kpiUnit"></div>
-            <div><label class="small-label">دورية البيانات</label>
+            <div><label class="block font-bold text-slate-700 mb-1">كود المؤشر (KPI Code)</label><input id="kpiCode"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">اسم المؤشر الرسمي</label><input id="kpiName"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">الفئة الإدارية</label><input id="kpiCategory"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">القسم / الإدارة المسؤولة</label><input id="kpiDepartment"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">وحدة القياس</label><input id="kpiUnit"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">دورية القياس</label>
                 <select id="kpiFrequency"><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="quarterly">ربع سنوي</option><option value="annual">سنوي</option></select>
             </div>
-            <div><label class="small-label">دورية التقرير</label>
+            <div><label class="block font-bold text-slate-700 mb-1">دورية رفع التقارير</label>
                 <select id="kpiReportingFrequency"><option value="monthly">شهري</option><option value="quarterly">ربع سنوي</option><option value="annual">سنوي</option></select>
             </div>
-            <div><label class="small-label">طريقة التجميع</label>
-                <select id="kpiAggregation"><option value="SUM">SUM — مجموع</option><option value="AVERAGE">AVERAGE — متوسط</option><option value="WEIGHTED_AVERAGE">WEIGHTED AVERAGE — متوسط موزون</option><option value="RATIO">RATIO — بسط/مقام</option><option value="LAST_VALUE">LAST VALUE — آخر قيمة</option></select>
+            <div><label class="block font-bold text-slate-700 mb-1">معادلة الحساب والتجميع</label>
+                <select id="kpiAggregation"><option value="SUM">مجموع (SUM)</option><option value="AVERAGE">متوسط (AVERAGE)</option><option value="WEIGHTED_AVERAGE">متوسط موزون</option><option value="RATIO">نسبة مئوية (بسط/مقام)</option><option value="LAST_VALUE">آخر قيمة مسجلة</option></select>
             </div>
-            <div><label class="small-label">المستهدف الرسمي</label><input id="kpiTarget" type="number" step="any"><p id="targetLockMessage" class="text-[10px] text-slate-400 mt-1"></p></div>
-            <div><label class="small-label">الاتجاه</label>
-                <select id="kpiDirection"><option value="higher">Higher — الأعلى أفضل</option><option value="lower">Lower — الأقل أفضل</option><option value="target">Target — الأقرب للهدف</option></select>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">المستهدف الرسمي</label>
+                <input id="kpiTarget" type="number" step="any" oninput="toggleTargetReason()">
+                <p id="targetLockMessage" class="text-[10px] text-slate-400 mt-1"></p>
             </div>
-            <div class="md:col-span-2"><label class="small-label">تعريف المؤشر</label><textarea id="kpiDefinition" rows="2"></textarea></div>
-            <div><label class="small-label">مصدر البيانات</label><input id="kpiDataSource"></div>
-            <div><label class="small-label">مالك المؤشر</label><input id="kpiOwner"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">اتجاه الأداء المفضل</label>
+                <select id="kpiDirection"><option value="higher">الأعلى أفضل (Higher is Better)</option><option value="lower">الأقل أفضل (Lower is Better)</option><option value="target">مرتبط بقيمة مستهدفة دقيقة</option></select>
+            </div>
+            <div><label class="block font-bold text-slate-700 mb-1">مصدر البيانات</label><input id="kpiDataSource"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">مالك المؤشر</label><input id="kpiOwner"></div>
+            <div class="md:col-span-2"><label class="block font-bold text-slate-700 mb-1">تعريف المؤشر</label><textarea id="kpiDefinition" rows="2"></textarea></div>
         </div>
-        <div id="targetReasonBox" class="hidden mt-4 text-xs">
-            <label class="small-label">سبب تغيير المستهدف</label><textarea id="targetChangeReason" rows="2"></textarea>
+        <div id="targetReasonBox" class="hidden mt-3 text-xs">
+            <label class="block font-bold text-rose-600 mb-1">سبب تعديل المستهدف الرسمي</label><textarea id="targetChangeReason" rows="2" placeholder="اكتب مبرر تعديل المستهدف..."></textarea>
         </div>
-        <div class="flex justify-end gap-3 mt-6">
+        <div class="flex justify-end gap-3 pt-3 border-t">
             <button onclick="closeKpiModal()" class="btn btn-secondary text-xs">إلغاء</button>
-            <button onclick="saveKpi()" class="btn btn-primary text-xs">حفظ</button>
+            <button onclick="saveKpi()" class="btn btn-primary text-xs">حفظ التغييرات</button>
         </div>
     </div>
 </div>
 
-<!-- ================= IMPORT MODAL ================= -->
+<!-- ================= MODAL: IMPORT ================= -->
 <div id="importModal" class="modal hidden">
-    <div class="modal-box">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-slate-900">مراجعة استيراد Excel</h3>
-            <button onclick="closeImportModal()" class="text-slate-500 text-lg font-bold">&times;</button>
+    <div class="modal-box space-y-4">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-base font-bold text-slate-900">مطابقة أعمدة ملف Excel المستورد</h3>
+            <button onclick="closeImportModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
         </div>
-        <div id="importMappingFields"></div>
-        <div class="flex justify-end gap-3 mt-6">
+        <div id="importMappingFields" class="space-y-3"></div>
+        <div class="flex justify-end gap-3 pt-3 border-t">
             <button onclick="closeImportModal()" class="btn btn-secondary text-xs">إلغاء</button>
-            <button onclick="confirmImport()" class="btn btn-primary text-xs">اعتماد الاستيراد</button>
+            <button onclick="confirmImport()" class="btn btn-primary text-xs">اعتماد واستيراد البيانات</button>
         </div>
     </div>
 </div>
 
-<div id="toast" class="toast hidden text-xs font-bold"></div>
+<div id="toast" class="toast hidden"></div>
 
+<!-- ================= SCRIPT ================= -->
 <script>
-const STORAGE = {
-    users: "ASEER_KPI_USERS_V4",
-    kpis: "ASEER_KPI_MASTER_V4",
-    records: "ASEER_KPI_RECORDS_V4",
-    audit: "ASEER_KPI_AUDIT_V4",
-    session: "ASEER_KPI_SESSION_V4"
-};
+const STORAGE = { users: "ASEER_USERS_V5", kpis: "ASEER_KPIS_V5", records: "ASEER_RECORDS_V5", audit: "ASEER_AUDIT_V5", session: "ASEER_SESSION_V5" };
+// Keys used by the previous version, so existing data entries are carried over.
+const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
+
+const SECTIONS = ["dashboard", "data", "kpis", "quality", "users", "audit"];
 
 const defaultUsers = [
     { username: "admin", password: "admin123", displayName: "عبدالعزيز عبدالله ال زربه", role: "admin", active: true },
@@ -690,12 +570,12 @@ const defaultKpis = [
     { code:"MYSTERY", name:"مؤشر أداء الزائر السري", category:"تجربة المريض", department:"تجربة المريض", unit:"%", definition:"نتائج الزائر السري", frequency:"weekly", reportingFrequency:"quarterly", aggregation:"AVERAGE", target:85, direction:"higher", dataSource:"", owner:"" },
     { code:"LAB", name:"مؤشر أداء عينتي للمختبر", category:"المختبر", department:"الخدمات الطبية", unit:"%", definition:"مؤشر عينتي للمختبر", frequency:"monthly", reportingFrequency:"quarterly", aggregation:"AVERAGE", target:95, direction:"higher", dataSource:"", owner:"" },
     { code:"MED-SAFETY", name:"مؤشر السلامة الدوائية", category:"السلامة", department:"الصيدلية", unit:"%", definition:"مؤشر السلامة الدوائية", frequency:"monthly", reportingFrequency:"quarterly", aggregation:"AVERAGE", target:98, direction:"higher", dataSource:"", owner:"" },
-    { code:"NO-SHOW", name:"نسبة عدم الحضور", category:"تشغيل", department:"الخدمات العلاجية", unit:"%", definition:"عدد حالات عدم الحضور من إجمالي المواعيد", frequency:"daily", reportingFrequency:"quarterly", aggregation:"RATIO", target:15, direction:"lower", dataSource:"", owner:"" },
-    { code:"ED-VISITS", name:"زيارات الطوارئ", category:"تشغيل", department:"الطوارئ", unit:"زيارة", definition:"إجمالي زيارات قسم الطوارئ", frequency:"daily", reportingFrequency:"quarterly", aggregation:"SUM", target:8000, direction:"higher", dataSource:"", owner:"" },
+    { code:"NO-SHOW", name:"نسبة عدم الحضور للموعد", category:"تشغيل", department:"الخدمات العلاجية", unit:"%", definition:"عدم الحضور للمواعيد", frequency:"daily", reportingFrequency:"quarterly", aggregation:"RATIO", target:15, direction:"lower", dataSource:"", owner:"" },
+    { code:"ED-VISITS", name:"عدد مراجعي الطوارئ", category:"تشغيل", department:"الطوارئ", unit:"مراجع", definition:"إجمالي زيارات الطوارئ", frequency:"daily", reportingFrequency:"quarterly", aggregation:"SUM", target:8000, direction:"higher", dataSource:"", owner:"" },
     { code:"ED-REVISIT", name:"إعادة زيارة الطوارئ خلال 72 ساعة", category:"جودة", department:"الطوارئ", unit:"%", definition:"نسبة إعادة زيارة الطوارئ خلال 72 ساعة", frequency:"daily", reportingFrequency:"quarterly", aggregation:"RATIO", target:5, direction:"lower", dataSource:"", owner:"" },
     { code:"OCCUPANCY", name:"نسبة إشغال الأسرة", category:"تشغيل", department:"الخدمات الطبية", unit:"%", definition:"نسبة إشغال الأسرة", frequency:"daily", reportingFrequency:"quarterly", aggregation:"AVERAGE", target:85, direction:"target", dataSource:"", owner:"" },
-    { code:"READMISSION", name:"إعادة الدخول خلال 30 يوم", category:"جودة", department:"الخدمات الطبية", unit:"%", definition:"نسبة إعادة الدخول خلال 30 يومًا", frequency:"monthly", reportingFrequency:"quarterly", aggregation:"RATIO", target:8, direction:"lower", dataSource:"", owner:"" },
-    { code:"REVENUE", name:"الإيرادات الذاتية", category:"مالي", department:"الإدارة المالية", unit:"ريال", definition:"الإيرادات الذاتية", frequency:"monthly", reportingFrequency:"quarterly", aggregation:"SUM", target:1500000, direction:"higher", dataSource:"", owner:"" }
+    { code:"READMISSION", name:"إعادة التنويم خلال 30 يومًا", category:"جودة", department:"الخدمات الطبية", unit:"%", definition:"إعادة التنويم خلال 30 يوماً", frequency:"monthly", reportingFrequency:"quarterly", aggregation:"RATIO", target:8, direction:"lower", dataSource:"", owner:"" },
+    { code:"REVENUE", name:"الموارد الذاتية", category:"مالي", department:"الإدارة المالية", unit:"ألف ر.س", definition:"الموارد الذاتية", frequency:"monthly", reportingFrequency:"quarterly", aggregation:"SUM", target:1500, direction:"higher", dataSource:"", owner:"" }
 ];
 
 let users = [], kpis = [], records = [], auditLogs = [], currentUser = null;
@@ -704,16 +584,13 @@ let importedRows = [], importWorkbookInfo = {};
 
 function init(){
     users = load(STORAGE.users, null) || defaultUsers;
-    users = users.filter(u => u.role !== "viewer");
-    save(STORAGE.users, users);
-
     kpis = load(STORAGE.kpis, null);
     if(!kpis){
         kpis = defaultKpis.map(k => ({ ...k, targetLastUpdated:null, targetUpdatedBy:null }));
         save(STORAGE.kpis, kpis);
     }
-    records = load(STORAGE.records, []);
-    auditLogs = load(STORAGE.audit, []);
+    records = load(STORAGE.records, null) || load(LEGACY_STORAGE.records, []);
+    auditLogs = load(STORAGE.audit, null) || load(LEGACY_STORAGE.audit, []);
 
     const session = sessionStorage.getItem(STORAGE.session);
     if(session){
@@ -722,21 +599,21 @@ function init(){
     }
 }
 
-function load(key, fallback){ try{ const data = localStorage.getItem(key); return data ? JSON.parse(data) : fallback; }catch(e){ return fallback; } }
-function save(key, data){ localStorage.setItem(key, JSON.stringify(data)); }
+function load(key, fallback){ try{ const d = localStorage.getItem(key); return d ? JSON.parse(d) : fallback; }catch(e){ return fallback; } }
+function save(key, data){ try{ localStorage.setItem(key, JSON.stringify(data)); }catch(e){ showToast("تعذر حفظ البيانات في المتصفح."); } }
 
 function login(){
-    const username = document.getElementById("loginUsername").value.trim();
-    const password = document.getElementById("loginPassword").value;
-    const user = users.find(u => u.username === username && u.password === password && u.active);
+    const u = document.getElementById("loginUsername").value.trim();
+    const p = document.getElementById("loginPassword").value;
+    const user = users.find(x => x.username === u && x.password === p && x.active);
     if(!user){ showLoginError("اسم المستخدم أو كلمة المرور غير صحيحة."); return; }
-    currentUser = { username:user.username, displayName:user.displayName, role:user.role, guest:false };
+    currentUser = { username:user.username, displayName:user.displayName, role:user.role };
     sessionStorage.setItem(STORAGE.session, JSON.stringify(currentUser));
     hideLoginError(); showApp();
 }
 
 function guestLogin(){
-    currentUser = { username:null, displayName:"زائر النظام", role:"visitor", guest:true };
+    currentUser = { username:null, displayName:"زائر النظام", role:"visitor" };
     sessionStorage.setItem(STORAGE.session, JSON.stringify(currentUser));
     showApp();
 }
@@ -759,6 +636,8 @@ function showApp(){
     updatePermissions();
     populateFilters();
     populateRecordKpis();
+    document.getElementById("recordDate").value = formatDateInput(new Date());
+    showSection("dashboard");
     renderDashboard();
     renderRecords();
     renderKpis();
@@ -767,459 +646,482 @@ function showApp(){
     runQualityCheck();
 }
 
-function can(permission){
-    if(!currentUser) return false;
-    return !!(permissions[currentUser.role] && permissions[currentUser.role][permission]);
-}
+function can(p){ return !!(currentUser && permissions[currentUser.role] && permissions[currentUser.role][p]); }
 
 function updatePermissions(){
-    const role = currentUser.role;
-    const p = permissions[role];
-    document.getElementById("navDashboard").classList.toggle("hidden", !p.dashboard);
-    document.getElementById("navData").classList.toggle("hidden", !p.data);
-    document.getElementById("navKpis").classList.toggle("hidden", !p.kpis);
-    document.getElementById("navQuality").classList.toggle("hidden", !p.quality);
-    document.getElementById("navUsers").classList.toggle("hidden", !p.users);
-    document.getElementById("navAudit").classList.toggle("hidden", !p.audit);
-    document.getElementById("exportDashboardBtn").classList.toggle("hidden", !p.export);
-    document.getElementById("addKpiBtn").classList.toggle("hidden", !p.editKpi);
+    document.getElementById("headerUserName").textContent = currentUser.displayName;
+    document.getElementById("headerUserRole").textContent = roleName(currentUser.role);
 
-    document.getElementById("currentUserBox").innerHTML = `
-        <div class="font-bold text-slate-900 text-xs">${escapeHtml(currentUser.displayName)}</div>
-        <div class="text-[11px] text-sky-700 mt-0.5 font-semibold">${roleName(role)}</div>
-    `;
-    document.getElementById("roleBadge").textContent = roleName(role);
-    if(role === "visitor") showSection("dashboard");
+    document.querySelectorAll(".tab-btn[data-section]").forEach(btn => {
+        btn.classList.toggle("hidden", !can(btn.dataset.section));
+    });
+    document.getElementById("exportDashboardBtn").classList.toggle("hidden", !can("export"));
+    document.getElementById("addKpiBtn").classList.toggle("hidden", !can("editKpi"));
+    document.getElementById("importBtn").classList.toggle("hidden", !can("import"));
 }
 
-function roleName(role){
-    return { admin:"مدير النظام", manager:"مدير المؤشرات", data:"مدخل البيانات", visitor:"زائر النظام" }[role] || role;
-}
+function roleName(r){ return { admin:"مدير النظام (Admin)", manager:"مدير الأداء", data:"مدخل بيانات", visitor:"زائر (عرض فقط)" }[r] || r; }
 
 function showSection(section){
-    const permissionMap = { dashboard:"dashboard", data:"data", kpis:"kpis", quality:"quality", users:"users", audit:"audit" };
-    if(!can(permissionMap[section])){ showToast("ليس لديك صلاحية للوصول إلى هذه الصفحة."); return; }
-    
-    ['dashboard', 'data', 'kpis', 'quality', 'users', 'audit'].forEach(s => {
-        document.getElementById("section" + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle("hidden", s !== section);
+    if(!can(section)){ showToast("ليس لديك صلاحية للوصول إلى هذه الصفحة."); return; }
+    SECTIONS.forEach(s => {
+        document.getElementById("section" + capitalize(s)).classList.toggle("hidden", s !== section);
+    });
+    document.querySelectorAll(".tab-btn[data-section]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.section === section);
     });
 
-    Object.values({ dashboard:"navDashboard", data:"navData", kpis:"navKpis", quality:"navQuality", users:"navUsers", audit:"navAudit" }).forEach(id => {
-        document.getElementById(id).classList.remove("active");
-    });
-    document.getElementById("nav" + section.charAt(0).toUpperCase() + section.slice(1)).classList.add("active");
-
-    const titles = { dashboard:"لوحة المؤشرات التنفيذية", data:"إدخال واستيراد البيانات", kpis:"تعريف مؤشرات الأداء", quality:"جودة البيانات", users:"إدارة المستخدمين", audit:"سجل التدقيق" };
-    document.getElementById("pageTitle").textContent = titles[section];
+    const titles = {
+        dashboard:["لوحة مؤشرات الأداء التنفيذية", "نظرة شاملة وتحليل دقيق لعمليات المستشفى الإكلينيكية والتشغيلية"],
+        data:["إدخال واستيراد البيانات", "إدخال القراءات يدوياً أو استيرادها من ملفات Excel"],
+        kpis:["تعريف مؤشرات الأداء", "إدارة المؤشرات المعتمدة ومستهدفاتها الرسمية"],
+        quality:["فحص جودة البيانات", "اكتشاف القيم المفقودة والمكررة والسجلات غير المكتملة"],
+        users:["إدارة المستخدمين", "الحسابات المعتمدة وصلاحياتها"],
+        audit:["سجل التدقيق", "توثيق زمني لكافة العمليات الحساسة"]
+    };
+    document.getElementById("pageTitle").textContent = titles[section][0];
+    document.getElementById("pageSubtitle").textContent = titles[section][1];
 }
 
 function populateFilters(){
-    const yearSelect = document.getElementById("filterYear");
+    const ySel = document.getElementById("filterYear");
+    const selected = ySel.value;
     const years = new Set([new Date().getFullYear()]);
     records.forEach(r => { if(r.year) years.add(Number(r.year)); });
-    yearSelect.innerHTML = [...years].sort((a,b)=>b-a).map(y => `<option value="${y}">${y}</option>`).join("");
+    ySel.innerHTML = [...years].sort((a,b)=>b-a).map(y => `<option value="${y}">${y}</option>`).join("");
+    if(selected && years.has(Number(selected))) ySel.value = selected;
 
-    const categories = [...new Set(kpis.map(k=>k.category).filter(Boolean))];
-    document.getElementById("filterCategory").innerHTML = `<option value="ALL">جميع الفئات</option>` + categories.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join("");
+    const cSel = document.getElementById("filterCategory");
+    const selectedCat = cSel.value;
+    const cats = [...new Set(kpis.map(k=>k.category).filter(Boolean))];
+    cSel.innerHTML = `<option value="ALL">جميع الفئات</option>` + cats.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join("");
+    if(selectedCat && (selectedCat === "ALL" || cats.includes(selectedCat))) cSel.value = selectedCat;
 }
 
 function populateRecordKpis(){
-    document.getElementById("recordKpi").innerHTML = `<option value="">اختر المؤشر</option>` + kpis.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("");
+    document.getElementById("recordKpi").innerHTML = `<option value="">اختر المؤشر...</option>` + kpis.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)} (${escapeHtml(k.unit)})</option>`).join("");
 }
 
 function addRecord(){
-    if(!can("data")){ showToast("ليس لديك صلاحية إدخال البيانات."); return; }
+    if(!can("data")){ showToast("ليس لديك صلاحية لإدخال البيانات."); return; }
     const date = document.getElementById("recordDate").value;
     const kpiCode = document.getElementById("recordKpi").value;
     const value = parseFloat(document.getElementById("recordValue").value);
-    const numerator = parseOptionalNumber("recordNumerator");
-    const denominator = parseOptionalNumber("recordDenominator");
-    const weight = parseOptionalNumber("recordWeight");
+    const num = parseNum("recordNumerator");
+    const den = parseNum("recordDenominator");
+    const weight = parseNum("recordWeight");
     const source = document.getElementById("recordSource").value.trim();
     const notes = document.getElementById("recordNotes").value.trim();
 
-    if(!date || !kpiCode || Number.isNaN(value)){ showToast("أكمل التاريخ والمؤشر والقيمة الفعلية."); return; }
+    if(!date || !kpiCode || Number.isNaN(value)){ showToast("يرجى ملء تاريخ السجل والمؤشر والقيمة الفعلية."); return; }
     const kpi = kpis.find(k => k.code === kpiCode);
+    if(!kpi){ showToast("المؤشر المحدد غير موجود."); return; }
+    if(kpi.aggregation === "RATIO" && den === 0){ showToast("لا يمكن أن يكون المقام صفراً."); return; }
 
     const record = normalizeRecord({
-        date, kpiCode, kpiName:kpi.name, actualValue:value, numerator, denominator, weight, dataSource:source, notes,
-        approved:can("approve"), approvalStatus:can("approve") ? "APPROVED" : "PENDING",
+        date, kpiCode, kpiName:kpi.name, actualValue:value, numerator:num, denominator:den, weight,
+        dataSource:source, notes, approved:can("approve"),
         createdBy:currentUser.displayName, createdAt:new Date().toISOString()
     });
 
     records.push(record);
     save(STORAGE.records, records);
-    addAudit("ADD_RECORD", kpi.name, "", value, "إضافة سجل بيانات");
-    clearRecordForm();
-    renderRecords(); populateFilters(); renderDashboard(); runQualityCheck();
-    showToast(can("approve") ? "تم حفظ واعتماد البيانات." : "تم حفظ البيانات بانتظار الاعتماد.");
+    addAudit("ADD_RECORD", kpi.name, "", value, notes || "إدخال يدوي");
+    ["recordValue","recordNumerator","recordDenominator","recordWeight","recordSource","recordNotes"].forEach(id => document.getElementById(id).value = "");
+    refreshData();
+    showToast(record.approved ? "تم حفظ السجل واعتماده وتحديث المؤشرات بنجاح." : "تم حفظ السجل بانتظار اعتماد مدير الأداء.");
 }
 
-function clearRecordForm(){
-    ["recordDate","recordKpi","recordValue","recordNumerator","recordDenominator","recordWeight","recordSource","recordNotes"].forEach(id => document.getElementById(id).value = "");
+function approveRecord(id){
+    if(!can("approve")){ showToast("ليس لديك صلاحية اعتماد البيانات."); return; }
+    const r = records.find(x => x.id === id);
+    if(!r || r.approved) return;
+    r.approved = true;
+    r.approvedBy = currentUser.displayName;
+    r.approvedAt = new Date().toISOString();
+    save(STORAGE.records, records);
+    addAudit("APPROVE_RECORD", r.kpiName, "بانتظار الاعتماد", "معتمد", r.date);
+    refreshData();
+    showToast("تم اعتماد السجل.");
 }
 
-function parseOptionalNumber(id){ const v = document.getElementById(id).value; if(v === "") return null; const n = parseFloat(v); return Number.isNaN(n) ? null : n; }
+function deleteRecord(id){
+    if(!can("approve")){ showToast("ليس لديك صلاحية حذف البيانات."); return; }
+    const r = records.find(x => x.id === id);
+    if(!r || !confirm("هل أنت متأكد من حذف هذا السجل؟")) return;
+    records = records.filter(x => x.id !== id);
+    save(STORAGE.records, records);
+    addAudit("DELETE_RECORD", r.kpiName, r.actualValue, "", r.date);
+    refreshData();
+    showToast("تم حذف السجل.");
+}
+
+function refreshData(){ renderRecords(); populateFilters(); renderDashboard(); runQualityCheck(); }
+
+function parseNum(id){ const v = document.getElementById(id).value; if(v === "") return null; const n = parseFloat(v); return Number.isNaN(n) ? null : n; }
 
 function normalizeRecord(row){
-    const date = new Date(row.date);
-    const year = date.getFullYear();
-    const month = date.getMonth()+1;
-    const quarter = "Q" + Math.ceil(month/3);
+    const date = row.date instanceof Date ? row.date : parseIsoDate(row.date);
     return {
         id: row.id || "REC-" + Date.now() + "-" + Math.random().toString(36).substring(2,8),
-        date: formatDateInput(date), year, month, quarter,
+        date: formatDateInput(date), year: date.getFullYear(), month: date.getMonth()+1, quarter: "Q" + Math.ceil((date.getMonth()+1)/3),
         kpiCode: row.kpiCode || "", kpiName: row.kpiName || "",
         actualValue: row.actualValue == null ? null : Number(row.actualValue),
         numerator: row.numerator == null ? null : Number(row.numerator),
         denominator: row.denominator == null ? null : Number(row.denominator),
         weight: row.weight == null ? null : Number(row.weight),
         dataSource: row.dataSource || "", notes: row.notes || "",
-        approved: row.approved === true, approvalStatus: row.approvalStatus || (row.approved ? "APPROVED" : "PENDING"),
+        approved: row.approved === true,
         createdBy: row.createdBy || currentUser?.displayName || "", createdAt: row.createdAt || new Date().toISOString()
     };
 }
 
 function getApprovedRecords(){ return records.filter(r => r.approved === true); }
 
-function periodRecords(kpiCode, year, quarter){
-    let rows = getApprovedRecords().filter(r => r.kpiCode === kpiCode && Number(r.year) === Number(year));
-    if(quarter !== "ALL") rows = rows.filter(r => r.quarter === quarter);
+function periodRecords(code, year, q){
+    let rows = getApprovedRecords().filter(r => r.kpiCode === code && Number(r.year) === Number(year));
+    if(q !== "ALL") rows = rows.filter(r => r.quarter === q);
     return rows;
 }
 
 function aggregateRows(rows, kpi){
     if(!rows.length) return null;
-    const method = kpi.aggregation || "AVERAGE";
-    if(method === "SUM"){
-        const vals = rows.map(r => Number(r.actualValue)).filter(Number.isFinite);
-        return vals.length ? vals.reduce((a,b)=>a+b,0) : null;
-    }
-    if(method === "AVERAGE"){
-        const vals = rows.map(r => Number(r.actualValue)).filter(Number.isFinite);
-        return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
-    }
-    if(method === "WEIGHTED_AVERAGE"){
-        const valid = rows.filter(r => Number.isFinite(Number(r.actualValue)) && Number.isFinite(Number(r.weight)));
-        if(!valid.length) return null;
-        const num = valid.reduce((s,r)=>s+Number(r.actualValue)*Number(r.weight),0);
+    const m = kpi.aggregation || "AVERAGE";
+    const vals = rows.map(r=>r.actualValue).filter(v => v != null && Number.isFinite(Number(v))).map(Number);
+    const avg = () => vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+    if(m === "SUM") return vals.length ? vals.reduce((a,b)=>a+b,0) : null;
+    if(m === "AVERAGE") return avg();
+    if(m === "WEIGHTED_AVERAGE"){
+        const valid = rows.filter(r => Number.isFinite(Number(r.actualValue)) && r.weight != null && Number.isFinite(Number(r.weight)));
         const den = valid.reduce((s,r)=>s+Number(r.weight),0);
-        return den === 0 ? null : num/den;
+        if(!valid.length || den === 0) return avg();
+        return valid.reduce((s,r)=>s+Number(r.actualValue)*Number(r.weight),0) / den;
     }
-    if(method === "RATIO"){
-        const valid = rows.filter(r => Number.isFinite(Number(r.numerator)) && Number.isFinite(Number(r.denominator)));
-        if(valid.length){
-            const num = valid.reduce((s,r)=>s+Number(r.numerator),0);
-            const den = valid.reduce((s,r)=>s+Number(r.denominator),0);
-            return den === 0 ? null : (num/den)*100;
-        }
-        const vals = rows.map(r=>Number(r.actualValue)).filter(Number.isFinite);
-        return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+    if(m === "RATIO"){
+        const valid = rows.filter(r => r.numerator != null && r.denominator != null && Number.isFinite(Number(r.numerator)) && Number.isFinite(Number(r.denominator)));
+        const den = valid.reduce((s,r)=>s+Number(r.denominator),0);
+        if(valid.length && den > 0) return valid.reduce((s,r)=>s+Number(r.numerator),0) / den * 100;
+        return avg();
     }
-    if(method === "LAST_VALUE"){
-        const sorted = [...rows].sort((a,b)=>new Date(a.date)-new Date(b.date));
-        return Number(sorted[sorted.length-1].actualValue);
+    if(m === "LAST_VALUE"){
+        const sorted = rows.filter(r => r.actualValue != null).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+        return sorted.length ? Number(sorted[sorted.length-1].actualValue) : null;
     }
-    return null;
+    return avg();
 }
 
-function getPeriodValue(kpiCode, year, quarter){
-    const kpi = kpis.find(k=>k.code===kpiCode);
+function getPeriodValue(code, year, q){
+    const kpi = kpis.find(k=>k.code===code);
     if(!kpi) return null;
-    return aggregateRows(periodRecords(kpiCode, year, quarter), kpi);
+    return aggregateRows(periodRecords(code, year, q), kpi);
 }
 
-function getPreviousPeriodValue(kpiCode, year, quarter){
-    if(quarter === "ALL") return getPeriodValue(kpiCode, Number(year)-1, "ALL");
-    const q = Number(quarter.substring(1));
-    if(q === 1) return getPeriodValue(kpiCode, Number(year)-1, "Q4");
-    return getPeriodValue(kpiCode, year, "Q"+(q-1));
+function getPrevValue(code, year, q){
+    if(q === "ALL") return getPeriodValue(code, Number(year)-1, "ALL");
+    const num = Number(q.substring(1));
+    if(num === 1) return getPeriodValue(code, Number(year)-1, "Q4");
+    return getPeriodValue(code, year, "Q"+(num-1));
 }
 
-function getSameQuarterPreviousYear(kpiCode, year, quarter){
-    if(quarter === "ALL") return getPeriodValue(kpiCode, Number(year)-1, "ALL");
-    return getPeriodValue(kpiCode, Number(year)-1, quarter);
+function getSameQPrevYear(code, year, q){
+    return getPeriodValue(code, Number(year)-1, q);
 }
 
-function calculateAchievement(actual, target, direction){
-    if(actual == null || target == null || !Number.isFinite(Number(actual)) || !Number.isFinite(Number(target))) return null;
-    actual = Number(actual); target = Number(target);
+function calcAchievement(act, target, dir){
+    if(act == null || target == null || !Number.isFinite(Number(act)) || !Number.isFinite(Number(target))) return null;
+    act = Number(act); target = Number(target);
     if(target === 0) return null;
-    if(direction === "higher") return (actual/target)*100;
-    if(direction === "lower") return actual === 0 ? 100 : (target/actual)*100;
-    if(direction === "target") return Math.max(0, 100 - (Math.abs(actual-target)/Math.abs(target)*100));
+    if(dir === "higher") return (act/target)*100;
+    if(dir === "lower") return act === 0 ? 100 : (target/act)*100;
+    if(dir === "target") return Math.max(0, 100 - (Math.abs(act-target)/Math.abs(target)*100));
     return null;
 }
 
-function getStatus(kpi, actual){
-    if(actual == null) return { key:"gray", label:"لا توجد بيانات" };
-    const target = Number(kpi.target);
-    if(!Number.isFinite(target)) return { key:"gray", label:"بدون مستهدف" };
-    const ach = calculateAchievement(actual, target, kpi.direction);
-    if(ach == null) return { key:"gray", label:"غير قابل للحساب" };
-    if(ach >= 100) return { key:"green", label:"أخضر" };
+function getStatus(kpi, act, ach){
+    if(act == null) return { key:"gray", label:"بدون بيانات" };
+    if(kpi.target == null || !Number.isFinite(Number(kpi.target))) return { key:"gray", label:"بلا مستهدف" };
+    if(ach == null) return { key:"gray", label:"غير متاح" };
+    // A "target" KPI is never above 100%, so allow a 2% tolerance band around the exact target.
+    const greenAt = kpi.direction === "target" ? 98 : 100;
+    if(ach >= greenAt) return { key:"green", label:"محقق" };
     if(ach >= 90) return { key:"yellow", label:"تحذير" };
-    return { key:"red", label:"أحمر" };
+    return { key:"red", label:"غير محقق" };
 }
 
-function calculateTrend(kpi, current, previous){
-    if(current == null || previous == null || !Number.isFinite(Number(current)) || !Number.isFinite(Number(previous))) return { key:"stable", label:"لا توجد مقارنة" };
-    const delta = Number(current) - Number(previous);
-    const tol = Math.max(Math.abs(Number(previous))*0.01, 0.0001);
-    if(Math.abs(delta) <= tol) return { key:"stable", label:"مستقر" };
-    const improving = kpi.direction === "lower" ? delta < 0 : delta > 0;
-    return improving ? { key:"up", label:"تحسن ↑" } : { key:"down", label:"تراجع ↓" };
+function calcTrend(act, prev, kpi){
+    if(act == null || prev == null) return { key:"stable", label:"—" };
+    const a = Number(act), p = Number(prev);
+    const tol = Math.max(Math.abs(p)*0.01, 0.0001);
+    if(Math.abs(a - p) <= tol) return { key:"stable", label:"مستقر ➔" };
+    let better;
+    if(kpi.direction === "lower") better = a < p;
+    else if(kpi.direction === "target") better = Math.abs(a - kpi.target) < Math.abs(p - kpi.target);
+    else better = a > p;
+    return better ? { key:"up", label:"تحسن ↗" } : { key:"down", label:"تراجع ↘" };
 }
 
-function formatValue(value, kpi){
-    if(value == null || !Number.isFinite(Number(value))) return "—";
-    const n = Number(value);
-    return n.toLocaleString("en-US", { maximumFractionDigits: Math.abs(n) < 100 ? 2 : 0 }) + (kpi.unit === "%" ? "%" : "");
+function fmt(val, kpi){
+    if(val == null || !Number.isFinite(Number(val))) return "—";
+    return Number(val).toLocaleString("en-US",{maximumFractionDigits:2}) + (kpi.unit === "%" ? "%" : "");
+}
+
+function getFilters(){
+    return {
+        year: Number(document.getElementById("filterYear").value) || new Date().getFullYear(),
+        q: document.getElementById("filterQuarter").value,
+        cat: document.getElementById("filterCategory").value
+    };
+}
+
+function computeResults(year, q, cat){
+    return kpis.filter(k => cat === "ALL" || k.category === cat).map(kpi => {
+        const act = getPeriodValue(kpi.code, year, q);
+        const prev = getPrevValue(kpi.code, year, q);
+        const sameY = getSameQPrevYear(kpi.code, year, q);
+        const ach = calcAchievement(act, kpi.target, kpi.direction);
+        const status = getStatus(kpi, act, ach);
+        const trend = calcTrend(act, prev, kpi);
+        return { kpi, act, prev, sameY, ach, status, trend };
+    });
 }
 
 function renderDashboard(){
     if(!currentUser) return;
-    const year = Number(document.getElementById("filterYear").value) || new Date().getFullYear();
-    const quarter = document.getElementById("filterQuarter").value;
-    const category = document.getElementById("filterCategory").value;
+    const { year, q, cat } = getFilters();
+    const results = computeResults(year, q, cat);
 
-    let filtered = kpis.filter(k => category === "ALL" || k.category === category);
-    const results = filtered.map(kpi => {
-        const actual = getPeriodValue(kpi.code, year, quarter);
-        const previous = getPreviousPeriodValue(kpi.code, year, quarter);
-        const sameYear = getSameQuarterPreviousYear(kpi.code, year, quarter);
-        const achievement = calculateAchievement(actual, kpi.target, kpi.direction);
-        const status = getStatus(kpi, actual);
-        const trend = calculateTrend(kpi, actual, previous);
-        return { kpi, actual, previous, sameYear, achievement, status, trend };
-    });
-
-    const validAch = results.map(r=>r.achievement).filter(v => v != null && Number.isFinite(v));
+    const validAch = results.map(r=>r.ach).filter(v=>v!=null);
     const avgAch = validAch.length ? validAch.reduce((a,b)=>a+b,0)/validAch.length : null;
 
     document.getElementById("summaryTotal").textContent = results.length;
-    document.getElementById("summaryGreen").textContent = results.filter(r => r.status.key === "green").length;
-    document.getElementById("summaryYellow").textContent = results.filter(r => r.status.key === "yellow").length;
-    document.getElementById("summaryRed").textContent = results.filter(r => r.status.key === "red").length;
+    document.getElementById("summaryGreen").textContent = results.filter(r=>r.status.key==="green").length;
+    document.getElementById("summaryYellow").textContent = results.filter(r=>r.status.key==="yellow").length;
+    document.getElementById("summaryRed").textContent = results.filter(r=>r.status.key==="red").length;
     document.getElementById("summaryAchievement").textContent = avgAch == null ? "—" : avgAch.toFixed(1) + "%";
 
-    renderExecutiveSummary(results, year, quarter);
-    renderDashboardTable(results);
+    renderExecInsights(results, year, q);
+    renderTable(results);
     renderCharts(results);
 }
 
-function renderExecutiveSummary(results, year, quarter){
-    const noData = results.filter(r => r.actual == null).length;
-    const deterioration = results.filter(r => r.trend.key === "down").length;
+function periodName(q){ return { ALL:"السنة كاملة", Q1:"الربع الأول", Q2:"الربع الثاني", Q3:"الربع الثالث", Q4:"الربع الرابع" }[q] || q; }
+
+function renderExecInsights(results, year, q){
+    const noData = results.filter(r=>r.act==null).length;
+    const down = results.filter(r=>r.trend.key==="down");
+    const red = results.filter(r=>r.status.key==="red");
+    const attention = [...new Set([...red, ...down])];
+    const names = attention.slice(0, 3).map(r => escapeHtml(r.kpi.name)).join("، ");
     document.getElementById("executiveSummary").innerHTML = `
-        <div class="rounded-xl bg-slate-50 p-4 border border-slate-200"><div class="text-xs text-slate-500 font-semibold">الفترة المحددة</div><div class="font-bold text-sm text-slate-900 mt-1">${year} — ${quarter === "ALL" ? "السنة كاملة" : quarter}</div></div>
-        <div class="rounded-xl bg-slate-50 p-4 border border-slate-200"><div class="text-xs text-slate-500 font-semibold">مؤشرات تحتاج متابعة</div><div class="font-bold text-sm text-rose-600 mt-1">${deterioration} مؤشرات متراجعة</div></div>
-        <div class="rounded-xl bg-slate-50 p-4 border border-slate-200"><div class="text-xs text-slate-500 font-semibold">بيانات مفقودة</div><div class="font-bold text-sm text-amber-600 mt-1">${noData} مؤشرات بلا قراءات</div></div>
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500 font-bold">فترة التقرير</div><div class="font-black text-sm text-slate-900 mt-1">${year} — ${periodName(q)}</div></div>
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500 font-bold">مؤشرات تتطلب تدخلاً</div><div class="font-black text-sm text-rose-600 mt-1">${attention.length} مؤشرات (${red.length} غير محققة، ${down.length} متراجعة)</div>${names ? `<div class="text-[11px] text-slate-500 mt-1 truncate">${names}${attention.length > 3 ? "…" : ""}</div>` : ""}</div>
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200"><div class="text-xs text-slate-500 font-bold">بيانات غير مسجلة</div><div class="font-black text-sm text-amber-600 mt-1">${noData} مؤشرات بلا قراءات</div></div>
     `;
 }
 
-function renderDashboardTable(results){
+function statusColor(key){ return { green:"#10b981", yellow:"#f59e0b", red:"#ef4444" }[key] || "#cbd5e1"; }
+
+function renderTable(results){
     const tbody = document.getElementById("dashboardTableBody");
-    if(!results.length){ tbody.innerHTML = `<tr><td colspan="10" class="text-center text-slate-400 py-8">لا توجد مؤشرات مطابقة</td></tr>`; return; }
+    if(!results.length){ tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">لا توجد بيانات مطابقة للفلتر</td></tr>`; return; }
     tbody.innerHTML = results.map(r => {
         const k = r.kpi;
-        const ach = r.achievement == null ? "—" : r.achievement.toFixed(1)+"%";
-        const variance = r.actual == null || k.target == null ? "—" : (Number(r.actual)-Number(k.target)).toLocaleString("en-US", { maximumFractionDigits:2 });
+        const achStr = r.ach == null ? "—" : r.ach.toFixed(1) + "%";
+        const varNum = r.act == null || k.target == null ? "—" : (Number(r.act)-Number(k.target)).toLocaleString("en-US",{maximumFractionDigits:2,signDisplay:"exceptZero"});
         return `
             <tr>
-                <td><div class="font-bold text-slate-900">${escapeHtml(k.name)}</div><div class="text-[10px] text-slate-400">${escapeHtml(k.code)}</div></td>
+                <td><div class="font-bold text-slate-900">${escapeHtml(k.name)}</div><div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}</div></td>
                 <td>${frequencyName(k.frequency)}</td>
-                <td class="font-bold text-slate-900">${formatValue(r.actual,k)}</td>
-                <td>${k.target == null ? "غير محدد" : formatValue(k.target,k)}</td>
-                <td><div class="font-bold">${ach}</div>${r.achievement != null ? `<div class="progress mt-1" style="width:80px"><div style="width:${Math.min(r.achievement,100)}\%;background:${r.status.key==="green"?"#10b981":r.status.key==="yellow"?"#f59e0b":"#ef4444"}"></div></div>` : ""}</td>
-                <td>${variance}</td>
-                <td>${formatValue(r.previous,k)}</td>
-                <td>${formatValue(r.sameYear,k)}</td>
+                <td class="font-extrabold text-slate-900">${fmt(r.act, k)}</td>
+                <td>${k.target == null ? "—" : fmt(k.target, k)}</td>
+                <td><div class="font-bold">${achStr}</div>${r.ach!=null?`<div class="progress mt-1 w-20"><div style="width:${Math.min(r.ach,100)}%;background:${statusColor(r.status.key)}"></div></div>`:""}</td>
+                <td>${varNum}</td>
+                <td>${fmt(r.prev, k)}</td>
+                <td>${fmt(r.sameY, k)}</td>
                 <td><span class="pill ${r.trend.key==="up"?"bg-emerald-50 text-emerald-700":r.trend.key==="down"?"bg-rose-50 text-rose-700":"bg-slate-100 text-slate-600"}">${r.trend.label}</span></td>
-                <td><span class="pill ${r.status.key==="green"?"status-green":r.status.key==="yellow"?"status-yellow":r.status.key==="red"?"status-red":"status-gray"}">${r.status.label}</span></td>
+                <td><span class="pill status-${r.status.key}">${r.status.label}</span></td>
             </tr>
         `;
     }).join("");
 }
 
 function renderCharts(results){
-    const counts = {
-        green: results.filter(r => r.status.key==="green").length,
-        yellow: results.filter(r => r.status.key==="yellow").length,
-        red: results.filter(r => r.status.key==="red").length,
-        gray: results.filter(r => r.status.key==="gray").length
-    };
-
+    const counts = { green: 0, yellow: 0, red: 0, gray: 0 };
+    results.forEach(r => counts[r.status.key]++);
     if(statusChart) statusChart.destroy();
     statusChart = new Chart(document.getElementById("statusChart"), {
         type: 'doughnut',
-        data: { labels: ["أخضر", "تحذير", "أحمر", "بدون بيانات"], datasets:[{ data:[counts.green, counts.yellow, counts.red, counts.gray], backgroundColor:['#10b981','#f59e0b','#ef4444','#94a3b8'] }] },
+        data: { labels: ["محقق", "تحذير", "غير محقق", "بدون بيانات"], datasets:[{ data:[counts.green, counts.yellow, counts.red, counts.gray], backgroundColor:['#10b981','#f59e0b','#ef4444','#cbd5e1'], borderWidth:0 }] },
         options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
     });
 
-    const chartResults = results.filter(r => r.achievement != null);
+    const active = results.filter(r => r.ach != null);
     if(achievementChart) achievementChart.destroy();
     achievementChart = new Chart(document.getElementById("achievementChart"), {
         type: 'bar',
-        data: {
-            labels: chartResults.map(r => shorten(r.kpi.name, 15)),
-            datasets:[{ label: 'نسبة الإنجاز %', data: chartResults.map(r => r.achievement), backgroundColor: '#0f766e', borderRadius: 4 }]
-        },
-        options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, max:120 } }, plugins:{ legend:{ display:false } } }
+        data: { labels: active.map(r => shorten(r.kpi.name, 15)), datasets:[{ label:'الإنجاز %', data:active.map(r=>Number(r.ach.toFixed(1))), backgroundColor:active.map(r=>statusColor(r.status.key)), borderRadius:6 }] },
+        options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, suggestedMax:120 } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ title: items => active[items[0].dataIndex].kpi.name } } } }
     });
 }
 
 function renderRecords(){
     const tbody = document.getElementById("recordsTableBody");
-    const rows = [...records].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,100);
-    if(!rows.length){ tbody.innerHTML = `<tr><td colspan="6" class="text-center text-slate-400 py-8">لا توجد سجلات مدخلة</td></tr>`; return; }
+    const rows = [...records].sort((a,b)=>String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100);
+    if(!rows.length){ tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">لا توجد سجلات مدخلة</td></tr>`; return; }
     tbody.innerHTML = rows.map(r => {
-        const k = kpis.find(x=>x.code===r.kpiCode);
+        const k = kpis.find(x => x.code === r.kpiCode);
+        const actions = can("approve") ? `
+            ${r.approved ? "" : `<button onclick="approveRecord('${escapeAttr(r.id)}')" class="btn btn-primary text-[11px] py-1 px-2.5">اعتماد</button>`}
+            <button onclick="deleteRecord('${escapeAttr(r.id)}')" class="btn btn-danger text-[11px] py-1 px-2.5">حذف</button>` : "—";
         return `
-            <tr>
-                <td>${r.date}</td>
-                <td class="font-bold text-slate-900">${escapeHtml(k?.name || r.kpiName || r.kpiCode)}</td>
-                <td>${r.actualValue == null ? "—" : Number(r.actualValue).toLocaleString("en-US")}</td>
-                <td>${r.numerator ?? "—"}</td>
-                <td>${r.denominator ?? "—"}</td>
-                <td><span class="pill ${r.approved ? "status-green" : "status-yellow"}">${r.approved ? "معتمد" : "بانتظار الاعتماد"}</span></td>
-            </tr>
-        `;
+        <tr>
+            <td>${escapeHtml(r.date)}</td>
+            <td class="font-bold text-slate-900">${escapeHtml(k?.name || r.kpiName || r.kpiCode)}</td>
+            <td>${r.actualValue == null ? "—" : Number(r.actualValue).toLocaleString("en-US")}</td>
+            <td>${r.numerator ?? "—"}</td>
+            <td>${r.denominator ?? "—"}</td>
+            <td><span class="pill ${r.approved ? "status-green" : "status-yellow"}">${r.approved ? "معتمد" : "بانتظار الاعتماد"}</span></td>
+            <td class="space-x-1 space-x-reverse">${actions}</td>
+        </tr>`;
     }).join("");
 }
 
 function renderKpis(){
-    const tbody = document.getElementById("kpiTableBody");
-    tbody.innerHTML = kpis.map(k => `
+    document.getElementById("kpiSectionTitle").textContent = `تعريف ومؤشرات الأداء المعتمدة (${kpis.length} مؤشراً)`;
+    document.getElementById("kpiTableBody").innerHTML = kpis.length ? kpis.map(k => `
         <tr>
-            <td class="font-bold text-slate-900">${escapeHtml(k.code)}</td>
-            <td>${escapeHtml(k.name)}</td>
+            <td class="font-mono font-bold text-slate-900">${escapeHtml(k.code)}</td>
+            <td class="font-bold">${escapeHtml(k.name)}</td>
             <td>${escapeHtml(k.category || "—")}</td>
             <td>${frequencyName(k.frequency)}</td>
-            <td>${frequencyName(k.reportingFrequency)}</td>
             <td>${aggregationName(k.aggregation)}</td>
-            <td><span class="pill ${k.target == null ? "status-yellow" : "status-green"}">${k.target == null ? "غير محدد" : formatValue(k.target, k)}</span></td>
+            <td><span class="pill ${k.target == null ? "status-yellow" : "status-green"}">${k.target == null ? "غير محدد" : escapeHtml(k.target + " " + (k.unit || ""))}</span></td>
             <td>${directionName(k.direction)}</td>
-            <td class="text-xs text-slate-400">${k.targetLastUpdated ? formatDateTime(k.targetLastUpdated) : "—"}</td>
-            <td>
+            <td class="text-xs text-slate-400">${k.targetLastUpdated ? new Date(k.targetLastUpdated).toLocaleDateString("ar-SA") : "—"}</td>
+            <td class="space-x-1 space-x-reverse">
                 ${can("editKpi") ? `<button onclick="openKpiModal('${escapeAttr(k.code)}')" class="btn btn-secondary text-[11px] py-1 px-2.5">تعديل</button>` : ""}
-                ${can("deleteKpi") ? `<button onclick="deleteKpi('${escapeAttr(k.code)}')" class="btn btn-danger text-[11px] py-1 px-2.5 mr-1">حذف</button>` : ""}
+                ${can("deleteKpi") ? `<button onclick="deleteKpi('${escapeAttr(k.code)}')" class="btn btn-danger text-[11px] py-1 px-2.5">حذف</button>` : ""}
             </td>
         </tr>
-    `).join("");
+    `).join("") : `<tr><td colspan="9" class="text-center py-6 text-slate-400">لا توجد مؤشرات معرفة</td></tr>`;
 }
 
-function openKpiModal(code=null){
+const KPI_FIELDS = { kpiCode:"code", kpiName:"name", kpiCategory:"category", kpiDepartment:"department", kpiUnit:"unit", kpiFrequency:"frequency", kpiReportingFrequency:"reportingFrequency", kpiAggregation:"aggregation", kpiTarget:"target", kpiDirection:"direction", kpiDefinition:"definition", kpiDataSource:"dataSource", kpiOwner:"owner" };
+const KPI_FIELD_DEFAULTS = { frequency:"monthly", reportingFrequency:"quarterly", aggregation:"AVERAGE", direction:"higher" };
+
+function openKpiModal(code){
     if(!can("editKpi")){ showToast("تعريف المؤشرات متاح لمدير النظام فقط."); return; }
+    const k = code ? kpis.find(x=>x.code===code) : null;
+    if(code && !k) return;
     document.getElementById("kpiModal").classList.remove("hidden");
-    document.getElementById("targetReasonBox").classList.add("hidden");
     document.getElementById("editKpiOriginalCode").value = code || "";
-    
-    if(code){
-        const k = kpis.find(x=>x.code===code);
-        if(!k) return;
-        document.getElementById("kpiModalTitle").textContent = "تعديل مؤشر";
-        ["kpiCode","kpiName","kpiCategory","kpiDepartment","kpiUnit","kpiTarget","kpiDefinition","kpiDataSource","kpiOwner"].forEach(id => {
-            const key = id.replace("kpi", "").toLowerCase();
-            document.getElementById(id).value = k[key === "code" ? "code" : key === "name" ? "name" : key === "category" ? "category" : key === "department" ? "department" : key === "unit" ? "unit" : key === "target" ? "target" : key === "definition" ? "definition" : key === "datasource" ? "dataSource" : key === "owner" ? "owner" : ""] || "";
-        });
-        document.getElementById("kpiCode").value = k.code;
-        document.getElementById("kpiName").value = k.name;
-        document.getElementById("kpiCategory").value = k.category || "";
-        document.getElementById("kpiDepartment").value = k.department || "";
-        document.getElementById("kpiUnit").value = k.unit || "";
-        document.getElementById("kpiFrequency").value = k.frequency || "monthly";
-        document.getElementById("kpiReportingFrequency").value = k.reportingFrequency || "quarterly";
-        document.getElementById("kpiAggregation").value = k.aggregation || "AVERAGE";
-        document.getElementById("kpiTarget").value = k.target ?? "";
-        document.getElementById("kpiDirection").value = k.direction || "higher";
-        document.getElementById("kpiDefinition").value = k.definition || "";
-        document.getElementById("kpiDataSource").value = k.dataSource || "";
-        document.getElementById("kpiOwner").value = k.owner || "";
-    } else {
-        document.getElementById("kpiModalTitle").textContent = "إضافة مؤشر جديد";
-        ["kpiCode","kpiName","kpiCategory","kpiDepartment","kpiUnit","kpiTarget","kpiDefinition","kpiDataSource","kpiOwner"].forEach(id => document.getElementById(id).value = "");
-    }
+    document.getElementById("kpiModalTitle").textContent = k ? "تعديل بيانات المؤشر" : "إضافة مؤشر جديد";
+    Object.entries(KPI_FIELDS).forEach(([id, key]) => {
+        document.getElementById(id).value = k ? (k[key] ?? KPI_FIELD_DEFAULTS[key] ?? "") : (KPI_FIELD_DEFAULTS[key] ?? "");
+    });
+    document.getElementById("targetChangeReason").value = "";
+    document.getElementById("targetReasonBox").classList.add("hidden");
+
     const tInput = document.getElementById("kpiTarget");
     tInput.disabled = !can("editTarget");
     tInput.classList.toggle("readonly", !can("editTarget"));
-    document.getElementById("targetLockMessage").textContent = can("editTarget") ? "🔓 مدير النظام يستطيع تعديل المستهدف." : "🔒 المستهدف مقفل ولا يمكن تعديله إلا من قبل مدير النظام.";
+    document.getElementById("targetLockMessage").textContent = can("editTarget") ? "🔓 تعديل المستهدف يتطلب ذكر السبب ويُسجل في سجل التدقيق." : "🔒 المستهدف مقفل ولا يمكن تعديله إلا من قبل مدير النظام.";
 }
 
-function saveKpi(){
-    if(!can("editKpi")){ showToast("ليس لديك صلاحية."); return; }
-    const originalCode = document.getElementById("editKpiOriginalCode").value;
-    const code = document.getElementById("kpiCode").value.trim();
-    const name = document.getElementById("kpiName").value.trim();
-    if(!code || !name){ showToast("أدخل كود واسم المؤشر."); return; }
-    const target = document.getElementById("kpiTarget").value === "" ? null : Number(document.getElementById("kpiTarget").value);
-
-    if(originalCode){
-        const index = kpis.findIndex(k=>k.code===originalCode);
-        if(index < 0) return;
-        const old = kpis[index];
-        if(Number(old.target) !== Number(target)){
-            if(!can("editTarget")){ showToast("المستهدف الرسمي لا يمكن تعديله إلا بواسطة مدير النظام."); return; }
-            const reason = document.getElementById("targetChangeReason").value.trim();
-            if(!reason){ document.getElementById("targetReasonBox").classList.remove("hidden"); showToast("أدخل سبب تغيير المستهدف."); return; }
-            kpis[index] = { ...old, code, name, target, targetLastUpdated:new Date().toISOString(), targetUpdatedBy:currentUser.displayName };
-            addAudit("CHANGE_TARGET", code, old.target, target, reason);
-        } else {
-            kpis[index] = { ...old, code, name, category:document.getElementById("kpiCategory").value, department:document.getElementById("kpiDepartment").value, unit:document.getElementById("kpiUnit").value, frequency:document.getElementById("kpiFrequency").value, reportingFrequency:document.getElementById("kpiReportingFrequency").value, aggregation:document.getElementById("kpiAggregation").value, direction:document.getElementById("kpiDirection").value, definition:document.getElementById("kpiDefinition").value, dataSource:document.getElementById("kpiDataSource").value, owner:document.getElementById("kpiOwner").value };
-            addAudit("EDIT_KPI", code, "", "", "تعديل تعريف مؤشر");
-        }
-    } else {
-        if(kpis.some(k=>k.code===code)){ showToast("كود المؤشر موجود مسبقاً."); return; }
-        kpis.push({ code, name, category:document.getElementById("kpiCategory").value, department:document.getElementById("kpiDepartment").value, unit:document.getElementById("kpiUnit").value, frequency:document.getElementById("kpiFrequency").value, reportingFrequency:document.getElementById("kpiReportingFrequency").value, aggregation:document.getElementById("kpiAggregation").value, target, direction:document.getElementById("kpiDirection").value, definition:document.getElementById("kpiDefinition").value, dataSource:document.getElementById("kpiDataSource").value, owner:document.getElementById("kpiOwner").value, targetLastUpdated:target!=null?new Date().toISOString():null, targetUpdatedBy:target!=null?currentUser.displayName:null });
-        addAudit("ADD_KPI", code, "", target, "إضافة مؤشر جديد");
-    }
-    save(STORAGE.kpis, kpis);
-    closeKpiModal(); populateRecordKpis(); populateFilters(); renderKpis(); renderDashboard();
-    showToast("تم حفظ المؤشر بنجاح.");
+function toggleTargetReason(){
+    const orig = document.getElementById("editKpiOriginalCode").value;
+    const k = orig ? kpis.find(x=>x.code===orig) : null;
+    const v = document.getElementById("kpiTarget").value;
+    const newT = v === "" ? null : Number(v);
+    document.getElementById("targetReasonBox").classList.toggle("hidden", !k || (k.target ?? null) === newT);
 }
 
 function closeKpiModal(){ document.getElementById("kpiModal").classList.add("hidden"); }
 
+function saveKpi(){
+    if(!can("editKpi")){ showToast("ليس لديك صلاحية."); return; }
+    const orig = document.getElementById("editKpiOriginalCode").value;
+    const form = {};
+    Object.entries(KPI_FIELDS).forEach(([id, key]) => form[key] = document.getElementById(id).value.trim());
+    form.target = form.target === "" ? null : Number(form.target);
+    if(!form.code || !form.name){ showToast("أدخل الكود واسم المؤشر."); return; }
+    if(form.target != null && !Number.isFinite(form.target)){ showToast("قيمة المستهدف غير صالحة."); return; }
+    if(kpis.some(k => k.code === form.code && k.code !== orig)){ showToast("كود المؤشر موجود مسبقاً."); return; }
+
+    if(orig){
+        const idx = kpis.findIndex(k=>k.code===orig);
+        if(idx < 0) return;
+        const old = kpis[idx];
+        const updated = { ...old, ...form };
+        if((old.target ?? null) !== form.target){
+            if(!can("editTarget")){ showToast("المستهدف الرسمي لا يمكن تعديله إلا بواسطة مدير النظام."); return; }
+            const reason = document.getElementById("targetChangeReason").value.trim();
+            if(!reason){ document.getElementById("targetReasonBox").classList.remove("hidden"); showToast("أدخل سبب تعديل المستهدف."); return; }
+            updated.targetLastUpdated = new Date().toISOString();
+            updated.targetUpdatedBy = currentUser.displayName;
+            addAudit("CHANGE_TARGET", form.code, old.target, form.target, reason);
+        }
+        if(orig !== form.code){
+            // Keep existing records attached to the KPI when its code changes.
+            records.forEach(r => { if(r.kpiCode === orig) r.kpiCode = form.code; });
+            save(STORAGE.records, records);
+        }
+        kpis[idx] = updated;
+        addAudit("EDIT_KPI", form.code, orig !== form.code ? orig : "", "", "تعديل تعريف مؤشر");
+    } else {
+        const now = new Date().toISOString();
+        kpis.push({ ...form, targetLastUpdated: form.target != null ? now : null, targetUpdatedBy: form.target != null ? currentUser.displayName : null });
+        addAudit("ADD_KPI", form.code, "", form.target, "إضافة مؤشر جديد");
+    }
+    save(STORAGE.kpis, kpis);
+    closeKpiModal(); populateRecordKpis(); populateFilters(); renderKpis(); renderRecords(); renderDashboard(); runQualityCheck();
+    showToast("تم حفظ التعديلات بنجاح.");
+}
+
 function deleteKpi(code){
     if(!can("deleteKpi")){ showToast("حذف المؤشرات متاح لمدير النظام فقط."); return; }
-    if(!confirm("هل أنت متأكد من حذف هذا المؤشر؟")) return;
+    const linked = records.filter(r => r.kpiCode === code).length;
+    if(!confirm(linked ? `هذا المؤشر مرتبط بـ ${linked} سجل. هل أنت متأكد من حذفه؟` : "هل أنت متأكد من حذف هذا المؤشر؟")) return;
     kpis = kpis.filter(x=>x.code!==code);
     save(STORAGE.kpis, kpis);
     addAudit("DELETE_KPI", code, "", "", "حذف مؤشر");
-    renderKpis(); populateRecordKpis(); populateFilters(); renderDashboard();
+    renderKpis(); populateRecordKpis(); populateFilters(); renderDashboard(); runQualityCheck();
     showToast("تم حذف المؤشر.");
 }
 
 async function handleExcelUpload(event){
-    if(!can("import")){ showToast("ليس لديك صلاحية الاستيراد."); event.target.value = ""; return; }
-    const file = event.target.files[0];
+    const input = event.target;
+    if(!can("import")){ showToast("ليس لديك صلاحية الاستيراد."); input.value = ""; return; }
+    const file = input.files[0];
     if(!file) return;
     try {
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type:"array", cellDates:true });
+        const workbook = XLSX.read(await file.arrayBuffer(), { type:"array", cellDates:true });
         importedRows = [];
         importWorkbookInfo = { fileName: file.name, sheets: workbook.SheetNames };
-
         workbook.SheetNames.forEach(sheetName => {
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header:1, defval:null, raw:true });
             if(!rows.length) return;
             const headerIdx = detectHeaderRow(rows);
-            const headers = rows[headerIdx];
-            for(let i=headerIdx+1; i<rows.length; i++){
+            const headers = rows[headerIdx] || [];
+            for(let i = headerIdx+1; i < rows.length; i++){
                 const row = rows[i];
                 if(!row || row.every(x => x == null || x === "")) continue;
-                const obj = {};
-                headers.forEach((h, idx) => { if(h) obj[String(h).trim()] = row[idx]; });
-                obj.__sheet = sheetName; importedRows.push(obj);
+                const obj = { __sheet: sheetName };
+                headers.forEach((h, idx) => { if(h != null && h !== "") obj[String(h).trim()] = row[idx]; });
+                importedRows.push(obj);
             }
         });
         if(!importedRows.length){ showToast("لم يتم العثور على بيانات صالحة للاستيراد."); return; }
         showImportModal();
-    } catch(e){ showToast("حدث خطأ أثناء قراءة ملف Excel."); }
+    } catch(e){
+        showToast("حدث خطأ أثناء قراءة ملف Excel.");
+    } finally {
+        input.value = "";  // allow re-selecting the same file
+    }
 }
 
 function detectHeaderRow(rows){
-    const kw = ["date","التاريخ","kpi","indicator","المؤشر","value","actual","القيمة"];
+    const kw = ["date","التاريخ","kpi","code","indicator","المؤشر","value","actual","القيمة","الكود"];
     let bestIdx = 0, bestScore = -1;
     rows.slice(0,10).forEach((row, idx) => {
         if(!Array.isArray(row)) return;
@@ -1230,115 +1132,196 @@ function detectHeaderRow(rows){
     return bestIdx;
 }
 
+const IMPORT_FIELDS = [
+    ["date","التاريخ",true,["date","التاريخ","تاريخ"]],
+    ["kpiCode","كود المؤشر",false,["code","kpi code","الكود","كود"]],
+    ["kpiName","اسم المؤشر",false,["kpi","indicator","name","المؤشر","اسم"]],
+    ["value","القيمة الفعلية",true,["value","actual","القيمة","الفعلي"]],
+    ["numerator","البسط",false,["numerator","البسط"]],
+    ["denominator","المقام",false,["denominator","المقام"]],
+    ["weight","الوزن",false,["weight","الوزن"]]
+];
+
 function showImportModal(){
-    document.getElementById("importModal").classList.remove("hidden");
-    const keys = Object.keys(importedRows[0] || {}).filter(k => !k.startsWith("__"));
-    const fields = [["date","التاريخ",true], ["kpiCode","KPI Code",false], ["kpiName","اسم المؤشر",false], ["value","القيمة الفعلية",true], ["numerator","البسط",false], ["denominator","المقام",false]];
-    let html = `<div class="bg-slate-50 p-3 rounded-xl mb-4 text-xs"><b>ملف:</b> ${importWorkbookInfo.fileName} — <b>سجلات:</b> ${importedRows.length}</div><div class="space-y-3">`;
-    fields.forEach(([field, label, req]) => {
-        html += `<div><label class="small-label">${label} ${req?'<span class="text-rose-500">*</span>':''}</label><select id="map_${field}"><option value="">— غير مستخدم —</option>${keys.map(k=>`<option value="${escapeAttr(k)}">${escapeHtml(k)}</option>`).join("")}</select></div>`;
+    const keys = [...new Set(importedRows.flatMap(r => Object.keys(r)))].filter(k => !k.startsWith("__"));
+    const used = new Set();
+    const guess = hints => {
+        const k = keys.find(key => !used.has(key) && hints.some(h => key.toLowerCase().includes(h)));
+        if(k) used.add(k);
+        return k || "";
+    };
+    // Guess the specific columns first so e.g. "كود المؤشر" is not taken by the name field.
+    const order = ["date","kpiCode","value","numerator","denominator","weight","kpiName"];
+    const guesses = {};
+    order.forEach(f => guesses[f] = guess(IMPORT_FIELDS.find(x => x[0] === f)[3]));
+
+    let html = `<div class="bg-slate-50 p-3 rounded-xl text-xs border border-slate-200"><b>الملف:</b> ${escapeHtml(importWorkbookInfo.fileName)} — <b>الأوراق:</b> ${importWorkbookInfo.sheets.length} — <b>السجلات:</b> ${importedRows.length}</div>
+        <p class="text-[11px] text-slate-500">حدد العمود المقابل لكل حقل. يجب تحديد كود المؤشر أو اسمه لربط السجلات بالمؤشرات المعرفة.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">`;
+    IMPORT_FIELDS.forEach(([field, label, req]) => {
+        html += `<div><label class="block font-bold text-slate-700 mb-1">${label} ${req ? '<span class="text-rose-500">*</span>' : ''}</label><select id="map_${field}"><option value="">— غير مستخدم —</option>${keys.map(k => `<option value="${escapeAttr(k)}" ${guesses[field] === k ? "selected" : ""}>${escapeHtml(k)}</option>`).join("")}</select></div>`;
     });
     html += `</div>`;
     document.getElementById("importMappingFields").innerHTML = html;
+    document.getElementById("importModal").classList.remove("hidden");
 }
 
-function closeImportModal(){ document.getElementById("importModal").classList.add("hidden"); }
+function closeImportModal(){ document.getElementById("importModal").classList.add("hidden"); importedRows = []; }
 
 function confirmImport(){
     const getMap = f => document.getElementById("map_"+f).value || null;
-    const mDate = getMap("date"), mCode = getMap("kpiCode"), mName = getMap("kpiName"), mVal = getMap("value");
-    if(!mDate || !mVal){ showToast("يجب تحديد عمود التاريخ والقيمة على الأقل."); return; }
+    const m = {}; IMPORT_FIELDS.forEach(([f]) => m[f] = getMap(f));
+    if(!m.date || !m.value){ showToast("يجب تحديد عمود التاريخ والقيمة على الأقل."); return; }
+    if(!m.kpiCode && !m.kpiName){ showToast("حدد عمود كود المؤشر أو اسمه."); return; }
 
-    let added = 0;
+    let added = 0, duplicates = 0, invalid = 0, unknown = 0;
     importedRows.forEach(row => {
-        const date = parseExcelDate(row[mDate]);
-        if(!date) return;
-        const actual = toNumberOrNull(row[mVal]);
-        if(actual == null) return;
-        const code = mCode ? normalizeText(row[mCode]) : "";
-        const name = mName ? normalizeText(row[mName]) : "";
-        let kpi = code ? kpis.find(k=>k.code===code) : null;
-        if(!kpi && name) kpi = kpis.find(k=>normalizeName(k.name) === normalizeName(name));
-        if(!kpi) return;
+        const date = parseExcelDate(row[m.date]);
+        const actual = toNumberOrNull(row[m.value]);
+        if(!date || actual == null){ invalid++; return; }
+        const code = m.kpiCode ? normalizeText(row[m.kpiCode]) : "";
+        const name = m.kpiName ? normalizeText(row[m.kpiName]) : "";
+        let kpi = code ? kpis.find(k => k.code.toLowerCase() === code.toLowerCase()) : null;
+        if(!kpi && name) kpi = kpis.find(k => normalizeName(k.name) === normalizeName(name));
+        if(!kpi){ unknown++; return; }
 
         const record = normalizeRecord({
             date, kpiCode: kpi.code, kpiName: kpi.name, actualValue: actual,
-            approved: can("approve"), approvalStatus: can("approve") ? "APPROVED" : "PENDING",
-            createdBy: currentUser.displayName, createdAt: new Date().toISOString()
+            numerator: m.numerator ? toNumberOrNull(row[m.numerator]) : null,
+            denominator: m.denominator ? toNumberOrNull(row[m.denominator]) : null,
+            weight: m.weight ? toNumberOrNull(row[m.weight]) : null,
+            dataSource: `Excel: ${importWorkbookInfo.fileName}`,
+            approved: can("approve"), createdBy: currentUser.displayName, createdAt: new Date().toISOString()
         });
-        if(!records.some(r => r.date === record.date && r.kpiCode === record.kpiCode)){
-            records.push(record); added++;
-        }
+        if(records.some(r => r.date === record.date && r.kpiCode === record.kpiCode)){ duplicates++; return; }
+        records.push(record); added++;
     });
     save(STORAGE.records, records);
-    addAudit("IMPORT_EXCEL", importWorkbookInfo.fileName, "", `${added} rec`, "استيراد بيانات جماعي");
-    closeImportModal(); renderRecords(); renderDashboard(); runQualityCheck();
-    showToast(`تم استيراد ${added} سجل بنجاح.`);
+    addAudit("IMPORT_EXCEL", importWorkbookInfo.fileName, "", `${added} سجل`, `مكرر: ${duplicates}، غير صالح: ${invalid}، مؤشر غير معروف: ${unknown}`);
+    closeImportModal(); refreshData();
+    const skipped = duplicates + invalid + unknown;
+    showToast(`تم استيراد ${added} سجل بنجاح.` + (skipped ? ` تم تجاهل ${skipped} (مكرر: ${duplicates}، غير صالح: ${invalid}، مؤشر غير معروف: ${unknown}).` : ""));
 }
 
 function parseExcelDate(val){
-    if(val instanceof Date && !isNaN(val)) return val;
+    if(val instanceof Date && !isNaN(val)) return new Date(val.getFullYear(), val.getMonth(), val.getDate());
     if(typeof val === "number"){ const p = XLSX.SSF.parse_date_code(val); return p ? new Date(p.y, p.m-1, p.d) : null; }
-    if(typeof val === "string"){ const d = new Date(val); return isNaN(d) ? null : d; }
+    if(typeof val === "string" && val.trim()){
+        const s = val.trim();
+        let mt = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+        if(mt) return new Date(+mt[1], +mt[2]-1, +mt[3]);
+        mt = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);  // DD/MM/YYYY
+        if(mt) return new Date(+mt[3], +mt[2]-1, +mt[1]);
+        const d = new Date(s); return isNaN(d) ? null : d;
+    }
     return null;
 }
 
-function runQualityCheck(){
-    let issues = [];
+function runQualityCheck(manual){
+    const issues = [];
+    const seen = new Map();
+    let missing = 0, dup = 0;
     records.forEach(r => {
-        if(r.actualValue == null) issues.push({ type:"قيمة مفقودة", kpi:r.kpiName, date:r.date, description:"القيمة الفعلية فارغة", severity:"HIGH" });
+        const kpi = kpis.find(k => k.code === r.kpiCode);
+        const label = kpi?.name || r.kpiName || r.kpiCode;
+        if(r.actualValue == null || !Number.isFinite(Number(r.actualValue))){
+            missing++; issues.push({ type:"قيمة مفقودة", kpi:label, date:r.date, desc:"القيمة الفعلية فارغة أو غير رقمية", sev:"HIGH" });
+        }
+        const key = r.kpiCode + "|" + r.date;
+        if(seen.has(key)){ dup++; issues.push({ type:"سجل مكرر", kpi:label, date:r.date, desc:"يوجد أكثر من سجل لنفس المؤشر في نفس التاريخ", sev:"MEDIUM" }); }
+        else seen.set(key, true);
+        if(!kpi) issues.push({ type:"مؤشر غير معرف", kpi:label, date:r.date, desc:"السجل مرتبط بمؤشر غير موجود في قائمة المؤشرات", sev:"HIGH" });
+        if(kpi && kpi.aggregation === "RATIO" && (r.numerator == null || r.denominator == null))
+            issues.push({ type:"بيانات ناقصة", kpi:label, date:r.date, desc:"مؤشر نسبة بدون بسط/مقام — سيُحسب من القيمة الفعلية", sev:"LOW" });
+        if(kpi && kpi.unit === "%" && Number(r.actualValue) > 100 && kpi.aggregation !== "RATIO")
+            issues.push({ type:"قيمة غير منطقية", kpi:label, date:r.date, desc:`نسبة مئوية أكبر من 100% (${r.actualValue})`, sev:"MEDIUM" });
+        if(!r.approved) issues.push({ type:"بانتظار الاعتماد", kpi:label, date:r.date, desc:"السجل غير معتمد ولا يدخل في حساب اللوحة", sev:"LOW" });
     });
-    kpis.forEach(k => {
-        if(k.target == null) issues.push({ type:"بدون مستهدف", kpi:k.name, date:"—", description:"المؤشر ليس له مستهدف رسمي", severity:"MEDIUM" });
-    });
+    const noTarget = kpis.filter(k => k.target == null);
+    noTarget.forEach(k => issues.push({ type:"بدون مستهدف", kpi:k.name, date:"—", desc:"المؤشر ليس له مستهدف رسمي", sev:"MEDIUM" }));
 
     document.getElementById("qualityRecords").textContent = records.length;
-    document.getElementById("qualityMissing").textContent = issues.filter(i=>i.type==="قيمة مفقودة").length;
-    document.getElementById("qualityDuplicates").textContent = 0;
-    document.getElementById("qualityNoTarget").textContent = kpis.filter(k=>k.target==null).length;
+    document.getElementById("qualityMissing").textContent = missing;
+    document.getElementById("qualityDuplicates").textContent = dup;
+    document.getElementById("qualityNoTarget").textContent = noTarget.length;
 
-    document.getElementById("qualityTableBody").innerHTML = issues.length ? issues.map(i=>`<tr><td>${i.type}</td><td>${escapeHtml(i.kpi)}</td><td>${i.date}</td><td>${i.description}</td><td><span class="pill status-red">${i.severity}</span></td></tr>`).join("") : `<tr><td colspan="5" class="text-center py-6 text-emerald-600 font-bold">✓ لم يتم اكتشاف مشكلات في جودة البيانات.</td></tr>`;
+    const sevClass = { HIGH:"status-red", MEDIUM:"status-yellow", LOW:"status-gray" };
+    const sevName = { HIGH:"عالية", MEDIUM:"متوسطة", LOW:"منخفضة" };
+    document.getElementById("qualityTableBody").innerHTML = issues.length
+        ? issues.map(i => `<tr><td class="font-bold">${i.type}</td><td>${escapeHtml(i.kpi)}</td><td>${escapeHtml(i.date)}</td><td>${escapeHtml(i.desc)}</td><td><span class="pill ${sevClass[i.sev]}">${sevName[i.sev]}</span></td></tr>`).join("")
+        : `<tr><td colspan="5" class="text-center py-6 text-emerald-600 font-bold">✓ كافة بيانات النظام سليمة وتجتاز الفحص الآلي.</td></tr>`;
+    if(manual) showToast(`اكتمل الفحص: ${issues.length} ملاحظة.`);
 }
 
 function renderUsers(){
-    document.getElementById("usersTableBody").innerHTML = users.map(u=>`<tr><td class="font-bold">${escapeHtml(u.username)}</td><td>${escapeHtml(u.displayName)}</td><td>${roleName(u.role)}</td><td><span class="pill status-green">فعال وثابت</span></td></tr>`).join("");
+    document.getElementById("usersTableBody").innerHTML = users.map(u => `
+        <tr><td class="font-bold">${escapeHtml(u.username)}</td><td>${escapeHtml(u.displayName)}</td><td><span class="pill bg-sky-50 text-sky-700">${roleName(u.role)}</span></td><td><span class="pill ${u.active ? "status-green" : "status-gray"}">${u.active ? "فعال" : "معطل"}</span></td></tr>
+    `).join("");
 }
 
 function renderAudit(){
-    document.getElementById("auditTableBody").innerHTML = auditLogs.length ? auditLogs.map(a=>`<tr><td>${formatDateTime(a.timestamp)}</td><td class="font-bold">${escapeHtml(a.displayName)}</td><td>${auditActionName(a.action)}</td><td>${escapeHtml(a.item||"—")}</td><td>${escapeHtml(String(a.oldValue||"—"))}</td><td>${escapeHtml(String(a.newValue||"—"))}</td><td>${escapeHtml(a.reason||"—")}</td></tr>`).join("") : `<tr><td colspan="7" class="text-center text-slate-400 py-6">لا يوجد سجل تدقيق</td></tr>`;
+    document.getElementById("auditTableBody").innerHTML = auditLogs.length ? auditLogs.map(a => `
+        <tr><td>${formatDateTime(a.timestamp || a.time)}</td><td class="font-bold">${escapeHtml(a.displayName || a.user)}</td><td>${auditActionName(a.action)}</td><td>${escapeHtml(a.item ?? "—")}</td><td>${escapeHtml(blank(a.oldValue ?? a.old))}</td><td>${escapeHtml(blank(a.newValue ?? a.new))}</td><td>${escapeHtml(a.reason || "—")}</td></tr>
+    `).join("") : `<tr><td colspan="7" class="text-center py-6 text-slate-400">لا يوجد سجل تدقيق حالياً</td></tr>`;
+}
+
+function addAudit(action, item, oldValue, newValue, reason){
+    auditLogs.unshift({ timestamp:new Date().toISOString(), username:currentUser.username, displayName:currentUser.displayName, action, item, oldValue, newValue, reason });
+    save(STORAGE.audit, auditLogs);
+    renderAudit();
 }
 
 function exportDashboard(){
     if(!can("export")){ showToast("ليس لديك صلاحية التصدير."); return; }
-    const year = Number(document.getElementById("filterYear").value);
-    const quarter = document.getElementById("filterQuarter").value;
-    const rows = kpis.map(k => ({ المؤشر: k.name, الكود: k.code, الفئة: k.category, الفعلي: getPeriodValue(k.code, year, quarter), المستهدف: k.target, الوحدة: k.unit }));
+    const { year, q, cat } = getFilters();
+    const rows = computeResults(year, q, cat).map(r => ({
+        "الكود": r.kpi.code, "المؤشر": r.kpi.name, "الفئة": r.kpi.category, "الوحدة": r.kpi.unit,
+        "الفعلي": round(r.act), "المستهدف": r.kpi.target, "نسبة الإنجاز %": round(r.ach),
+        "الفترة السابقة": round(r.prev), "نفس الفترة العام الماضي": round(r.sameY),
+        "الاتجاه": r.trend.label, "الحالة": r.status.label
+    }));
     const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = Object.keys(rows[0] || {}).map(() => ({ wch: 18 }));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "KPIs");
-    XLSX.writeFile(wb, `Aseer_KPI_Report_${year}_${quarter}.xlsx`);
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.writeFile(wb, `Aseer_KPIs_${year}_${q}.xlsx`);
 }
 
 function exportAudit(){
-    const ws = XLSX.utils.json_to_sheet(auditLogs);
+    if(!can("audit")){ showToast("ليس لديك صلاحية التصدير."); return; }
+    const rows = auditLogs.map(a => ({
+        "التاريخ والوقت": formatDateTime(a.timestamp || a.time), "المستخدم": a.displayName || a.user,
+        "الإجراء": auditActionName(a.action), "العنصر": a.item, "القيمة السابقة": blank(a.oldValue ?? a.old),
+        "القيمة الجديدة": blank(a.newValue ?? a.new), "السبب": a.reason
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Audit");
-    XLSX.writeFile(wb, "Aseer_KPI_Audit.xlsx");
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.writeFile(wb, "Audit_Log.xlsx");
 }
 
 function frequencyName(f){ return { daily:"يومي", weekly:"أسبوعي", monthly:"شهري", quarterly:"ربع سنوي", annual:"سنوي" }[f] || f || "—"; }
 function aggregationName(a){ return { SUM:"مجموع", AVERAGE:"متوسط", WEIGHTED_AVERAGE:"متوسط موزون", RATIO:"بسط/مقام", LAST_VALUE:"آخر قيمة" }[a] || a || "—"; }
 function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف" }[d] || d || "—"; }
-function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", IMPORT_EXCEL:"استيراد Excel", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
-function formatDateInput(d){ return d.toISOString().slice(0,10); }
+function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", IMPORT_EXCEL:"استيراد Excel", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+function pad2(n){ return String(n).padStart(2, "0"); }
+// Local-date formatting/parsing: toISOString() would shift dates by the UTC offset.
+function formatDateInput(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function parseIsoDate(s){ const m = String(s||"").match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); return m ? new Date(+m[1], +m[2]-1, +m[3]) : new Date(s); }
 function formatDateTime(v){ return v ? new Date(v).toLocaleString("ar-SA") : "—"; }
-function toNumberOrNull(v){ const n = Number(String(v||"").replace(/,/g,"")); return Number.isFinite(n) ? n : null; }
-function normalizeText(v){ return String(v||"").trim(); }
-function normalizeName(n){ return String(n||"").trim().toLowerCase().replace(/\s+/g," ").replace(/[ًٌٍَُِّْـ]/g,""); }
+function toNumberOrNull(v){ if(v == null || v === "") return null; const n = Number(String(v).replace(/[,%\s]/g,"")); return Number.isFinite(n) ? n : null; }
+function round(v){ return v == null || !Number.isFinite(Number(v)) ? null : Math.round(Number(v)*100)/100; }
+function blank(v){ return v == null || v === "" ? "—" : String(v); }
+function normalizeText(v){ return String(v ?? "").trim(); }
+function normalizeName(n){ return String(n ?? "").trim().toLowerCase().replace(/\s+/g," ").replace(/[ًٌٍَُِّْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي"); }
 function shorten(s, max){ s = String(s||""); return s.length > max ? s.substring(0, max) + "…" : s; }
-function escapeHtml(v){ return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function escapeHtml(v){ return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 function escapeAttr(v){ return escapeHtml(v); }
+
 function showToast(msg){
     const t = document.getElementById("toast"); t.textContent = msg; t.classList.remove("hidden");
-    clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => t.classList.add("hidden"), 3500);
+    clearTimeout(window.tTimer); window.tTimer = setTimeout(()=>t.classList.add("hidden"), 3500);
 }
 
 init();
