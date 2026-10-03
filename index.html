@@ -1134,7 +1134,7 @@ async function init(){
             users = (await rpc("public_users")).map(u => ({ ...u, active:true }));
         }catch(e){
             users = [];
-            showLoginError("تعذر الاتصال بقاعدة البيانات المشتركة. تحقق من الإنترنت ثم أعد تحميل الصفحة.");
+            showLoginError(/غير مهيأة/.test(e.message) ? e.message : "تعذر الاتصال بقاعدة البيانات المشتركة. تحقق من الإنترنت ثم أعد تحميل الصفحة.");
             document.getElementById("loginPasswordBox").classList.remove("hidden");
         }
         renderLoginUsers();
@@ -1244,7 +1244,11 @@ async function rpc(fn, args = {}){
     const { data, error } = await CLOUD.client.rpc(fn, args);
     if(error){
         const code = Object.keys(CLOUD_ERRORS).find(c => String(error.message || "").includes(c));
-        const err = new Error(code ? CLOUD_ERRORS[code] : "تعذر الاتصال بقاعدة البيانات: " + (error.message || "خطأ غير معروف"));
+        // PostgREST answers PGRST202 when a function is missing: setup.sql has not been run in this project yet.
+        const notSetUp = error.code === "PGRST202" || /could not find the function/i.test(String(error.message || ""));
+        const err = new Error(code ? CLOUD_ERRORS[code]
+            : notSetUp ? "قاعدة البيانات غير مهيأة بعد: شغّل ملف supabase/setup.sql في SQL Editor بمشروع Supabase ثم أعد تحميل الصفحة."
+            : "تعذر الاتصال بقاعدة البيانات: " + (error.message || "خطأ غير معروف"));
         err.code = code;
         if(code === "SESSION_EXPIRED" && currentUser?.token) setTimeout(() => { showToast(err.message); logout(); }, 0);
         throw err;
