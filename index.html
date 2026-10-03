@@ -917,7 +917,7 @@
             </div>
             <button onclick="closeQuarterModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold" aria-label="إغلاق">&times;</button>
         </div>
-        <div class="entry-warn !text-[11px]">القيمة المدخلة هنا تحل محل القيمة المحسوبة من القراءات أو ملف الإكسل لهذا الربع، في العرض الربع سنوي (وفي الإجمالي السنوي لمؤشرات العدد). اترك الخانة فارغة لاستخدام القيمة المحسوبة.</div>
+        <div class="entry-warn !text-[11px]">القيمة المدخلة هنا تحل محل القيمة المحسوبة من القراءات أو ملف الإكسل للأرباع المنتهية. الربع الحالي يُحسب تلقائياً من القراءات ولا يُعدّل، في العرض الربع سنوي (وفي الإجمالي السنوي لمؤشرات العدد). اترك الخانة فارغة لاستخدام القيمة المحسوبة.</div>
         <div id="qmRows" class="space-y-2"></div>
         <div>
             <label for="qmReason" class="block text-[11px] font-bold text-rose-600 mb-1">سبب التعديل <span aria-hidden="true">*</span> (إلزامي — يُسجل في سجل التدقيق)</label>
@@ -1040,7 +1040,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.4 — 2026-10-03";
+const APP_VERSION = "الإصدار 3.5 — 2026-10-03";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -2132,8 +2132,11 @@ function computedPeriodValue(kpi, year, q){ return aggregateRows(periodRecords(k
 
 // Quarter values set by the admin, kept on the KPI: kpi.quarterValues = { "2026-Q3": { value, by, at, reason } }.
 // They take the place of the value computed from readings for that quarter.
+// A quarter still in progress (Q4 2026 from 1 October) is always computed from its readings;
+// only quarters that have ended take a value set by the admin.
+function quarterOpen(year, q){ return formatDateInput(quarterBounds(Number(year), q)[1]) >= formatDateInput(new Date()); }
 function manualQuarter(kpi, year, q){
-    if(!/^Q[1-4]$/.test(q) || !kpi.quarterValues) return null;
+    if(!/^Q[1-4]$/.test(q) || !kpi.quarterValues || quarterOpen(year, q)) return null;
     const m = kpi.quarterValues[`${Number(year)}-${q}`];
     return m && isNum(m.value) ? Number(m.value) : null;
 }
@@ -2447,6 +2450,11 @@ function openQuarterModal(code, year){
     document.getElementById("qmRows").innerHTML = QUARTERS.map((q, i) => {
         const m = k.quarterValues?.[`${year}-${q}`];
         const calc = computedPeriodValue(k, year, q);
+        if(quarterOpen(year, q)) return `<div class="grid grid-cols-[110px_1fr_1fr] gap-3 items-center bg-sky-50 border border-sky-200 rounded-xl px-3 py-2">
+            <div class="text-xs font-black text-slate-800">${QUARTER_LABELS[i]} <span class="text-slate-400 font-mono">${q}</span></div>
+            <div class="text-[11px] text-slate-500">المحسوبة: <b class="text-slate-800">${fmt(calc, k)}</b></div>
+            <div class="text-[10.5px] font-bold text-sky-700"><i class="fa-solid fa-rotate ml-1"></i>تلقائي من القراءات ابتداءً من ${shortDate(formatDateInput(quarterBounds(year, q)[0]))}</div>
+        </div>`;
         return `<div class="grid grid-cols-[110px_1fr_1fr] gap-3 items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
             <div class="text-xs font-black text-slate-800">${QUARTER_LABELS[i]} <span class="text-slate-400 font-mono">${q}</span></div>
             <div class="text-[11px] text-slate-500">المحسوبة: <b class="text-slate-800">${fmt(calc, k)}</b></div>
@@ -2468,6 +2476,7 @@ async function saveQuarterValues(){
     const changes = [];
     for(const input of document.querySelectorAll("#qmRows [data-qm]")){
         const q = input.dataset.qm, key = `${year}-${q}`, raw = input.value.trim();
+        if(quarterOpen(year, q)) continue;
         if(raw !== "" && !isNum(raw)){ showToast(`قيمة ${q} غير صحيحة.`); return; }
         const old = before[key] && isNum(before[key].value) ? Number(before[key].value) : null;
         const val = raw === "" ? null : Number(raw);
