@@ -381,6 +381,8 @@ begin
 end $$;
 
 -- ---------- grants ----------
+-- Some new projects do not give the API roles access to the public schema by default.
+grant usage on schema public to anon, authenticated;
 revoke all on public.app_users, public.app_sessions, public.audit_log from anon, authenticated;
 grant select on public.kpis, public.records, public.target_years, public.app_events to anon, authenticated;
 grant execute on function public.public_users(), public.login(text, text), public.logout(uuid), public.whoami(uuid),
@@ -404,3 +406,7 @@ insert into public.app_users(username, display_name, role, pass_hash, must_chang
     ('manager', 'لمى علي الحقباني',          'manager', extensions.crypt('Manager@2026', extensions.gen_salt('bf')), true),
     ('data',    'وحدة مؤشرات الأداء',         'data',    extensions.crypt('Data@2026', extensions.gen_salt('bf')), true)
 on conflict (username) do nothing;
+
+-- ---------- make the new functions visible to the API right away ----------
+-- PostgREST caches the schema; without a reload the page can get "could not find the function" (PGRST202).
+notify pgrst, 'reload schema';

@@ -1134,7 +1134,7 @@ async function init(){
             users = (await rpc("public_users")).map(u => ({ ...u, active:true }));
         }catch(e){
             users = [];
-            showLoginError(/غير مهيأة/.test(e.message) ? e.message : "تعذر الاتصال بقاعدة البيانات المشتركة. تحقق من الإنترنت ثم أعد تحميل الصفحة.");
+            showLoginError(/غير مهيأة/.test(e.message) ? e.message : "تعذر الاتصال بقاعدة البيانات المشتركة. تحقق من الإنترنت ثم أعد تحميل الصفحة. [" + String(e.message || "").slice(0, 200) + "]");
             document.getElementById("loginPasswordBox").classList.remove("hidden");
         }
         renderLoginUsers();
@@ -1248,6 +1248,7 @@ async function rpc(fn, args = {}){
         const notSetUp = error.code === "PGRST202" || /could not find the function/i.test(String(error.message || ""));
         const err = new Error(code ? CLOUD_ERRORS[code]
             : notSetUp ? "قاعدة البيانات غير مهيأة بعد: شغّل ملف supabase/setup.sql في SQL Editor بمشروع Supabase ثم أعد تحميل الصفحة."
+                + ` [${error.code || ""} ${String(error.message || "").slice(0, 160)}${error.hint ? " — " + String(error.hint).slice(0, 120) : ""}]`
             : "تعذر الاتصال بقاعدة البيانات: " + (error.message || "خطأ غير معروف"));
         err.code = code;
         if(code === "SESSION_EXPIRED" && currentUser?.token) setTimeout(() => { showToast(err.message); logout(); }, 0);
