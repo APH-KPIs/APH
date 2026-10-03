@@ -208,6 +208,25 @@
         .key-edit { position: absolute; bottom: 10px; left: 12px; font-size: 10.5px; font-weight: 800; color: #0369a1; background: #e0f2fe; border-radius: 8px; padding: 3px 8px; }
         .key-edit:hover { background: #bae6fd; }
         .kq-manual { font-size: 9.5px; font-weight: 800; color: #7c3aed; }
+        .pending-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #78350f; background: #fde68a; border-radius: 999px; padding: 5px 11px; }
+        .pending-badge:hover { background: #fcd34d; }
+        .pending-badge { white-space: nowrap; flex-shrink: 0; }
+        .pending-badge .pb-label { display: none; }
+        /* Phones: the header keeps the hospital name readable next to the status pills. */
+        @media (max-width: 639px) {
+            header.executive-header .brand, header.executive-header .brand-text { min-width: 0; overflow: hidden; }
+            header.executive-header .brand-mark { flex-shrink: 0; }
+            header.executive-header > div > div:first-child { overflow: hidden; flex: 1 1 auto; }
+            header.executive-header > div { gap: 10px; }
+            header.executive-header .brand-ar { font-size: 12.5px; white-space: normal; line-height: 1.3; max-width: 160px; }
+            header.executive-header .brand-en { display: none; }
+            header.executive-header .live-badge .txt { display: none; }
+            header.executive-header .live-badge { padding: 6px; }
+        }
+        @media (min-width: 640px) { .pending-badge .pb-label { display: inline; } }
+        .pending-badge .fa-bell { animation: ring 2.4s ease-in-out infinite; }
+        @keyframes ring { 0%, 86%, 100% { transform: rotate(0); } 90% { transform: rotate(14deg); } 95% { transform: rotate(-14deg); } }
+        @media (prefers-reduced-motion: reduce) { .pending-badge .fa-bell { animation: none; } }
         #printArea { display: none; }
         @media print {
             @page { size: A4; margin: 12mm; }
@@ -401,6 +420,7 @@
 
             <div class="flex items-center gap-3">
                 <span id="liveBadge" class="live-badge hidden" title="حالة الاتصال بقاعدة البيانات المشتركة"><span class="dot"></span><span class="txt"></span></span>
+                <button id="pendingBadge" onclick="openPendingReadings()" class="pending-badge hidden" title="قراءات بانتظار اعتمادك"><i class="fa-solid fa-bell"></i><span class="txt"></span></button>
                 <button id="changePwBtn" onclick="openPasswordModal(false)" class="btn btn-ghost text-xs hidden" title="تغيير كلمة المرور"><i class="fa-solid fa-key"></i></button>
                 <div class="show-sm text-left max-w-[170px]">
                     <div id="headerUserName" class="text-xs font-bold text-white truncate"></div>
@@ -435,6 +455,7 @@
 
         <!-- ================= SECTION: DASHBOARD ================= -->
         <section id="sectionDashboard" class="space-y-6">
+            <div id="pendingReminder" class="hidden"></div>
             <div id="backupReminder" class="hidden"></div>
             <!-- FILTERS -->
             <div class="card p-4">
@@ -685,6 +706,13 @@
                                 <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                                 <input id="recordSearch" type="search" placeholder="بحث بالمؤشر أو التاريخ..." class="!py-2 !pr-9 !text-xs w-56" oninput="renderRecords()">
                             </div>
+                            <select id="recordStatus" onchange="renderRecords(); updatePendingNotice()" class="!py-2 !text-xs !w-40" aria-label="حالة السجل">
+                                <option value="ALL">كل الحالات</option>
+                                <option value="pending">بانتظار الاعتماد</option>
+                                <option value="approved">معتمد</option>
+                                <option value="local">على الجهاز — لم تُرسل</option>
+                            </select>
+                            <button id="approveAllBtn" onclick="approveShown()" class="btn btn-primary text-xs whitespace-nowrap hidden"><i class="fa-solid fa-check-double ml-1"></i> اعتماد الكل</button>
                             <button id="exportRecordsBtn" onclick="exportRecords()" class="btn btn-secondary text-xs whitespace-nowrap"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير Excel</button>
                             <span id="backupBtns" class="hidden flex items-center gap-2">
                                 <button onclick="exportFullBackup()" class="btn btn-primary text-xs whitespace-nowrap" title="القراءات والمؤشرات والمستهدفات والقيم الربعية في ملف واحد"><i class="fa-solid fa-shield-halved ml-1"></i> نسخة احتياطية كاملة</button>
@@ -1076,7 +1104,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.6 — 2026-10-03";
+const APP_VERSION = "الإصدار 3.7 — 2026-10-03";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1622,7 +1650,7 @@ async function flushPending(){
         save(STORAGE.pending, { username: null, rows: [], deletes: [] });
         records.forEach(r => { delete r.localPending; });
         const sent = q.rows.length + q.deletes.length - skipped;
-        showToast(`عاد الاتصال — تم إرسال ${sent} قراءة محفوظة على الجهاز${skipped ? `، ولم يُقبل ${skipped} لأنه معتمد أو يخص مستخدماً آخر` : ""}.`);
+        showToast(`عاد الاتصال — تم إرسال ${readingsText(sent)} محفوظة على الجهاز${skipped ? `، ولم يُقبل ${skipped} لأنه معتمد أو يخص مستخدماً آخر` : ""}.`);
         addAudit("SYNC_PENDING", "قراءات محفوظة على الجهاز", "", String(sent), "إرسال تلقائي بعد عودة الاتصال");
         flushingPending = false;
         await cloudSync(false);
@@ -2086,6 +2114,58 @@ async function approveRecord(id){
     showToast("تم اعتماد السجل.");
 }
 
+// ---- Readings waiting for approval: header badge, dashboard notice and bulk approval ----
+// Calculated readings are approved together with their sources, so only entered readings count.
+function readingsText(n){ return n === 1 ? "قراءة واحدة" : n === 2 ? "قراءتان" : n <= 10 ? `${n} قراءات` : `${n.toLocaleString("en-US")} قراءة`; }
+function daysText(n){ return n === 1 ? "يوم واحد" : n === 2 ? "يومين" : n <= 10 ? `${n} أيام` : `${n} يوماً`; }
+function pendingApprovals(){ return records.filter(r => !r.approved && !r.localPending && r.dataSource !== DERIVED_SOURCE); }
+
+function updatePendingNotice(){
+    const badge = document.getElementById("pendingBadge"), box = document.getElementById("pendingReminder");
+    if(!badge || !box) return;
+    const list = currentUser && can("approve") ? pendingApprovals() : [];
+    const n = list.length;
+    badge.classList.toggle("hidden", !n);
+    box.classList.toggle("hidden", !n);
+    document.getElementById("approveAllBtn")?.classList.toggle("hidden", !can("approve") || document.getElementById("recordStatus")?.value !== "pending" || !n);
+    if(!n) return;
+    badge.querySelector(".txt").innerHTML = `${n.toLocaleString("en-US")}<span class="pb-label"> بانتظار الاعتماد</span>`;
+    badge.setAttribute("aria-label", `${readingsText(n)} بانتظار الاعتماد`);
+    const oldest = list.reduce((m, r) => !m || r.date < m ? r.date : m, "");
+    const by = [...new Set(list.map(r => r.createdBy).filter(Boolean))];
+    const days = oldest ? Math.floor((Date.now() - parseIsoDate(oldest)) / 86400000) : 0;
+    box.innerHTML = `<div class="card p-4 border-r-4 border-r-amber-400 flex flex-wrap items-center justify-between gap-3">
+        <div class="text-xs"><b class="text-amber-800"><i class="fa-solid fa-bell ml-1"></i> ${readingsText(n)} بانتظار اعتمادك</b>
+            <div class="text-slate-600 mt-0.5">أقدمها بتاريخ ${escapeHtml(oldest)}${days > 0 ? ` (قبل ${daysText(days)})` : ""}${by.length ? ` · أدخلها: ${escapeHtml(by.slice(0, 3).join("، "))}${by.length > 3 ? " وآخرون" : ""}` : ""}. القراءات غير المعتمدة لا تدخل في حسابات اللوحة.</div></div>
+        <button onclick="openPendingReadings()" class="btn btn-primary text-xs"><i class="fa-solid fa-list-check ml-1"></i> مراجعة واعتماد</button>
+    </div>`;
+}
+
+function openPendingReadings(){
+    showSection("data");
+    document.getElementById("recordSearch").value = "";
+    document.getElementById("recordStatus").value = "pending";
+    renderRecords(); updatePendingNotice();
+    document.getElementById("recordsTableBody").closest(".overflow-auto")?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function approveShown(){
+    if(!can("approve")){ showToast("ليس لديك صلاحية اعتماد البيانات."); return; }
+    const list = matchedRecords().filter(r => !r.approved && !r.localPending && r.dataSource !== DERIVED_SOURCE);
+    if(!list.length){ showToast("لا توجد قراءات بانتظار الاعتماد في القائمة المعروضة."); return; }
+    if(!confirm(`اعتماد ${readingsText(list.length)} بانتظار الاعتماد (المطابقة للبحث الحالي) دفعة واحدة؟\n\nراجع القيم قبل الاعتماد؛ تدخل القراءات المعتمدة في حسابات اللوحة مباشرة.`)) return;
+    const now = new Date().toISOString(), prev = list.map(r => ({ r, by: r.approvedBy, at: r.approvedAt }));
+    list.forEach(r => { r.approved = true; r.approvedBy = currentUser.displayName; r.approvedAt = now; });
+    const [dUp, dRem] = deriveRecords(list);
+    if(!await persistRecords([...list, ...dUp], dRem)){
+        prev.forEach(({ r, by, at }) => { r.approved = false; r.approvedBy = by; r.approvedAt = at; });
+        refreshData(); return;
+    }
+    addAudit("APPROVE_RECORD", `${list.length} قراءة`, "بانتظار الاعتماد", "معتمد", "اعتماد جماعي للقراءات المعروضة");
+    refreshData();
+    showToast(`تم اعتماد ${readingsText(list.length)}.`);
+}
+
 async function deleteRecord(id){
     if(!can("approve")){ showToast("ليس لديك صلاحية حذف البيانات."); return; }
     const r = records.find(x => x.id === id);
@@ -2155,7 +2235,7 @@ async function saveRecordEdit(){
     showToast("تم حفظ تعديل السجل.");
 }
 
-function refreshData(){ renderRecords(); populateFilters(); renderDashboard(); runQualityCheck(); }
+function refreshData(){ renderRecords(); populateFilters(); renderDashboard(); runQualityCheck(); updatePendingNotice(); }
 
 function parseNum(id){ const v = document.getElementById(id).value; if(v === "") return null; const n = parseFloat(v); return Number.isNaN(n) ? null : n; }
 
@@ -2468,6 +2548,7 @@ function renderDashboard(){
     renderExecInsights(results, year, q);
     renderKeyKpis(year, q);
     renderBackupReminder();
+    updatePendingNotice();
 
     const term = normalizeName(document.getElementById("tableSearch").value);
     const st = document.getElementById("tableStatus").value;
@@ -3017,8 +3098,10 @@ function renderCharts(results){
 function matchedRecords(){
     const term = normalizeName(document.getElementById("recordSearch").value);
     const kpiName = r => kpis.find(x => x.code === r.kpiCode)?.name || r.kpiName || r.kpiCode;
+    const st = document.getElementById("recordStatus")?.value || "ALL";
+    const stOk = r => st === "ALL" || (st === "pending" ? !r.approved && !r.localPending : st === "approved" ? r.approved && !r.localPending : !!r.localPending);
     return [...records]
-        .filter(r => !term || normalizeName(kpiName(r)).includes(term) || String(r.date).includes(term) || String(r.kpiCode).toLowerCase().includes(term))
+        .filter(r => stOk(r) && (!term || normalizeName(kpiName(r)).includes(term) || String(r.date).includes(term) || String(r.kpiCode).toLowerCase().includes(term)))
         .sort((a,b)=>String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)));
 }
 
