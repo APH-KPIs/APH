@@ -1,0 +1,46 @@
+# Keeps the shared database awake. Supabase's free plan pauses a project after about a week
+# without requests, so this calls a public read-only function every three days.
+# It uses only the public key already published in config.js.
+name: Keep database awake
+
+on:
+  schedule:
+    - cron: "17 5 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Call the database
+        run: |
+          read -r URL KEY < <(node -e 'global.window = {}; eval(require("fs").readFileSync("config.js", "utf8")); const c = window.APP_CONFIG || {}; console.log(c.supabaseUrl || "", c.supabaseKey || "")')
+          if [ -z "$URL" ]; then echo "config.js has no supabaseUrl; nothing to keep awake."; exit 0; fi
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o body.json -w "%{http_code}" -m 30 -X POST "$URL/rest/v1/rpc/public_users" \
+              -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}' || echo 000)
+            if [ "$code" = "200" ] && node -e 'JSON.parse(require("fs").readFileSync("body.json", "utf8"))'; then
+              echo "Database is awake."; exit 0
+            fi
+            echo "Attempt $attempt: HTTP $code"; cat body.json 2>/dev/null || true; echo
+            sleep 20
+          done
+          echo "::error::The database did not answer. If it is paused, open supabase.com and choose Restore project."
+          exit 1
+
+      # GitHub turns off scheduled workflows after 60 days without repository activity.
+      # Re-enabling this workflow through the API resets that timer without adding commits.
+      - name: Keep this schedule enabled
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -sS -f -X PUT -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/keep-alive.yml/enable" \
+            || echo "Could not re-enable the schedule (it stays enabled until 60 days without activity)."
