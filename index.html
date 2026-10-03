@@ -728,6 +728,7 @@
                             <th>الوحدة</th>
                             <th>اتجاه الأداء</th>
                             <th>المستهدف <span id="targetYearHead"></span></th>
+                            <th>نوع المستهدف (زمنياً)</th>
                             <th>مرجع</th>
                             <th>الفعلي <span id="targetPrevHead"></span></th>
                         </tr>
@@ -1011,7 +1012,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.2 — 2026-10-03";
+const APP_VERSION = "الإصدار 3.3 — 2026-10-03";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -3413,7 +3414,7 @@ function renderTargets(){
         const t = k.targets?.[year];
         const prevActual = getPeriodValue(k.code, year - 1, "ALL");
         const ref = hasRange(k) ? `النطاق المثالي: ${rangeText(k)}` : isNum(k.target) ? `مستهدف الملف: ${fmt(k.target, k)}` : isNum(k.greenMin) ? `حد الأخضر: ${fmt(k.greenMin, k)}` : (k.targets?.[year-1] && isNum(k.targets[year-1].value) ? `مستهدف ${year-1}: ${fmt(k.targets[year-1].value, k)}` : "—");
-        const catRow = k.category !== lastCat ? `<tr><td colspan="7" class="!bg-slate-50 !py-2 text-[11px] font-black text-slate-500">${escapeHtml(k.category || "بدون فئة")}</td></tr>` : "";
+        const catRow = k.category !== lastCat ? `<tr><td colspan="8" class="!bg-slate-50 !py-2 text-[11px] font-black text-slate-500">${escapeHtml(k.category || "بدون فئة")}</td></tr>` : "";
         lastCat = k.category;
         return `${catRow}
         <tr>
@@ -3421,9 +3422,10 @@ function renderTargets(){
             <td class="text-xs">${escapeHtml(k.category || "—")}</td>
             <td class="text-xs">${escapeHtml(k.unit || "—")}</td>
             <td><select data-dir="${escapeAttr(k.code)}" class="!py-1.5 !text-xs !w-36 ${editable ? "" : "readonly"}" ${editable ? "" : "disabled"}>${dirOptions(k.direction || "none")}</select></td>
-            <td><input data-target="${escapeAttr(k.code)}" type="number" step="any" class="!py-1.5 !text-xs !w-28 ${editable ? "" : "readonly"}" ${editable ? "" : "disabled"} value="${t && isNum(t.value) ? t.value : ""}" placeholder="${isNum(k.target) ? k.target : ""}"></td>
+            <td><input data-target="${escapeAttr(k.code)}" type="number" step="any" class="!py-1.5 !text-xs !w-28 ${editable ? "" : "readonly"}" ${editable ? "" : "disabled"} value="${t && isNum(t.value) ? t.value : ""}" placeholder="${isNum(k.target) ? k.target : ""}" oninput="updateTargetScale(this)"></td>
+            <td class="text-[11px] min-w-[190px]">${targetBasisHtml(k)}<div data-scale="${escapeAttr(k.code)}" class="text-[10.5px] text-sky-700 font-semibold mt-0.5">${targetScaleText(k, t && isNum(t.value) ? t.value : k.target)}</div></td>
             <td class="text-[11px] text-slate-500">${ref}</td>
-            <td class="text-xs font-semibold">${fmt(prevActual, k)}</td>
+            <td class="text-xs font-semibold">${fmt(prevActual, k)}${k.aggregation === "SUM" && isNum(prevActual) ? `<div class="text-[10.5px] text-slate-500 font-normal">متوسط الربع: ${fmt(prevActual / 4, k)}</div>` : ""}</td>
         </tr>`;
     }).join("");
 
@@ -3440,6 +3442,29 @@ function renderTargets(){
                 <button onclick="saveTargets(true)" class="btn btn-primary text-xs"><i class="fa-solid fa-lock ml-1"></i> اعتماد وقفل مستهدفات ${year}</button>` : ""}
             ${locked && can("editTarget") ? `<button onclick="unlockTargets()" class="btn btn-secondary text-xs"><i class="fa-solid fa-lock-open ml-1"></i> فتح للتعديل (مع ذكر السبب)</button>` : ""}
         </div>`;
+}
+
+// How a typed target is read over time. Summed (count) KPIs take a quarterly total that the dashboard
+// scales to the period shown; rates, averages and period values use the same number for every period.
+function targetBasisHtml(k){
+    const tag = (txt, cls) => `<span class="pill ${cls} !py-0.5 !px-2 !text-[10.5px]">${txt}</span>`;
+    if(k.direction === "range") return `${tag("نطاق ثابت", "status-green")}<div class="text-slate-500 mt-0.5">نفس النطاق لأي فترة</div>`;
+    if(k.direction === "conditional") return `${tag("مشروط", "status-gray")}<div class="text-slate-500 mt-0.5">لا يُقيَّم بمستهدف</div>`;
+    if(k.aggregation === "SUM") return `${tag("ربع سنوي (إجمالي الربع)", "status-yellow")}<div class="text-slate-500 mt-0.5">أدخل إجمالي الربع الواحد</div>`;
+    const kind = k.unit === "%" || k.aggregation === "RATIO" || k.aggregation === "WEIGHTED_AVERAGE" ? "نسبة"
+        : k.aggregation === "AVERAGE" ? "متوسط" : "قيمة الفترة";
+    return `${tag(`${kind} — ثابت لكل الفترات`, "status-green")}<div class="text-slate-500 mt-0.5">نفس الرقم للأسبوع والشهر والربع والسنة</div>`;
+}
+function targetScaleText(k, v){
+    if(k.aggregation !== "SUM" || k.direction === "range" || k.direction === "conditional" || !isNum(v)) return "";
+    v = Number(v);
+    const r = x => x >= 10 ? Math.round(x) : Math.round(x * 10) / 10;
+    return `سنوي ${fmt(v * 4, k)} · شهري ≈ ${fmt(r(v / 3), k)} · أسبوعي ≈ ${fmt(r(v / 13), k)}${k.frequency === "daily" ? ` · يومي ≈ ${fmt(r(v / 91), k)}` : ""}`;
+}
+function updateTargetScale(input){
+    const k = kpis.find(x => x.code === input.dataset.target);
+    const box = document.querySelector(`[data-scale="${CSS.escape(input.dataset.target)}"]`);
+    if(k && box) box.textContent = targetScaleText(k, input.value !== "" ? input.value : k.target);
 }
 
 async function saveTargets(approve){
