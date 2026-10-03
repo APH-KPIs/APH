@@ -1011,7 +1011,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.1 — 2026-10-03";
+const APP_VERSION = "الإصدار 3.2 — 2026-10-03";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1044,6 +1044,26 @@ const KEY_KPIS = [
     { code:"LAB_COMPLETION_PCT",       label:"مؤشر أداء عينتي للمختبر" },
     { code:"SELF_REVENUE",             label:"الموارد الذاتية" }
 ];
+// How each KPI is judged, per the performance unit's evaluation list. Applied to KPIs whose direction
+// is still unset, so a direction the admin or manager already chose is kept.
+const DIRECTION_RULES = {
+    lower: ["ED_VISITS","CALLS937_REPORTS","CALLS937_REPORTS_WEEKLY","MAINT_REQUESTS","SECURITY_OBS","SWITCH_INCOMING_CALLS","REFERRALS_OUT","INPATIENTS_WITH_HOME"],
+    higher: ["PSY_CLINIC_VISITS","TELE_APPTS","CALLS937_CLOSED","APPT_OUTGOING_CALLS","CLINIC_CONFIRM_PCT_OF_VISITS","REFERRALS_IN","DRUGMAIL_SHIPMENTS_DAILY","DRUGMAIL_SHIPMENTS_WEEKLY","DRUGMAIL_SHIPMENTS_MONTHLY"],
+    range: ["OCC_WITH_HOME_PCT","OCC_NO_HOME_PCT"],
+    conditional: ["APPT_POSTPONE_REQ","INPATIENTS_NO_HOME"]
+};
+// Bed occupancy is good inside 75%–85%; below is waste, above is congestion.
+const DEFAULT_RANGE = { rangeMin: 75, rangeMax: 85 };
+function applyDirectionRules(list){
+    Object.entries(DIRECTION_RULES).forEach(([dir, codes]) => codes.forEach(code => {
+        const k = list.find(x => x.code === code);
+        if(!k) return;
+        if(!k.direction || k.direction === "none") k.direction = dir;
+        if(k.direction === "range" && !(isNum(k.rangeMin) && isNum(k.rangeMax))) Object.assign(k, DEFAULT_RANGE);
+    }));
+    return list;
+}
+
 // Adds any ADDED_KPIS missing from the list; returns the ones added.
 function addMissingKpis(list){
     const have = new Set(list.map(k => k.code));
@@ -1220,6 +1240,7 @@ async function init(){
         kpis = defaultKpis.map(k => ({ ...k, targetLastUpdated:null, targetUpdatedBy:null }));
         save(STORAGE.kpis, kpis);
     }else if(addMissingKpis(kpis).length) save(STORAGE.kpis, kpis);
+    applyDirectionRules(kpis);
     records = unpackRecords(load(STORAGE.records, null) || load(LEGACY_STORAGE.records, []));
     auditLogs = load(STORAGE.audit, null) || load(LEGACY_STORAGE.audit, []);
     targetYears = load(STORAGE.targetYears, {});
@@ -1354,6 +1375,7 @@ async function cloudLoadAll(){
     kpis = kRows.length ? sortKpisByOrder(kRows.map(r => r.data)) : defaultKpis.map(k => ({ ...k }));
     // New KPIs show for everyone at once; the admin's next sign-in stores them in the database.
     const added = kRows.length ? addMissingKpis(kpis) : [];
+    applyDirectionRules(kpis);
     if(added.length && currentUser && currentUser.role === "admin" && currentUser.token)
         rpc("save_kpis", withToken({ p_kpis: added.map(k => ({ ...k, sortOrder: kpis.indexOf(k) })), p_replace: false })).catch(() => {});
     const rRows = await fetchAll("records", q => q.eq("deleted", false).order("id"));
@@ -1392,7 +1414,7 @@ async function cloudSync(fromOthers){
         const kRows = await fetchAll("kpis", q => q.order("code"));
         const newKpis = kRows.length ? sortKpisByOrder(kRows.map(r => r.data)) : kpis;
         const kpisChanged = JSON.stringify(newKpis) !== JSON.stringify(kpis);
-        if(kpisChanged){ kpis = newKpis; records.forEach(r => r.kpiName = kpis.find(k => k.code === r.kpiCode)?.name || r.kpiName); recordIndex = null; }
+        if(kpisChanged){ kpis = applyDirectionRules(newKpis); records.forEach(r => r.kpiName = kpis.find(k => k.code === r.kpiCode)?.name || r.kpiName); recordIndex = null; }
         const tRows = await fetchAll("target_years", q => q.order("year"));
         const newYears = Object.fromEntries(tRows.map(r => [r.year, r.data]));
         const yearsChanged = JSON.stringify(newYears) !== JSON.stringify(targetYears);
@@ -2171,10 +2193,32 @@ function calcAchievement(act, target, dir){
     if(dir === "target") return Math.max(0, 100 - (Math.abs(act-target)/Math.abs(target)*100));
     return null;
 }
+const hasRange = k => k.direction === "range" && isNum(k.rangeMin) && isNum(k.rangeMax);
+// Range KPIs: 100% inside the band, otherwise the share of the nearest bound.
+function rangeAchievement(k, act){
+    if(!hasRange(k) || !isNum(act)) return null;
+    const a = Number(act), lo = Number(k.rangeMin), hi = Number(k.rangeMax);
+    if(a >= lo && a <= hi) return 100;
+    return a < lo ? (lo ? a / lo * 100 : null) : (a ? hi / a * 100 : null);
+}
+function rangeText(k){ return `${fmt(k.rangeMin, k)} – ${fmt(k.rangeMax, k)}`; }
+// Target as shown on cards and in the detail view.
+function targetText(k, tgt){
+    if(hasRange(k)) return rangeText(k);
+    return tgt != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(tgt, k)}` : "غير محدد";
+}
 
 function getStatus(kpi, act, ach, target){
     if(act == null) return { key:"gray", label:"بدون بيانات" };
-    if(kpi.direction === "none") return { key:"gray", label:"يحتاج تحديد الاتجاه" };
+    if(kpi.direction === "none" || !kpi.direction) return { key:"gray", label:"يحتاج تحديد الاتجاه" };
+    if(kpi.direction === "conditional") return { key:"gray", label:"مؤشر مشروط" };
+    if(kpi.direction === "range"){
+        if(!hasRange(kpi)) return { key:"gray", label:"حدد النطاق" };
+        const a = Number(act);
+        if(a < Number(kpi.rangeMin)) return { key:"red", label:"أقل من النطاق (هدر)" };
+        if(a > Number(kpi.rangeMax)) return { key:"red", label:"أعلى من النطاق (اختناق)" };
+        return { key:"green", label:"ضمن النطاق" };
+    }
     if(isNum(kpi.greenMin)){
         // Official color thresholds (e.g. 937 index: green ≥ 95%, yellow ≥ 85%).
         const lower = kpi.direction === "lower";
@@ -2197,8 +2241,13 @@ function calcTrend(act, prev, kpi, target){
     const a = Number(act), p = Number(prev);
     const tol = Math.max(Math.abs(p)*0.01, 0.0001);
     if(Math.abs(a - p) <= tol) return { key:"stable", label:"مستقر ➔" };
-    if(kpi.direction === "none") return a > p ? { key:"neutral", label:"ارتفاع ↑" } : { key:"neutral", label:"انخفاض ↓" };
+    if(kpi.direction === "none" || kpi.direction === "conditional" || (kpi.direction === "range" && !hasRange(kpi))) return a > p ? { key:"neutral", label:"ارتفاع ↑" } : { key:"neutral", label:"انخفاض ↓" };
     let better;
+    if(kpi.direction === "range"){
+        const dist = v => Math.max(0, Number(kpi.rangeMin) - v, v - Number(kpi.rangeMax));
+        if(dist(a) === dist(p)) return a > p ? { key:"neutral", label:"ارتفاع ↑" } : { key:"neutral", label:"انخفاض ↓" };
+        return dist(a) < dist(p) ? { key:"up", label:"تحسن ↗" } : { key:"down", label:"تراجع ↘" };
+    }
     if(kpi.direction === "lower") better = a < p;
     else if(kpi.direction === "target") better = isNum(target) ? Math.abs(a - target) < Math.abs(p - target) : a > p;
     else better = a > p;
@@ -2226,7 +2275,7 @@ function computeResults(year, q, cat){
         const prev = getPrevValue(kpi.code, year, q);
         const sameY = getSameQPrevYear(kpi.code, year, q);
         const target = periodTarget(kpi, year, q, targetFor(kpi, year));
-        const ach = calcAchievement(act, periodTarget(kpi, year, q, effectiveTarget(kpi, year)), kpi.direction);
+        const ach = hasRange(kpi) ? rangeAchievement(kpi, act) : calcAchievement(act, periodTarget(kpi, year, q, effectiveTarget(kpi, year)), kpi.direction);
         const status = getStatus(kpi, act, ach, target);
         const trend = calcTrend(act, prev, kpi, target);
         return { kpi, act, prev, sameY, ach, status, trend, target, year };
@@ -2285,7 +2334,7 @@ function applyDashboardView(){
 function keyQuarter(kpi, year, q){
     const act = getPeriodValue(kpi.code, year, q);
     const target = periodTarget(kpi, year, q, targetFor(kpi, year));
-    const ach = calcAchievement(act, periodTarget(kpi, year, q, effectiveTarget(kpi, year)), kpi.direction);
+    const ach = hasRange(kpi) ? rangeAchievement(kpi, act) : calcAchievement(act, periodTarget(kpi, year, q, effectiveTarget(kpi, year)), kpi.direction);
     const shown = target != null ? target : periodTarget(kpi, year, q, effectiveTarget(kpi, year));
     return { q, act, target: shown, ach, status: getStatus(kpi, act, ach, target) };
 }
@@ -2307,10 +2356,10 @@ function keyKpiCard(k, label, year, selQ){
     const qs = QUARTERS.map(q => keyQuarter(k, year, q));
     const cur = qs.find(x => x.q === selQ);
     const color = statusColor(cur.status.key);
-    const max = Math.max(0, ...qs.flatMap(x => [x.act, x.target]).filter(isNum).map(Number)) || 1;
+    const max = Math.max(0, ...[...qs.flatMap(x => [x.act, x.target]), hasRange(k) ? k.rangeMax : null].filter(isNum).map(Number)) || 1;
     const pct = v => Math.max(0, Math.min(100, Number(v) / max * 100));
     const barColor = x => x.status.key === "gray" ? "#94a3b8" : statusColor(x.status.key);
-    const tgtText = cur.target != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(cur.target, k)}` : "غير محدد";
+    const tgtText = targetText(k, cur.target);
     const unit = k.unit && k.unit !== "%" ? `<span class="kpi-unit text-[11px] font-bold text-slate-500 mr-1">${escapeHtml(k.unit)}</span>` : "";
     const tip = x => `${periodName(x.q)}: الفعلي ${fmt(x.act, k)} · المستهدف ${x.target != null ? fmt(x.target, k) : "غير محدد"} · ${x.status.label}`;
     return `
@@ -2330,7 +2379,8 @@ function keyKpiCard(k, label, year, selQ){
         <div class="kq-bars">${qs.map(x => `
             <div class="kq-col ${x.q === selQ ? "sel" : ""}" title="${escapeAttr(tip(x))}">
                 ${x.act != null ? `<div class="bar" style="height:${pct(x.act).toFixed(1)}%;background:${barColor(x)}"></div>` : ""}
-                ${x.target != null ? `<div class="tgt" style="bottom:${pct(x.target).toFixed(1)}%"></div>` : ""}
+                ${hasRange(k) ? [k.rangeMin, k.rangeMax].map(v => `<div class="tgt" style="bottom:${pct(v).toFixed(1)}%"></div>`).join("")
+                    : x.target != null ? `<div class="tgt" style="bottom:${pct(x.target).toFixed(1)}%"></div>` : ""}
             </div>`).join("")}
         </div>
         <div class="kq-labels">${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${fmt(x.act, k)}</b></div>`).join("")}</div>
@@ -2401,7 +2451,7 @@ function kpiCard(r, year){
             <div><span class="kpi-value">${fmt(r.act, k)}</span>${r.act != null ? unit : ""}</div>
             ${r.act != null && r.prev != null ? trendPill(r.trend) : ""}
         </div>
-        <div class="kpi-meta"><span>المستهدف: <b>${tgt != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(tgt, k)}` : "غير محدد"}</b></span><span>${r.ach != null ? `الإنجاز: <b>${r.ach.toFixed(0)}%</b>` : ""}</span></div>
+        <div class="kpi-meta"><span>المستهدف: <b>${targetText(k, tgt)}</b></span><span>${r.ach != null ? `الإنجاز: <b>${r.ach.toFixed(0)}%</b>` : ""}</span></div>
         ${r.ach != null ? `<div class="progress"><div style="width:${Math.min(r.ach,100)}%;background:${color}"></div></div>` : ""}
         <div class="mt-auto">${sparkline(quarterSeries(k.code, year), r.status.key === "gray" ? "#64748b" : color)}</div>
         <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}${staleNote(k)}</div>
@@ -2428,7 +2478,7 @@ function openKpiDetail(code){
     const tile = (label, value, sub="") => `<div class="detail-tile"><div class="t-label">${label}</div><div class="t-value">${value}</div>${sub ? `<div class="t-sub">${sub}</div>` : ""}</div>`;
     document.getElementById("detailTiles").innerHTML = [
         tile(`الفعلي — ${periodName(q)} ${year}`, fmt(r?.act, k), k.unit && k.unit !== "%" ? escapeHtml(k.unit) : ""),
-        tile(`المستهدف ${year}`, tgt != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(tgt, k)}` : "غير محدد", (targetSource(k, year) || "يحدده مدير النظام أو مدير الأداء") + (k.aggregation === "SUM" && tgt != null && !/^Q/.test(q) ? " · متناسب مع الفترة" : "")),
+        tile(hasRange(k) ? "النطاق المثالي" : `المستهدف ${year}`, targetText(k, tgt), hasRange(k) ? "خارج النطاق سلبي (هدر أو اختناق)" : (targetSource(k, year) || "يحدده مدير النظام أو مدير الأداء") + (k.aggregation === "SUM" && tgt != null && !/^Q/.test(q) ? " · متناسب مع الفترة" : "")),
         tile("نسبة الإنجاز", r?.ach != null ? r.ach.toFixed(1) + "%" : "—", r?.ach != null ? `<div class="progress mt-1"><div style="width:${Math.min(r.ach,100)}%;background:${statusColor(r.status.key)}"></div></div>` : ""),
         tile(q === "ALL" ? "السنة السابقة" : "الفترة السابقة", fmt(r?.prev, k), delta != null ? `${delta > 0 ? "+" : ""}${fmt(delta, k)} · ${r.trend.label}` : ""),
         tile("نفس الفترة العام الماضي", fmt(r?.sameY, k))
@@ -2515,7 +2565,7 @@ function renderDetailMonthChart(k, year){
 function detailCell(k, y, q){
     const act = getPeriodValue(k.code, y, q);
     const target = periodTarget(k, y, q, targetFor(k, y));
-    const ach = calcAchievement(act, periodTarget(k, y, q, effectiveTarget(k, y)), k.direction);
+    const ach = hasRange(k) ? rangeAchievement(k, act) : calcAchievement(act, periodTarget(k, y, q, effectiveTarget(k, y)), k.direction);
     const st = getStatus(k, act, ach, target);
     return { act, ach, st };
 }
@@ -2645,7 +2695,7 @@ function periodEnd(year, q){
 
 function renderExecInsights(results, year, q){
     const noData = results.filter(r=>r.act==null).length;
-    const noTarget = results.filter(r => effectiveTarget(r.kpi, year) == null || r.kpi.direction === "none").length;
+    const noTarget = results.filter(r => !hasRange(r.kpi) && (effectiveTarget(r.kpi, year) == null || r.kpi.direction === "none" || r.kpi.direction === "conditional")).length;
     const down = results.filter(r=>r.trend.key==="down");
     const red = results.filter(r=>r.status.key==="red");
     const attention = [...new Set([...red, ...down])];
@@ -2669,6 +2719,7 @@ function staleNote(k){
 }
 
 function targetLabel(k, target){
+    if(hasRange(k)) return `<span title="النطاق المثالي">${rangeText(k)}</span>`;
     if(isNum(target)) return fmt(target, k);
     if(isNum(k.greenMin)) return `<span title="عتبات الألوان الرسمية">${k.direction === "lower" ? "≤" : "≥"} ${fmt(k.greenMin, k)}</span>`;
     return `<span class="text-slate-400">غير محدد</span>`;
@@ -3164,6 +3215,7 @@ async function confirmWorkbookImport(){
         kpis = replaceKpis ? merged : [...kpis.filter(k => !fileCodes.has(k.code)), ...merged];
         if(replaceKpis) ADDED_KPIS.forEach(a => { const old = before.kpis.find(k => k.code === a.code); if(old && !fileCodes.has(a.code)) kpis.push(old); });
         addMissingKpis(kpis);
+        applyDirectionRules(kpis);
     }
     const known = new Set(kpis.map(k => k.code));
 
@@ -3354,13 +3406,13 @@ function renderTargets(){
         ? `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-3 text-xs font-semibold">اعتمد ${escapeHtml(state.by || "")} مستهدفات ${year} بتاريخ ${formatDateTime(state.at)}. لا يمكن تعديلها إلا بفتحها مع ذكر السبب.</div>`
         : (!can("editTarget") ? `<div class="bg-slate-50 border border-slate-200 text-slate-600 rounded-xl p-3 text-xs font-semibold">عرض فقط — يحدد المستهدفات مدير النظام أو مدير الأداء.</div>` : "");
 
-    const dirOptions = d => ["higher","lower","target","none"].map(v => `<option value="${v}" ${d === v ? "selected" : ""}>${directionName(v)}</option>`).join("");
+    const dirOptions = d => ["higher","lower","target","range","conditional","none"].map(v => `<option value="${v}" ${d === v ? "selected" : ""}>${directionName(v)}</option>`).join("");
     const sorted = [...kpis].sort((a,b) => String(a.category).localeCompare(String(b.category), "ar"));
     let lastCat = null;
     document.getElementById("targetsTableBody").innerHTML = sorted.map(k => {
         const t = k.targets?.[year];
         const prevActual = getPeriodValue(k.code, year - 1, "ALL");
-        const ref = isNum(k.target) ? `مستهدف الملف: ${fmt(k.target, k)}` : isNum(k.greenMin) ? `حد الأخضر: ${fmt(k.greenMin, k)}` : (k.targets?.[year-1] && isNum(k.targets[year-1].value) ? `مستهدف ${year-1}: ${fmt(k.targets[year-1].value, k)}` : "—");
+        const ref = hasRange(k) ? `النطاق المثالي: ${rangeText(k)}` : isNum(k.target) ? `مستهدف الملف: ${fmt(k.target, k)}` : isNum(k.greenMin) ? `حد الأخضر: ${fmt(k.greenMin, k)}` : (k.targets?.[year-1] && isNum(k.targets[year-1].value) ? `مستهدف ${year-1}: ${fmt(k.targets[year-1].value, k)}` : "—");
         const catRow = k.category !== lastCat ? `<tr><td colspan="7" class="!bg-slate-50 !py-2 text-[11px] font-black text-slate-500">${escapeHtml(k.category || "بدون فئة")}</td></tr>` : "";
         lastCat = k.category;
         return `${catRow}
@@ -3651,7 +3703,7 @@ function exportAudit(){
 
 function frequencyName(f){ return { daily:"يومي", weekly:"أسبوعي", monthly:"شهري", quarterly:"ربع سنوي", annual:"سنوي" }[f] || f || "—"; }
 function aggregationName(a){ return { SUM:"مجموع", AVERAGE:"متوسط", WEIGHTED_AVERAGE:"متوسط موزون", RATIO:"بسط/مقام", LAST_VALUE:"آخر قيمة" }[a] || a || "—"; }
-function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف", none:"يحتاج مراجعة" }[d] || d || "—"; }
+function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف", range:"ضمن نطاق مثالي", conditional:"مؤشر مشروط", none:"يحتاج مراجعة" }[d] || d || "—"; }
 function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_USER:"إضافة مستخدم", EDIT_USER:"تعديل مستخدم", CHANGE_PASSWORD:"تغيير كلمة المرور", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 function pad2(n){ return String(n).padStart(2, "0"); }
