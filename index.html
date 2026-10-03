@@ -203,6 +203,11 @@
         .key-card .k-value { font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1; }
         .key-card .k-meta { font-size: 11px; color: #64748b; display: flex; justify-content: space-between; gap: 8px; }
         .key-card .k-meta b { color: #0f172a; }
+        .key-wrap { position: relative; display: flex; }
+        .key-wrap > .key-card { flex: 1; }
+        .key-edit { position: absolute; bottom: 10px; left: 12px; font-size: 10.5px; font-weight: 800; color: #0369a1; background: #e0f2fe; border-radius: 8px; padding: 3px 8px; }
+        .key-edit:hover { background: #bae6fd; }
+        .kq-manual { font-size: 9.5px; font-weight: 800; color: #7c3aed; }
         .kq-bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: end; height: 64px; padding-top: 4px; }
         .kq-col { position: relative; height: 100%; display: flex; align-items: flex-end; background: #f1f5f9; border-radius: 6px; }
         .kq-col > .bar { width: 100%; border-radius: 6px; opacity: .55; min-height: 2px; }
@@ -902,6 +907,29 @@
     </div>
 </div>
 
+<!-- ================= MODAL: QUARTER VALUES (admin) ================= -->
+<div id="quarterModal" class="modal hidden" onclick="if(event.target === this) closeQuarterModal()">
+    <div class="modal-box space-y-4" style="width:min(560px,100%)" role="dialog" aria-modal="true" aria-labelledby="qmTitle">
+        <div class="flex justify-between items-start gap-3 border-b border-slate-200 pb-3">
+            <div>
+                <h3 id="qmTitle" class="text-base font-bold text-slate-900">تعديل القيم الربعية</h3>
+                <p id="qmSub" class="text-[11px] text-slate-500 mt-0.5"></p>
+            </div>
+            <button onclick="closeQuarterModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold" aria-label="إغلاق">&times;</button>
+        </div>
+        <div class="entry-warn !text-[11px]">القيمة المدخلة هنا تحل محل القيمة المحسوبة من القراءات أو ملف الإكسل للأرباع المنتهية. الربع الحالي يُحسب تلقائياً من القراءات ولا يُعدّل، في العرض الربع سنوي (وفي الإجمالي السنوي لمؤشرات العدد). اترك الخانة فارغة لاستخدام القيمة المحسوبة.</div>
+        <div id="qmRows" class="space-y-2"></div>
+        <div>
+            <label for="qmReason" class="block text-[11px] font-bold text-rose-600 mb-1">سبب التعديل <span aria-hidden="true">*</span> (إلزامي — يُسجل في سجل التدقيق)</label>
+            <input id="qmReason" type="text" class="!py-2 !text-xs" placeholder="مثال: اعتماد القيمة الرسمية من تقرير الإدارة">
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
+            <button onclick="closeQuarterModal()" class="btn btn-secondary text-xs">إلغاء</button>
+            <button onclick="saveQuarterValues()" class="btn btn-primary text-xs"><i class="fa-solid fa-floppy-disk ml-1"></i> حفظ القيم</button>
+        </div>
+    </div>
+</div>
+
 <div id="loadingOverlay" class="modal hidden" style="z-index:150">
     <div class="bg-white rounded-2xl px-8 py-6 text-center shadow-xl">
         <i class="fa-solid fa-circle-notch fa-spin text-sky-600 text-2xl"></i>
@@ -1012,7 +1040,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.3 — 2026-10-03";
+const APP_VERSION = "الإصدار 3.5 — 2026-10-03";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -2091,8 +2119,28 @@ function aggregateRows(rows, kpi){
 function getPeriodValue(code, year, q){
     const kpi = kpis.find(k=>k.code===code);
     if(!kpi) return null;
+    const manual = manualQuarter(kpi, year, q);
+    if(manual != null) return manual;
+    // A count KPI's year total adds up its quarters, so a quarter the admin set counts in the year.
+    if(q === "ALL" && kpi.aggregation === "SUM" && hasManualQuarters(kpi, year)){
+        const parts = QUARTERS.map(qq => getPeriodValue(code, year, qq)).filter(isNum);
+        return parts.length ? parts.reduce((a, v) => a + Number(v), 0) : null;
+    }
     return aggregateRows(periodRecords(code, year, q), kpi);
 }
+function computedPeriodValue(kpi, year, q){ return aggregateRows(periodRecords(kpi.code, year, q), kpi); }
+
+// Quarter values set by the admin, kept on the KPI: kpi.quarterValues = { "2026-Q3": { value, by, at, reason } }.
+// They take the place of the value computed from readings for that quarter.
+// A quarter still in progress (Q4 2026 from 1 October) is always computed from its readings;
+// only quarters that have ended take a value set by the admin.
+function quarterOpen(year, q){ return formatDateInput(quarterBounds(Number(year), q)[1]) >= formatDateInput(new Date()); }
+function manualQuarter(kpi, year, q){
+    if(!/^Q[1-4]$/.test(q) || !kpi.quarterValues || quarterOpen(year, q)) return null;
+    const m = kpi.quarterValues[`${Number(year)}-${q}`];
+    return m && isNum(m.value) ? Number(m.value) : null;
+}
+function hasManualQuarters(kpi, year){ return QUARTERS.some(q => manualQuarter(kpi, year, q) != null); }
 
 function shiftDays(dateStr, days){ const d = parseIsoDate(dateStr); d.setDate(d.getDate() + days); return formatDateInput(d); }
 
@@ -2363,7 +2411,8 @@ function keyKpiCard(k, label, year, selQ){
     const tgtText = targetText(k, cur.target);
     const unit = k.unit && k.unit !== "%" ? `<span class="kpi-unit text-[11px] font-bold text-slate-500 mr-1">${escapeHtml(k.unit)}</span>` : "";
     const tip = x => `${periodName(x.q)}: الفعلي ${fmt(x.act, k)} · المستهدف ${x.target != null ? fmt(x.target, k) : "غير محدد"} · ${x.status.label}`;
-    return `
+    const edit = can("editKpi") ? `<button type="button" class="key-edit" onclick="openQuarterModal('${escapeAttr(k.code)}', ${year})" title="تعديل القيم الربعية مباشرة"><i class="fa-solid fa-pen ml-1"></i>تعديل القيم</button>` : "";
+    return `<div class="key-wrap">
     <button type="button" class="key-card" style="--status:${color}" onclick="openKpiDetail('${escapeAttr(k.code)}')" aria-label="تفاصيل ${escapeAttr(label)}">
         <div class="flex items-start justify-between gap-2">
             <div>
@@ -2384,8 +2433,76 @@ function keyKpiCard(k, label, year, selQ){
                     : x.target != null ? `<div class="tgt" style="bottom:${pct(x.target).toFixed(1)}%"></div>` : ""}
             </div>`).join("")}
         </div>
-        <div class="kq-labels">${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${fmt(x.act, k)}</b></div>`).join("")}</div>
-    </button>`;
+        <div class="kq-labels">${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${fmt(x.act, k)}</b>${manualQuarter(k, year, x.q) != null ? `<span class="kq-manual" title="قيمة معدلة من مدير النظام">✎ يدوي</span>` : ""}</div>`).join("")}</div>
+        ${edit ? `<div class="h-5"></div>` : ""}
+    </button>${edit}</div>`;
+}
+
+let quarterModalKpi = null, quarterModalYear = null;
+function openQuarterModal(code, year){
+    if(!can("editKpi")) return;
+    const k = kpis.find(x => x.code === code);
+    if(!k) return;
+    quarterModalKpi = k; quarterModalYear = Number(year);
+    const label = KEY_KPIS.find(x => x.code === code)?.label || k.name;
+    document.getElementById("qmTitle").textContent = `تعديل القيم الربعية — ${label}`;
+    document.getElementById("qmSub").textContent = `${k.name} · سنة ${year}${k.unit ? ` · الوحدة: ${k.unit}` : ""}`;
+    document.getElementById("qmRows").innerHTML = QUARTERS.map((q, i) => {
+        const m = k.quarterValues?.[`${year}-${q}`];
+        const calc = computedPeriodValue(k, year, q);
+        if(quarterOpen(year, q)) return `<div class="grid grid-cols-[110px_1fr_1fr] gap-3 items-center bg-sky-50 border border-sky-200 rounded-xl px-3 py-2">
+            <div class="text-xs font-black text-slate-800">${QUARTER_LABELS[i]} <span class="text-slate-400 font-mono">${q}</span></div>
+            <div class="text-[11px] text-slate-500">المحسوبة: <b class="text-slate-800">${fmt(calc, k)}</b></div>
+            <div class="text-[10.5px] font-bold text-sky-700"><i class="fa-solid fa-rotate ml-1"></i>تلقائي من القراءات ابتداءً من ${shortDate(formatDateInput(quarterBounds(year, q)[0]))}</div>
+        </div>`;
+        return `<div class="grid grid-cols-[110px_1fr_1fr] gap-3 items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+            <div class="text-xs font-black text-slate-800">${QUARTER_LABELS[i]} <span class="text-slate-400 font-mono">${q}</span></div>
+            <div class="text-[11px] text-slate-500">المحسوبة: <b class="text-slate-800">${fmt(calc, k)}</b></div>
+            <div><input data-qm="${q}" type="number" step="any" class="!py-1.5 !text-xs" value="${m && isNum(m.value) ? m.value : ""}" placeholder="القيمة المحسوبة">
+                ${m ? `<div class="text-[10px] text-violet-600 mt-0.5">عدّلها ${escapeHtml(m.by || "")} ${m.at ? formatDateTime(m.at) : ""}</div>` : ""}</div>
+        </div>`;
+    }).join("");
+    document.getElementById("qmReason").value = "";
+    document.getElementById("quarterModal").classList.remove("hidden");
+}
+function closeQuarterModal(){ document.getElementById("quarterModal").classList.add("hidden"); quarterModalKpi = null; }
+
+async function saveQuarterValues(){
+    const k = quarterModalKpi, year = quarterModalYear;
+    if(!k || !can("editKpi")) return;
+    const reason = document.getElementById("qmReason").value.trim();
+    const before = JSON.parse(JSON.stringify(k.quarterValues || {}));
+    const next = { ...before };
+    const changes = [];
+    for(const input of document.querySelectorAll("#qmRows [data-qm]")){
+        const q = input.dataset.qm, key = `${year}-${q}`, raw = input.value.trim();
+        if(quarterOpen(year, q)) continue;
+        if(raw !== "" && !isNum(raw)){ showToast(`قيمة ${q} غير صحيحة.`); return; }
+        const old = before[key] && isNum(before[key].value) ? Number(before[key].value) : null;
+        const val = raw === "" ? null : Number(raw);
+        if(old === val) continue;
+        if(val == null) delete next[key];
+        else next[key] = { value: val, by: currentUser.displayName, at: new Date().toISOString(), reason };
+        changes.push({ q, old, val });
+    }
+    if(!changes.length){ closeQuarterModal(); return; }
+    if(!reason){ showToast("اكتب سبب التعديل — يُسجل في سجل التدقيق."); document.getElementById("qmReason").focus(); return; }
+    k.quarterValues = next;
+    let ok = true;
+    if(CLOUD.on){
+        try{
+            setLoading(true, "جاري حفظ القيم...");
+            await rpc("save_kpis", withToken({ p_kpis: [{ ...k, sortOrder: kpis.indexOf(k) }], p_replace: false }));
+            await cloudSync(false);
+        }catch(e){ ok = false; k.quarterValues = before; showToast(e.message); }
+        finally{ setLoading(false); }
+    }else save(STORAGE.kpis, kpis);
+    if(!ok) return;
+    const show = v => v == null ? "القيمة المحسوبة" : fmt(v, k);
+    changes.forEach(c => addAudit("EDIT_QUARTER_VALUE", `${k.code} ${year}-${c.q}`, show(c.old), show(c.val), reason));
+    closeQuarterModal();
+    showToast("تم حفظ القيم الربعية.");
+    renderDashboard();
 }
 
 // Quarterly values ending at the selected year, oldest first (for card sparklines).
@@ -3729,7 +3846,7 @@ function exportAudit(){
 function frequencyName(f){ return { daily:"يومي", weekly:"أسبوعي", monthly:"شهري", quarterly:"ربع سنوي", annual:"سنوي" }[f] || f || "—"; }
 function aggregationName(a){ return { SUM:"مجموع", AVERAGE:"متوسط", WEIGHTED_AVERAGE:"متوسط موزون", RATIO:"بسط/مقام", LAST_VALUE:"آخر قيمة" }[a] || a || "—"; }
 function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف", range:"ضمن نطاق مثالي", conditional:"مؤشر مشروط", none:"يحتاج مراجعة" }[d] || d || "—"; }
-function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_USER:"إضافة مستخدم", EDIT_USER:"تعديل مستخدم", CHANGE_PASSWORD:"تغيير كلمة المرور", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر" }[a] || a; }
+function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_USER:"إضافة مستخدم", EDIT_USER:"تعديل مستخدم", CHANGE_PASSWORD:"تغيير كلمة المرور", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر", EDIT_QUARTER_VALUE:"تعديل قيمة ربعية" }[a] || a; }
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 function pad2(n){ return String(n).padStart(2, "0"); }
 // Local-date formatting/parsing: toISOString() would shift dates by the UTC offset.
@@ -3750,7 +3867,11 @@ function showToast(msg){
     clearTimeout(window.tTimer); window.tTimer = setTimeout(()=>t.classList.add("hidden"), 3500);
 }
 
-document.addEventListener("keydown", e => { if(e.key === "Escape" && !document.getElementById("kpiDetailModal").classList.contains("hidden")) closeKpiDetail(); });
+document.addEventListener("keydown", e => {
+    if(e.key !== "Escape") return;
+    if(!document.getElementById("quarterModal").classList.contains("hidden")) closeQuarterModal();
+    else if(!document.getElementById("kpiDetailModal").classList.contains("hidden")) closeKpiDetail();
+});
 
 init();
 </script>
