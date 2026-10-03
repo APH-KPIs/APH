@@ -252,6 +252,42 @@
         #printArea .cat td { background: #f8fafc; font-weight: 900; color: #0b1f33; }
         #printArea .sel { background: #e0f2fe; font-weight: 800; }
         .pr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 4px; vertical-align: middle; }
+        /* Key KPIs export: landscape A4, 3 × 3 cards on one page */
+        .kp-page { display: flex; flex-direction: column; gap: 8px; }
+        .kp-band { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: linear-gradient(90deg, #0b1f33, #102a43) !important; color: #fff; border-radius: 12px; padding: 10px 14px; }
+        .kp-band img { width: 46px; height: 46px; }
+        .kp-band .t1 { font-size: 15px; font-weight: 900; }
+        .kp-band .t2 { font-size: 9.5px; color: #cbd5e1; }
+        .kp-band .t3 { font-size: 10px; color: #7dd3fc; font-weight: 700; }
+        .kp-band .rt { text-align: left; }
+        .kp-band .rt .big { font-size: 16px; font-weight: 900; }
+        .kp-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .kp-summary div { border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 8px; display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 700; color: #475569; }
+        .kp-summary b { font-size: 16px; font-weight: 900; }
+        .kp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .kp-card { border: 1px solid #e2e8f0; border-top: 4px solid var(--st); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; break-inside: avoid; }
+        .kp-card .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+        .kp-card .lb { font-size: 11px; font-weight: 900; color: #0b1f33; }
+        .kp-card .nm { font-size: 8px; color: #94a3b8; }
+        .kp-card .pill2 { font-size: 8.5px; font-weight: 800; border-radius: 999px; padding: 2px 7px; white-space: nowrap; background: var(--stbg) !important; color: var(--stfg); }
+        .kp-card .row { display: flex; justify-content: space-between; align-items: flex-end; gap: 6px; }
+        .kp-card .val { font-size: 19px; font-weight: 900; color: #0f172a; line-height: 1; }
+        .kp-card .unit { font-size: 9px; color: #64748b; font-weight: 700; margin-right: 3px; }
+        .kp-card .meta { font-size: 8.5px; color: #64748b; display: flex; justify-content: space-between; gap: 6px; }
+        .kp-card .meta b { color: #0f172a; }
+        .kp-card .delta { font-size: 8.5px; font-weight: 800; }
+        .kp-bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; align-items: end; height: 50px; }
+        .kp-col { position: relative; height: 100%; display: flex; align-items: flex-end; background: #f1f5f9 !important; border-radius: 4px; }
+        .kp-col .bar { width: 100%; border-radius: 4px; min-height: 2px; opacity: .55; }
+        .kp-col.sel { outline: 1.5px solid #0b1f33; }
+        .kp-col.sel .bar { opacity: 1; }
+        .kp-col .tg { position: absolute; left: -2px; right: -2px; border-top: 1.5px dashed #334155; }
+        .kp-lab { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; font-size: 8px; color: #64748b; }
+        .kp-lab b { display: block; font-size: 8.5px; color: #0f172a; }
+        .kp-lab .sel { color: #0b1f33; font-weight: 900; }
+        .kp-foot { display: flex; justify-content: space-between; gap: 10px; font-size: 8.5px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 5px; }
+        .kp-foot .lg { display: flex; gap: 10px; }
+        .kp-foot i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-left: 3px; vertical-align: middle; }
         .pr-foot { margin-top: 10px; font-size: 9px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 6px; }
         .kq-bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: end; height: 64px; padding-top: 4px; }
         .kq-col { position: relative; height: 100%; display: flex; align-items: flex-end; background: #f1f5f9; border-radius: 6px; }
@@ -528,7 +564,8 @@
                         <h3 class="font-bold text-sm text-slate-900 flex items-center"><i class="fa-solid fa-star text-amber-500 ml-2"></i> أبرز المؤشرات — مقارنة أرباع السنة <span id="keyKpisYear" class="text-[11px] font-semibold text-slate-400 mr-2"></span></h3>
                         <p class="text-[11px] text-slate-500 mt-0.5">الأعمدة تمثل الفعلي لكل ربع ملونة بحالته، والخط الأفقي داخل العمود هو المستهدف. الربع المختار مُبرز.</p>
                     </div>
-                    <div class="flex gap-3 text-[10px] font-bold text-slate-500">
+                    <div class="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-500">
+                        <button onclick="printKeyKpis()" class="btn btn-secondary text-xs" title="تصدير بطاقات أبرز المؤشرات بصيغة PDF"><i class="fa-solid fa-file-pdf text-rose-600 ml-1"></i> تصدير PDF</button>
                         <span class="flex items-center gap-1"><i class="kq-dot" style="background:#10b981"></i>محقق</span>
                         <span class="flex items-center gap-1"><i class="kq-dot" style="background:#f59e0b"></i>تحذير</span>
                         <span class="flex items-center gap-1"><i class="kq-dot" style="background:#ef4444"></i>غير محقق</span>
@@ -1104,7 +1141,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.7 — 2026-10-03";
+const APP_VERSION = "الإصدار 3.8 — 2026-10-03";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1382,8 +1419,8 @@ function lastReadingDate(code){
 function indexedRecords(code, year){
     if(!recordIndex){
         recordIndex = new Map(); lastReading = new Map();
+        // Every reading counts on the dashboard as soon as it is entered; approval is a monthly sign-off.
         records.forEach(r => {
-            if(!r.approved) return;
             if(isNum(r.actualValue) || isNum(r.numerator)){ const d = lastReading.get(r.kpiCode); if(!d || r.date > d) lastReading.set(r.kpiCode, r.date); }
             const key = r.kpiCode + "|" + r.year;
             if(!recordIndex.has(key)) recordIndex.set(key, []);
@@ -2097,7 +2134,7 @@ async function addRecord(){
     onEntryKpiChange();
     document.getElementById("recordKpi").focus();
     const extra = derived.length ? ` وتحديث ${derived.length} مؤشر محسوب` : "";
-    showToast((record.approved ? "تم حفظ القراءة واعتمادها" : "تم حفظ القراءة بانتظار اعتماد مدير الأداء") + extra + ".");
+    showToast((record.approved ? "تم حفظ القراءة واعتمادها" : "تم حفظ القراءة وظهرت في اللوحة (تُعتمد في نهاية الشهر)") + extra + ".");
 }
 
 async function approveRecord(id){
@@ -2125,19 +2162,24 @@ function updatePendingNotice(){
     if(!badge || !box) return;
     const list = currentUser && can("approve") ? pendingApprovals() : [];
     const n = list.length;
+    const today = formatDateInput(new Date()), monthStart = today.slice(0, 8) + "01";
+    const overdue = list.filter(r => r.date < monthStart);
+    const monthEnd = Number(today.slice(8, 10)) >= 25;
+    const showBox = n && (monthEnd || overdue.length);
     badge.classList.toggle("hidden", !n);
-    box.classList.toggle("hidden", !n);
+    box.classList.toggle("hidden", !showBox);
     document.getElementById("approveAllBtn")?.classList.toggle("hidden", !can("approve") || document.getElementById("recordStatus")?.value !== "pending" || !n);
     if(!n) return;
     badge.querySelector(".txt").innerHTML = `${n.toLocaleString("en-US")}<span class="pb-label"> بانتظار الاعتماد</span>`;
     badge.setAttribute("aria-label", `${readingsText(n)} بانتظار الاعتماد`);
-    const oldest = list.reduce((m, r) => !m || r.date < m ? r.date : m, "");
+    if(!showBox) return;
+    const months = [...new Set(list.map(r => String(r.date).slice(0, 7)))].sort()
+        .map(m => `${MONTHS_AR[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`);
     const by = [...new Set(list.map(r => r.createdBy).filter(Boolean))];
-    const days = oldest ? Math.floor((Date.now() - parseIsoDate(oldest)) / 86400000) : 0;
     box.innerHTML = `<div class="card p-4 border-r-4 border-r-amber-400 flex flex-wrap items-center justify-between gap-3">
-        <div class="text-xs"><b class="text-amber-800"><i class="fa-solid fa-bell ml-1"></i> ${readingsText(n)} بانتظار اعتمادك</b>
-            <div class="text-slate-600 mt-0.5">أقدمها بتاريخ ${escapeHtml(oldest)}${days > 0 ? ` (قبل ${daysText(days)})` : ""}${by.length ? ` · أدخلها: ${escapeHtml(by.slice(0, 3).join("، "))}${by.length > 3 ? " وآخرون" : ""}` : ""}. القراءات غير المعتمدة لا تدخل في حسابات اللوحة.</div></div>
-        <button onclick="openPendingReadings()" class="btn btn-primary text-xs"><i class="fa-solid fa-list-check ml-1"></i> مراجعة واعتماد</button>
+        <div class="text-xs"><b class="text-amber-800"><i class="fa-solid fa-bell ml-1"></i> الاعتماد الشهري: ${readingsText(n)} بانتظار اعتمادك</b>
+            <div class="text-slate-600 mt-0.5">${overdue.length ? `<b class="text-rose-700">${readingsText(overdue.length)} من أشهر سابقة.</b> ` : ""}الأشهر: ${escapeHtml(months.join("، "))}${by.length ? ` · أدخلها: ${escapeHtml(by.slice(0, 3).join("، "))}${by.length > 3 ? " وآخرون" : ""}` : ""}. القراءات ظاهرة في اللوحة؛ الاعتماد يقفلها من التعديل.</div></div>
+        <button onclick="openPendingReadings()" class="btn btn-primary text-xs"><i class="fa-solid fa-list-check ml-1"></i> مراجعة واعتماد الشهر</button>
     </div>`;
 }
 
@@ -2258,7 +2300,6 @@ function normalizeRecord(row){
     };
 }
 
-function getApprovedRecords(){ return records.filter(r => r.approved === true); }
 
 // Period keys: "ALL" (year), "Q1".."Q4", "M1".."M12", or "W<Sunday date>" (weeks start on Sunday, as in the KPI file).
 function weekStart(dateStr){
@@ -2453,7 +2494,10 @@ function rangeText(k, year){ const r = rangeOf(k, year); return r ? `${fmt(r[0],
 // Target as shown on cards and in the detail view.
 function targetText(k, tgt){
     if(hasRange(k)) return rangeText(k);
-    return tgt != null ? `${k.direction === "lower" ? "≤ " : ""}${fmt(tgt, k)}` : "غير محدد";
+    if(tgt == null) return "غير محدد";
+    // Pro-rated count targets read better as whole numbers.
+    const shown = k.aggregation === "SUM" && k.unit !== "%" && Math.abs(tgt) >= 10 ? Math.round(tgt) : tgt;
+    return `${k.direction === "lower" ? "≤ " : ""}${fmt(shown, k)}`;
 }
 
 function getStatus(kpi, act, ach, target){
@@ -2993,7 +3037,7 @@ function populatePeriodOptions(typeChanged){
     sel.innerHTML = opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
     if(!typeChanged && opts.some(o => o[0] === prev)){ sel.value = prev; return; }
     let latest = "";
-    records.forEach(r => { if(Number(r.year) === year && r.approved && r.date > latest) latest = r.date; });
+    records.forEach(r => { if(Number(r.year) === year && r.date > latest) latest = r.date; });
     if(!latest) return;
     let key = type === "quarter" ? "Q" + Math.ceil(Number(latest.slice(5, 7)) / 3)
         : type === "month" ? "M" + Number(latest.slice(5, 7))
@@ -3001,7 +3045,7 @@ function populatePeriodOptions(typeChanged){
     // Prefer the latest complete period: a week or month that has only just started is mostly empty.
     if(key !== "ALL" && periodEnd(year, key) >= formatDateInput(new Date())){
         const [py, pk] = prevPeriod(year, key);
-        if(py === year && records.some(r => r.approved && Number(r.year) === py && inPeriod(r, pk))) key = pk;
+        if(py === year && records.some(r => Number(r.year) === py && inPeriod(r, pk))) key = pk;
     }
     if(opts.some(o => o[0] === key)) sel.value = key;
 }
@@ -3150,6 +3194,75 @@ function printReport(){
         <div class="pr-foot">✎ قيمة ربعية عدّلها مدير النظام. الربع الجاري يُحسب تلقائياً من القراءات. مستهدفات مؤشرات العدد ربع سنوية وتُوزع تلقائياً على الفترة المعروضة؛ النسب والمتوسطات ثابتة لكل الفترات.</div>`;
     const img = document.querySelector("#printArea img");
     const go = () => setTimeout(() => window.print(), 50);
+    if(img && !img.complete){ img.onload = go; img.onerror = go; } else go();
+}
+
+// ---- Key KPIs export: one landscape page with a card per key KPI (print or save as PDF) ----
+function printKeyKpis(){
+    if(!currentUser) return;
+    const { year, q } = getFilters();
+    const selQ = /^Q[1-4]$/.test(q) ? q : "Q" + Math.ceil((new Date().getMonth() + 1) / 3);
+    const tone = { green: ["#10b981", "#d1fae5", "#065f46"], yellow: ["#f59e0b", "#fef3c7", "#92400e"], red: ["#ef4444", "#fee2e2", "#991b1b"], gray: ["#94a3b8", "#f1f5f9", "#475569"] };
+    const cards = [], counts = { green: 0, yellow: 0, red: 0, gray: 0 };
+    KEY_KPIS.forEach(({ code, label }) => {
+        const k = kpis.find(x => x.code === code && x.active !== false);
+        if(!k) return;
+        const qs = QUARTERS.map(qq => keyQuarter(k, year, qq));
+        const cur = qs.find(x => x.q === selQ);
+        const key = tone[cur.status.key] ? cur.status.key : "gray";
+        counts[key]++;
+        const [py, pq] = prevPeriod(year, selQ);
+        const prev = getPeriodValue(k.code, py, pq);
+        const trend = calcTrend(cur.act, prev, k, cur.target);
+        const change = isNum(cur.act) && isNum(prev) && Number(prev) !== 0 ? (Number(cur.act) - Number(prev)) / Math.abs(Number(prev)) * 100 : null;
+        const trendColor = trend.key === "up" ? "#047857" : trend.key === "down" ? "#b91c1c" : "#475569";
+        const band = hasRange(k, year) ? rangeOf(k, year) : null;
+        const max = Math.max(0, ...[...qs.flatMap(x => [x.act, x.target]), band ? band[1] : null].filter(isNum).map(Number)) || 1;
+        const pct = v => Math.max(0, Math.min(100, Number(v) / max * 100)).toFixed(1);
+        const unit = k.unit && k.unit !== "%" ? `<span class="unit">${escapeHtml(k.unit)}</span>` : "";
+        cards.push(`<div class="kp-card" style="--st:${tone[key][0]};--stbg:${tone[key][1]};--stfg:${tone[key][2]}">
+            <div class="hd"><div><div class="lb">${escapeHtml(label)}</div><div class="nm">${escapeHtml(k.name)}</div></div><span class="pill2">${escapeHtml(cur.status.label)}</span></div>
+            <div class="row"><div><span class="val">${fmt(cur.act, k)}</span>${cur.act != null ? unit : ""}</div>
+                <div class="delta" style="color:${trendColor}">${change != null ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% عن ${pq === "Q4" && py !== year ? `Q4 ${py}` : pq}` : ""}${cur.act != null && prev != null ? ` · ${escapeHtml(trend.label)}` : ""}</div></div>
+            <div class="meta"><span>المستهدف: <b>${targetText(k, cur.target)}</b></span><span>${cur.ach != null ? `الإنجاز: <b>${cur.ach.toFixed(0)}%</b>` : ""}</span></div>
+            <div class="kp-bars">${qs.map(x => {
+                const c = tone[x.status.key] ? tone[x.status.key][0] : tone.gray[0];
+                const lines = band ? band.map(v => `<div class="tg" style="bottom:${pct(v)}%"></div>`).join("") : x.target != null ? `<div class="tg" style="bottom:${pct(x.target)}%"></div>` : "";
+                return `<div class="kp-col ${x.q === selQ ? "sel" : ""}">${x.act != null ? `<div class="bar" style="height:${pct(x.act)}%;background:${c} !important"></div>` : ""}${lines}</div>`;
+            }).join("")}</div>
+            <div class="kp-lab">${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}${manualQuarter(k, year, x.q) != null ? " ✎" : ""}<b>${fmt(x.act, k)}</b></div>`).join("")}</div>
+        </div>`);
+    });
+    const total = cards.length;
+    document.getElementById("printArea").innerHTML = `<div class="kp-page">
+        <div class="kp-band">
+            <div style="display:flex;align-items:center;gap:10px"><img src="logo.png" alt=""><div>
+                <div class="t1">أبرز المؤشرات — مقارنة أرباع السنة ${year}</div>
+                <div class="t2">مستشفى إرادة والصحة النفسية بأبها · تجمع عسير الصحي · وحدة مؤشرات الأداء</div>
+                <div class="t3">الربع المختار: ${escapeHtml(periodName(selQ))} (${selQ})</div></div></div>
+            <div class="rt"><div class="big">${total} مؤشرات رئيسية</div><div class="t2">أُعد في ${formatDateTime(new Date().toISOString())}</div><div class="t2">بواسطة ${escapeHtml(currentUser.displayName)}</div></div>
+        </div>
+        <div class="kp-summary">
+            <div>إجمالي المؤشرات <b>${total}</b></div>
+            <div style="color:#047857">محقق <b>${counts.green}</b></div>
+            <div style="color:#b45309">تحذير <b>${counts.yellow}</b></div>
+            <div style="color:#b91c1c">غير محقق <b>${counts.red}</b></div>
+            <div>بدون حالة <b>${counts.gray}</b></div>
+        </div>
+        <div class="kp-grid">${cards.join("")}</div>
+        <div class="kp-foot">
+            <div class="lg"><span><i style="background:#10b981"></i>محقق</span><span><i style="background:#f59e0b"></i>تحذير</span><span><i style="background:#ef4444"></i>غير محقق</span><span><i style="background:#94a3b8"></i>بدون حالة</span><span>- - - المستهدف أو حدود النطاق</span><span>▢ الربع المختار</span><span>✎ قيمة عدّلها مدير النظام</span></div>
+            <div>${escapeHtml(APP_VERSION)}</div>
+        </div>
+    </div>`;
+    // Landscape for this export only; the general report stays portrait.
+    const page = document.createElement("style");
+    page.id = "printPageStyle"; page.textContent = "@page { size: A4 landscape; margin: 8mm; }";
+    document.head.appendChild(page);
+    const cleanup = () => { page.remove(); window.removeEventListener("afterprint", cleanup); };
+    window.addEventListener("afterprint", cleanup);
+    const img = document.querySelector("#printArea img");
+    const go = () => setTimeout(() => { window.print(); setTimeout(cleanup, 1000); }, 50);
     if(img && !img.complete){ img.onload = go; img.onerror = go; } else go();
 }
 
@@ -3626,7 +3739,7 @@ function prepareDashboardImport(workbook, sheets){
             <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" id="wbReplaceRecords" class="!w-4 !h-4 mt-0.5" ${can("approve") ? "checked" : "disabled"}>
                 <span><b>استبدال القراءات السابقة لمؤشرات الملف</b> (يُنصح به عند رفع نسخة محدثة من نفس الملف). عند إلغاء التحديد تُتجاهل القراءات المكررة لنفس المؤشر والتاريخ.</span></label>
         </div>
-        ${can("editKpi") ? "" : `<div class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">تعريفات المؤشرات لا تتغير إلا بواسطة مدير النظام؛ تُستورد القراءات للمؤشرات المعرفة حالياً فقط.${can("approve") ? "" : " ستُحفظ القراءات بانتظار اعتماد مدير الأداء."}</div>`}`;
+        ${can("editKpi") ? "" : `<div class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">تعريفات المؤشرات لا تتغير إلا بواسطة مدير النظام؛ تُستورد القراءات للمؤشرات المعرفة حالياً فقط.${can("approve") ? "" : " تظهر القراءات في اللوحة مباشرة، ويعتمدها مدير الأداء في نهاية الشهر."}</div>`}`;
     importWorkbookInfo.mode = "workbook";
     document.getElementById("importModal").classList.remove("hidden");
 }
@@ -3833,7 +3946,7 @@ function runQualityCheck(manual){
             issues.push({ type:"بيانات ناقصة", kpi:label, date:r.date, desc:"مؤشر نسبة بدون بسط/مقام — سيُحسب من القيمة الفعلية", sev:"LOW" });
         if(kpi && kpi.unit === "%" && Number(r.actualValue) > 100 && kpi.aggregation !== "RATIO")
             issues.push({ type:"قيمة غير منطقية", kpi:label, date:r.date, desc:`نسبة مئوية أكبر من 100% (${r.actualValue})`, sev:"MEDIUM" });
-        if(!r.approved) issues.push({ type:"بانتظار الاعتماد", kpi:label, date:r.date, desc:"السجل غير معتمد ولا يدخل في حساب اللوحة", sev:"LOW" });
+        if(!r.approved) issues.push({ type:"بانتظار الاعتماد", kpi:label, date:r.date, desc:"يظهر في اللوحة وينتظر الاعتماد الشهري من مدير الأداء", sev:"LOW" });
         if(r.dq) issues.push({ type:"ملاحظة من الملف المصدر", kpi:label, date:r.date, desc:`${r.dq}${r.notes ? " — " + r.notes : ""}`, sev:"MEDIUM" });
     });
     const active = activeKpis();
@@ -4226,12 +4339,12 @@ function exportDashboard(){
     });
     addSheet(quarterly, "المقارنة الربعية");
 
-    const raw = getApprovedRecords()
+    const raw = records
         .filter(r => Number(r.year) === periodYear(year, q) && inPeriod(r, q))
         .filter(r => { const k = kpis.find(x => x.code === r.kpiCode); return k && (cat === "ALL" || k.category === cat); })
         .sort((a,b) => String(a.date).localeCompare(String(b.date)))
-        .map(r => ({ "التاريخ": r.date, "الكود": r.kpiCode, "المؤشر": r.kpiName, "القيمة": r.actualValue, "البسط": r.numerator, "المقام": r.denominator, "المصدر": r.dataSource, "أدخله": r.createdBy }));
-    addSheet(raw, "السجلات المعتمدة");
+        .map(r => ({ "التاريخ": r.date, "الكود": r.kpiCode, "المؤشر": r.kpiName, "القيمة": r.actualValue, "البسط": r.numerator, "المقام": r.denominator, "المصدر": r.dataSource, "أدخله": r.createdBy, "الحالة": r.approved ? "معتمد" : "بانتظار الاعتماد الشهري" }));
+    addSheet(raw, "السجلات");
 
     XLSX.writeFile(wb, `Aseer_KPIs_${year}_${q}.xlsx`);
 }
