@@ -20,7 +20,7 @@ const out = vm.runInContext(`(() => {
         kpis: list, categories: CATEGORY_TREE, derived: Object.keys(DERIVED_KPIS),
         templateVersion: TEMPLATE_VERSION, templateFile: TEMPLATE_FILE, dataStartDate: DATA_START_DATE,
         facilities: MASTER_FACILITIES, departments: MASTER_DEPARTMENTS, masterCategories: MASTER_CATEGORIES,
-        calcTypes: CALC_TYPES, periodTypes: PERIOD_TYPES, directionCodes: DIRECTION_CODES, importCodes: IMPORT_CODES
+        calcTypes: CALC_TYPES, arabicLabels: KPI_ARABIC_LABELS, periodTypes: PERIOD_TYPES, directionCodes: DIRECTION_CODES, importCodes: IMPORT_CODES
     });
 })()`, sandbox);
 process.stdout.write(out);

@@ -1395,6 +1395,16 @@ const TEMPLATE_VERSION = "1.0";
 // (tools/build_excel_template.py) imports the same way.
 const TEMPLATE_FILE = "templates/APH_KPI_Simple_2026.xlsx", TEMPLATE_DOWNLOAD_NAME = "قالب إدخال المؤشرات 2026.xlsx";
 const TEMPLATE_FILE_DETAILED = "templates/APH_KPI_Data_Template_2026.xlsx";
+// Arabic-only labels and definitions for the simple entry workbook, where a KPI's platform name or definition has
+// English in it. The importer accepts these labels as well as the platform names.
+const KPI_ARABIC_LABELS = {
+    PSY_CLINIC_VISITS: { label:"عدد مراجعي العيادات (نظام أبكس)" },
+    PSY_NOSHOW_COUNT: { label:"المرضى الذين لم يحضروا للمواعيد (نظام أبكس)" },
+    PATIENT_EXP_OPD: { label:"تجربة المريض - العيادات الخارجية" },
+    READMIT30_PSY: { definition:"نسبة المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص من إجمالي المخرَّجين أحياء (%)" },
+    READMIT30_DETOX: { definition:"نسبة المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص من إجمالي المخرَّجين أحياء (%)" },
+    ED_REVISIT_72H: { definition:"نسبة العودة غير المخطط لها للطوارئ خلال 72 ساعة بنفس التشخيص من إجمالي مراجعي الطوارئ (%)" }
+};
 // First date accepted; there is no end date (any date up to today).
 const DATA_START_DATE = "2026-01-01";
 const MASTER_FACILITIES = [
@@ -5428,7 +5438,7 @@ function dmLocateSheet(wb){
 const SIMPLE_DATE_HEADERS = ["التاريخ", "تاريخ القياس", "Date"];
 function dmLocateSimpleSheet(wb){
     const norm = v => String(v ?? "").replace(/[\u064B-\u0652\u0640]/g, "").replace(/[إأآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[\s\-—–_:()|/]+/g, " ").trim().toLowerCase();
-    const byName = new Map(kpis.map(k => [norm(k.name), k]));
+    const byName = new Map([...kpis.map(k => [norm(k.name), k]), ...kpis.filter(k => KPI_ARABIC_LABELS[k.code]?.label).map(k => [norm(KPI_ARABIC_LABELS[k.code].label), k])]);
     const byCode = new Map(kpis.map(k => [String(k.code).toUpperCase(), k]));
     const partOf = text => { const t = norm(text); if(t.endsWith(" " + norm("البسط"))) return ["NUM", t.slice(0, -norm("البسط").length - 1)]; if(t.endsWith(" " + norm("المقام"))) return ["DEN", t.slice(0, -norm("المقام").length - 1)]; return ["", t]; };
     for(const name of wb.SheetNames){

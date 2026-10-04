@@ -55,6 +55,9 @@ def build(year, out):
     P = platform(year)
     derived = set(P["derived"])
     kpis = [k for k in P["kpis"] if k["code"] not in derived and k.get("active") is not False]
+    for k in kpis:   # Arabic-only text in the workbook
+        ar = P["arabicLabels"].get(k["code"], {})
+        k["name"], k["definition"] = ar.get("label") or k["name"], ar.get("definition") or k.get("definition") or ""
     deps = [d["nameAr"] for d in P["departments"]]
     kpis.sort(key=lambda k: deps.index(k["department"]) if k["department"] in deps else 99)
     ratio = lambda k: P["calcTypes"][k["calcType"]]["mult"] > 0
