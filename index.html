@@ -1221,7 +1221,7 @@ function groupByCategory(items, catOf){
 }
 
 // Layout version 2: categories and order of the daily sheet, APEX clinic statistics, No-Show %.
-// Version 3: 937 counts only from the weekly 937 sheet (the one with satisfaction).
+// Version 3: 937 report counts from the daily sheet; satisfaction and the overall index from the weekly 937 sheet.
 const KPI_LAYOUT_V = 3;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","DISCHARGES_DAILY","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
@@ -1232,7 +1232,7 @@ const KPI_LAYOUT = {
     "الجودة": ["SENTINEL_EVENTS","MYSTERY_SHOPPER","OCC_HEALTH"],
     "الشؤون الهندسية": ["MAINT_REQUESTS","MAINT_COMPLETED","MAINT_COMPLETION_PCT","SECURITY_OBS","SWITCH_INCOMING_CALLS","APPT_OUTGOING_CALLS"],
     "التنسيق الطبي": ["REFERRALS_OUT","REFERRALS_IN"],
-    "بلاغات 937": ["CALLS937_REPORTS_WEEKLY","CALLS937_CLOSURE_RATE","CALLS937_SATISFACTION","CALLS937_OVERALL_INDEX","CALLS937_REPORTS","CALLS937_CLOSED"],
+    "بلاغات 937": ["CALLS937_REPORTS","CALLS937_CLOSED","CALLS937_SATISFACTION","CALLS937_OVERALL_INDEX","CALLS937_REPORTS_WEEKLY","CALLS937_CLOSURE_RATE"],
     "تجربة المريض": ["PATIENT_EXP_INPATIENT","PATIENT_EXP_OPD","PATIENT_EXP_ADDICTION"],
     "الموارد الذاتية": ["SELF_REVENUE"]
 };
@@ -1242,11 +1242,12 @@ const KPI_RENAMES = {
     PSY_NOSHOW_PCT: { name: "نسبة عدم الحضور للمواعيد (No Show)", department: "العيادات الخارجية",
         definition: "المرضى الذين لم يحضروا للمواعيد ÷ عدد مراجعي العيادات (إحصائية APEX) × 100، ويُحسب من مجموع الفترة (الشهر أو الربع)." },
     CALLS937_SATISFACTION: { name: "الرضا عن الإغلاق" },
-    CALLS937_REPORTS_WEEKLY: { name: "عدد بلاغات 937" },
-    CALLS937_CLOSURE_RATE: { name: "نسبة البلاغات التي تم إغلاقها" }
+    CALLS937_REPORTS: { name: "عدد البلاغات 937" },
+    CALLS937_CLOSED: { name: "عدد البلاغات 937 التي تم إغلاقها" }
 };
-// Daily copies of the 937 counts; the weekly 937 sheet is the source. Hidden, readings kept.
-const KPI_HIDDEN = ["CALLS937_REPORTS", "CALLS937_CLOSED"];
+// The weekly 937 sheet repeats the report count (and gives closure as a rate); the daily counts are used.
+// Hidden, readings kept.
+const KPI_HIDDEN = ["CALLS937_REPORTS_WEEKLY", "CALLS937_CLOSURE_RATE"];
 // The same statistic was listed twice; the copy without readings is dropped.
 const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_COUNT: "PSY_NOSHOW_COUNT" };
 const LAYOUT_ORDER = Object.values(KPI_LAYOUT).flat();
