@@ -12,7 +12,7 @@ the platform. Facility, department and category codes are defined once here and 
 The workbook is only an input interface: the platform reads IMPORT_TEMPLATE (or DATA) by header name,
 never by position, colour or merged cells, and re-validates every row on the server.
 """
-import argparse, datetime as dt, json, os, re, subprocess, sys
+import argparse, datetime as dt, json, os, re, shutil, subprocess, sys, tempfile, zipfile
 
 from openpyxl import Workbook
 from openpyxl.comments import Comment
@@ -24,7 +24,8 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MASTER_ROWS = 1000                        # rows of the master sheets that formulas and lists look at
-CAPACITY = 10000                          # DATA rows that carry formulas (pre-filled calendar + spare rows)
+SPARE_ROWS = 1500                         # empty DATA rows with formulas after the pre-filled calendar
+CAPACITY = 10000                          # upper bound; the real count is calendar rows + SPARE_ROWS
 MASTER_PASSWORD = "APH-KPI-2026"
 TEST_ROWS = 0                             # --test N: small workbook (N calendar rows) for checking the formulas          # protects formulas and master sheets from accidental edits only
 
@@ -167,7 +168,7 @@ DATA_FIELDS = [
     ("Last_Updated", "آخر تحديث", "in", "Date", "اختياري"),
     ("Validation_Status", "نتيجة الفحص", "calc", "Text", "تلقائي"),
 ]
-HELPERS = ["_Ind_Row", "_Has_Value", "_Multiplier", "_Calc_Type", "_Direction", "_Fac_Row", "_Dep_Row", "_Min", "_Max", "_Dup_Key", "_Green", "_Yellow"]
+HELPERS = ["_Ind_Row", "_Has_Value", "_Multiplier", "_Calc_Type", "_Direction", "_Fac_Row", "_Dep_Row", "_Min", "_Max", "_Green", "_Yellow"]
 IMPORT_FIELDS = ["Unique_Key", "Facility_ID", "Department_ID", "Indicator_ID", "Period_Type", "Measurement_Date",
                  "Numerator", "Denominator", "Actual_Value", "Data_Source", "Data_Entry_By", "Data_Entry_Date", "Notes"]
 
@@ -186,6 +187,7 @@ def col_map(fields):
 
 
 def build(year, out_path):
+    global CAPACITY
     kpis, derived = load_kpis()
     dep_by_ar = {d[2]: d[0] for d in DEPARTMENTS}
     cat_by_ar = {c[2]: c[0] for c in CATEGORIES}
@@ -337,7 +339,8 @@ def build(year, out_path):
         for d in dates: rows.append((d, kpis.index(k), k, per))
     rows.sort(key=lambda x: (x[0], x[1]))
     if TEST_ROWS: rows = rows[:TEST_ROWS]
-    elif len(rows) > CAPACITY - 500: sys.exit(f"{len(rows)} calendar rows leave too few spare rows; raise CAPACITY")
+    else: CAPACITY = len(rows) + SPARE_ROWS
+    last = 2 + CAPACITY
 
     ind_rng = lambda c: f"INDICATORS!${ic[c]}$1:${ic[c]}${MASTER_ROWS}"
     for i in range(CAPACITY):
@@ -363,7 +366,6 @@ def build(year, out_path):
             "_Dep_Row": f'=IF({C("Department_ID")}="","",IFERROR(MATCH({C("Department_ID")},DEPARTMENTS!$A$1:$A${MASTER_ROWS},0),""))',
             "_Min": f'=IF({IR}="","",IF(INDEX({ind_rng("Minimum_Acceptable")},{IR})="","",INDEX({ind_rng("Minimum_Acceptable")},{IR})))',
             "_Max": f'=IF({IR}="","",IF(INDEX({ind_rng("Maximum_Acceptable")},{IR})="","",INDEX({ind_rng("Maximum_Acceptable")},{IR})))',
-            "_Dup_Key": f'=IF({C("_Has_Value")},{C("Unique_Key")},"")',
             "_Green": f'=IF({IR}="","",IF(INDEX({ind_rng("Green_Threshold")},{IR})="","",INDEX({ind_rng("Green_Threshold")},{IR})))',
             "_Yellow": f'=IF({IR}="","",IF(INDEX({ind_rng("Yellow_Threshold")},{IR})="","",INDEX({ind_rng("Yellow_Threshold")},{IR})))',
             "Unique_Key": (f'=IF(OR({C("Facility_ID")}="",{C("Department_ID")}="",{C("Indicator_ID")}="",{C("Period_Type")}="",NOT(ISNUMBER({C("Period_Start")}))),"",'
@@ -484,7 +486,7 @@ def build(year, out_path):
         chk = [
             f'IF(OR({X("Facility_ID")}="",{X("Department_ID")}="",{X("Indicator_ID")}="",{X("Period_Type")}="",{X("Measurement_Date")}=""),"E11 ","")',
             f'IF(AND({X("Measurement_Date")}<>"",NOT(ISNUMBER({X("Measurement_Date")}))),"E02 ","")',
-            f'IF(ISNUMBER({X("Measurement_Date")}),IF(OR({X("Measurement_Date")}<DATE({DATA_START.year},{DATA_START.month},{DATA_START.day}),{X("Measurement_Date")}>TODAY()),"E03 ",""),"")',
+            f'IF(ISNUMBER({X("Measurement_Date")}),IF({X("Measurement_Date")}<DATE({DATA_START.year},{DATA_START.month},{DATA_START.day}),"E03 ",""),"")',
             f'IF(AND({X("Indicator_ID")}<>"",{X("_Ind_Row")}=""),"E04 ","")',
             f'IF({X("Department_ID")}="","",IF({X("_Dep_Row")}="","E05 ",IF(INDEX(DEPARTMENTS!$F$1:$F${MASTER_ROWS},{X("_Dep_Row")})<>"Y","E05 ","")))',
             f'IF({X("Facility_ID")}="","",IF({X("_Fac_Row")}="","E06 ",IF(INDEX(FACILITIES!$F$1:$F${MASTER_ROWS},{X("_Fac_Row")})<>"Y","E06 ","")))',
@@ -499,7 +501,6 @@ def build(year, out_path):
             f'IF(AND({X("_Ind_Row")}<>"",NOT(ISNUMBER({X("Target_Value")}))),"W01 ","")',
             f'IF(AND(ISNUMBER({X("Measurement_Date")}),ISNUMBER({X("Period_Start")})),IF(AND({X("Measurement_Date")}<>{X("Period_Start")},{X("Period_Start")}>=DATE({DATA_START.year},{DATA_START.month},{DATA_START.day})),"W02 ",""),"")',
             f'IF(AND({X("_Multiplier")}>0,ISNUMBER({X("Numerator")}),ISNUMBER({X("Denominator")})),IF(AND({X("Denominator")}>0,{X("Numerator")}>{X("Denominator")}),"W03 ",""),"")',
-            f'IF({X("_Dup_Key")}="","",IF(COUNTIF(DATA!${D["_Dup_Key"]}{r + 1}:${D["_Dup_Key"]}${last + 1},{X("_Dup_Key")})>0,"W05 ",""))',
         ]
         ws_val[f"A{r}"] = r
         ws_val[f"B{r}"] = f'=IF({X("_Has_Value")},{X("Unique_Key")},"")'
@@ -521,7 +522,7 @@ def build(year, out_path):
     ws_val["J1"] = "ملخص الفحص"; ws_val["J1"].font = F_TITLE
     summary = [("سجلات معبأة", f'=COUNTIF(D{first}:D{last},"VALID")+COUNTIF(D{first}:D{last},"WARNING")+COUNTIF(D{first}:D{last},"INVALID")'),
                ("VALID", f'=COUNTIF(D{first}:D{last},"VALID")'), ("WARNING", f'=COUNTIF(D{first}:D{last},"WARNING")'),
-               ("INVALID", f'=COUNTIF(D{first}:D{last},"INVALID")'), ("مكررة (W05)", f'=COUNTIF(C{first}:C{last},"*W05*")')]
+               ("INVALID", f'=COUNTIF(D{first}:D{last},"INVALID")')]
     ws_val["P2"], ws_val["Q2"] = "البند", "العدد"
     for c in ("P2", "Q2"): ws_val[c].font, ws_val[c].fill, ws_val[c].alignment = F_H, FILL_H, CENTER
     for i, (lab, fml) in enumerate(summary):
@@ -541,17 +542,15 @@ def build(year, out_path):
     ws_val.column_dimensions["O"].width = 12
     protect(ws_val)
 
-    # ------------------------------------------------ IMPORT_TEMPLATE (fixed order; only records with values)
+    # ------------------------------------------------ IMPORT_TEMPLATE (fixed column order, no formulas)
+    # For records pasted from another system. Left empty, the platform reads the DATA sheet (same column names).
     header(ws_imp, 1, IMPORT_FIELDS)
-    for i in range(CAPACITY):
-        r, src = 2 + i, first + i
-        hv = f"DATA!${D['_Has_Value']}{src}"
+    for i in range(500):
         for j, name in enumerate(IMPORT_FIELDS, 1):
-            c = ws_imp.cell(row=r, column=j, value=f'=IF({hv},IF(DATA!{D[name]}{src}="","",DATA!{D[name]}{src}),"")')
+            c = ws_imp.cell(row=2 + i, column=j)
             if name in ("Measurement_Date", "Data_Entry_Date"): c.number_format = DATE_FMT
     widths(ws_imp, [44, 12, 14, 30, 12, 14, 11, 11, 12, 24, 16, 14, 30])
     ws_imp.freeze_panes = "A2"
-    protect(ws_imp)
 
     # ------------------------------------------------ README
     build_readme(ws_readme, year, len(rows), len(entry), kpis, derived, D)
@@ -562,7 +561,60 @@ def build(year, out_path):
     wb.properties.creator = "APH KPI Platform"
     wb.active = 0
     wb.save(out_path)
+    share_formulas(out_path)
     return len(rows)
+
+
+# ---------------------------------------------------------------- shared formulas
+# openpyxl writes every formula in full. Excel stores a column of identical formulas once ("shared formula"),
+# which keeps the file small enough to open quickly on any device. Runs of cells in one column whose formulas
+# are the same apart from relative row numbers become one shared formula; the calculation is unchanged.
+_CELL = re.compile(r'<c r="([A-Z]+)(\d+)"([^>]*)><f>([^<]*)</f>(?:<v\s*/>|<v>[^<]*</v>)?</c>')
+_REF = re.compile(r"(?<![A-Za-z_\d.])(\$?)([A-Z]{1,3})(\$?)(\d+)(?![\d(A-Za-z_])")
+
+
+def _shape(formula, row):
+    """The formula with relative row numbers written as offsets from its own row (text in quotes untouched)."""
+    parts = formula.split('"')
+    for i in range(0, len(parts), 2):
+        parts[i] = _REF.sub(lambda m: m.group(0) if m.group(3) else f"{m.group(1)}{m.group(2)}[{int(m.group(4)) - row}]", parts[i])
+    return '"'.join(parts)
+
+
+def _share_sheet(xml):
+    cells = [(m.start(), m.end(), m.group(1), int(m.group(2)), m.group(3), m.group(4)) for m in _CELL.finditer(xml)]
+    by_col = {}
+    for c in cells: by_col.setdefault(c[2], []).append(c)
+    replace, si = {}, 0
+    for col, lst in by_col.items():
+        lst.sort(key=lambda c: c[3])
+        i = 0
+        while i < len(lst):
+            shape, j = _shape(lst[i][5], lst[i][3]), i + 1
+            while j < len(lst) and lst[j][3] == lst[j - 1][3] + 1 and _shape(lst[j][5], lst[j][3]) == shape: j += 1
+            if j - i >= 2:
+                m = lst[i]
+                replace[m[0]] = (m[1], f'<c r="{col}{m[3]}"{m[4]}><f t="shared" ref="{col}{m[3]}:{col}{lst[j - 1][3]}" si="{si}">{m[5]}</f></c>')
+                for c in lst[i + 1:j]: replace[c[0]] = (c[1], f'<c r="{col}{c[3]}"{c[4]}><f t="shared" si="{si}"/></c>')
+                si += 1
+            i = j
+    out, pos = [], 0
+    for start in sorted(replace):
+        end, text = replace[start]
+        out.append(xml[pos:start]); out.append(text); pos = end
+    out.append(xml[pos:])
+    return "".join(out)
+
+
+def share_formulas(path):
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx", dir=os.path.dirname(path) or ".").name
+    with zipfile.ZipFile(path) as zin, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename.startswith("xl/worksheets/sheet") and b"<f>" in data:
+                data = _share_sheet(data.decode("utf-8")).encode("utf-8")
+            zout.writestr(item, data)
+    shutil.move(tmp, path)
 
 
 def build_readme(ws, year, n_rows, n_kpis, kpis, derived, D):
@@ -620,7 +672,7 @@ def build_readme(ws, year, n_rows, n_kpis, kpis, derived, D):
         ("FACILITIES", "المنشآت", "", "", "مدير النظام"),
         ("LOOKUPS", "القوائم المرجعية للقوائم المنسدلة", "", "", "مدير النظام"),
         ("VALIDATION", "فحص كل سجل قبل الرفع: VALID / WARNING / INVALID", "", "", "تلقائي"),
-        ("IMPORT_TEMPLATE", "نسخة الرفع بترتيب أعمدة ثابت — تقرؤها المنصة", "", "", "تلقائي (لا تُعدّل)"),
+        ("IMPORT_TEMPLATE", "أعمدة الرفع بترتيب ثابت للصق بيانات من نظام آخر؛ اتركها فارغة إذا عبأت DATA", "", "", "اختياري"),
     ])
 
     title("طريقة التعبئة")
@@ -651,7 +703,7 @@ def build_readme(ws, year, n_rows, n_kpis, kpis, derived, D):
     title("المفتاح الفريد ومنع التكرار")
     line("الصيغة", "Facility_ID-Indicator_ID-YYYYMMDD-Department_ID-Period_Type (التاريخ هو بداية الفترة)")
     line("مثال", "FAC001-ED_VISITS-20260101-DEP005-DAILY")
-    line("عند إعادة الرفع", "السجل ذو المفتاح الموجود يُحدَّث (UPDATE) ولا يُنشأ سجل جديد؛ الجديد يُضاف (INSERT)؛ والمطابق تماماً لا يتغير. تكرار المفتاح داخل الملف نفسه: يُعتمد آخر سطر (W05).")
+    line("عند إعادة الرفع", "السجل ذو المفتاح الموجود يُحدَّث (UPDATE) ولا يُنشأ سجل جديد؛ الجديد يُضاف (INSERT)؛ والمطابق تماماً لا يتغير. تكرار المفتاح داخل الملف نفسه: تنبه المنصة عند الرفع ويُعتمد آخر سطر (W05).")
 
     title("الوحدات وأنواع الحساب")
     line("الوحدات المقبولة", "، ".join(UNITS))
@@ -666,7 +718,7 @@ def build_readme(ws, year, n_rows, n_kpis, kpis, derived, D):
 
     title("الرفع إلى المنصة")
     for i, s in enumerate(["ادخل المنصة ← إدارة البيانات.", "اضغط «رفع ملف Excel» واختر الملف.",
-                           "تقرأ المنصة ورقة IMPORT_TEMPLATE (أو DATA) بأسماء الأعمدة لا بمواقعها، وتعرض شاشة الفحص: السجلات، الجديدة، التحديثات، المكررة، الأخطاء، التحذيرات.",
+                           "تقرأ المنصة ورقة DATA (أو IMPORT_TEMPLATE إذا عُبئت) بأسماء الأعمدة لا بمواقعها، وتعرض شاشة الفحص: السجلات، الجديدة، التحديثات، المكررة، الأخطاء، التحذيرات.",
                            "أصلح الأخطاء أو نزّل «تقرير الأخطاء» (Excel) لمعرفة السطر والحقل والقيمة والإجراء المقترح.",
                            "اضغط «IMPORT & SAVE». تُحفظ السجلات الصحيحة فقط، ويُسجل الرفع كدفعة (Batch) في سجل الاستيراد مع سجل كامل للتعديلات.",
                            "تتحدث لوحة المؤشرات مباشرة لكل المستخدمين."], 1):
