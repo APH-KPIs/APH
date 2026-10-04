@@ -1160,9 +1160,8 @@ const permissions = {
 // Official KPI list from KPI_Dashboard_Ready.xlsx (03_KPI_MASTER); percentages are stored on a 0-100 scale.
 // KPIs added after the official workbook list. They are kept when a workbook import replaces the KPI list.
 const ADDED_KPIS = [
-    {code:"ED_LOS_HOURS",name:"معدل بقاء المريض بالطوارئ",category:"الطوارئ",department:"الطوارئ",unit:"ساعة",definition:"متوسط مدة بقاء المريض في الطوارئ من التسجيل حتى الخروج أو التنويم، بالساعات.",frequency:"daily",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"lower",dataSource:"الطوارئ"},
-    {code:"MYSTERY_SHOPPER",name:"الزائر السري",category:"الجودة",department:"إدارة الجودة",unit:"%",definition:"نتيجة تقييم الزائر السري للفترة (نسبة الالتزام بالمعايير).",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدارة الجودة"},
-    {code:"OCC_HEALTH",name:"مؤشر الصحة المهنية",category:"الجودة",department:"الصحة المهنية",unit:"%",definition:"نتيجة مؤشر الصحة المهنية الشهري.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"الصحة المهنية"},
+    {code:"MYSTERY_SHOPPER",name:"الزائر السري",category:"الجودة",department:"إدارة الجودة",unit:"%",definition:"نتيجة تقييم الزائر السري للفترة (نسبة الالتزام بالمعايير). تُدخل شهرياً يدوياً في المنصة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدخال يدوي في المنصة"},
+    {code:"OCC_HEALTH",name:"مؤشر الصحة المهنية",category:"الجودة",department:"الصحة المهنية",unit:"%",definition:"نتيجة مؤشر الصحة المهنية الشهري. تُدخل شهرياً يدوياً في المنصة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدخال يدوي في المنصة"},
     {code:"DISCHARGES_DAILY",name:"عدد حالات الخروج اليومي",category:"الخدمات العلاجية",department:"الخدمات العلاجية",unit:"عدد",definition:"عدد المرضى المخرَّجين من التنويم في اليوم.",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"higher",dataSource:"الخدمات العلاجية"},
     {code:"SELF_REVENUE",name:"الموارد الذاتية",category:"الموارد الذاتية",department:"الإدارة المالية",unit:"ريال",definition:"إجمالي إيرادات الموارد الذاتية المحصلة خلال الفترة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"SUM",direction:"higher",dataSource:"الإدارة المالية"}
 ];
@@ -1227,7 +1226,7 @@ const KPI_LAYOUT = {
     "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","DISCHARGES_DAILY","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
     "الصيدلية": ["MED_ERR_REPORTING_DOCTORS","MED_ERR_REPORTING_NURSES","MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY","DRUGMAIL_SHIPMENTS_WEEKLY","DRUGMAIL_SHIPMENTS_MONTHLY"],
     "المختبر (عينتي)": ["LAB_COMPLETION_PCT"],
-    "الطوارئ": ["ED_VISITS","ED_LOS_HOURS","ED_REVISIT_72H"],
+    "الطوارئ": ["ED_VISITS","ED_REVISIT_72H"],
     "العيادات": ["PSY_CLINIC_VISITS","PSY_NOSHOW_COUNT","PSY_NOSHOW_PCT","CLINIC_CONFIRM_PCT_OF_VISITS"],
     "الجودة": ["SENTINEL_EVENTS","MYSTERY_SHOPPER","OCC_HEALTH"],
     "الشؤون الهندسية": ["MAINT_REQUESTS","MAINT_COMPLETED","MAINT_COMPLETION_PCT","SECURITY_OBS","SWITCH_INCOMING_CALLS","APPT_OUTGOING_CALLS"],
@@ -1242,6 +1241,8 @@ const KPI_RENAMES = {
     PSY_NOSHOW_PCT: { name: "نسبة عدم الحضور للمواعيد (No Show)", department: "العيادات الخارجية",
         definition: "المرضى الذين لم يحضروا للمواعيد ÷ عدد مراجعي العيادات (إحصائية APEX) × 100، ويُحسب من مجموع الفترة (الشهر أو الربع)." },
     CALLS937_SATISFACTION: { name: "الرضا عن الإغلاق" },
+    MYSTERY_SHOPPER: { frequency: "monthly", dataSource: "إدخال يدوي في المنصة" },
+    OCC_HEALTH: { frequency: "monthly", dataSource: "إدخال يدوي في المنصة" },
     CALLS937_REPORTS: { name: "عدد البلاغات 937" },
     CALLS937_CLOSED: { name: "عدد البلاغات 937 التي تم إغلاقها" }
 };
@@ -1250,6 +1251,8 @@ const KPI_RENAMES = {
 const KPI_HIDDEN = ["CALLS937_REPORTS_WEEKLY", "CALLS937_CLOSURE_RATE"];
 // The same statistic was listed twice; the copy without readings is dropped.
 const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_COUNT: "PSY_NOSHOW_COUNT" };
+// Removed from the platform at the owner's request (layout 3).
+const KPI_REMOVED = ["ED_LOS_HOURS"];
 const LAYOUT_ORDER = Object.values(KPI_LAYOUT).flat();
 
 // Applies the layout to KPIs not yet on it; returns { changed, removed } for saving.
@@ -1260,6 +1263,10 @@ function applyKpiLayout(list, recs){
     Object.entries(KPI_DUPLICATES).forEach(([dup, keep]) => {
         const i = list.findIndex(k => k.code === dup);
         if(i >= 0 && list.some(k => k.code === keep) && !hasReadings(dup) && (list[i].layoutV || 0) < KPI_LAYOUT_V){ removed.push(dup); list.splice(i, 1); }
+    });
+    KPI_REMOVED.forEach(code => {
+        const i = list.findIndex(k => k.code === code);
+        if(i >= 0 && (list[i].layoutV || 0) < 3){ removed.push(code); list.splice(i, 1); }
     });
     list.forEach(k => {
         if((k.layoutV || 0) >= KPI_LAYOUT_V) return;
