@@ -1188,7 +1188,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.20 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.21 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1275,7 +1275,8 @@ function groupByCategory(items, catOf){
 // Version 9: quality, engineering and call targets; completed-maintenance count entry-only; one patient-experience KPI.
 // Version 10: related KPIs grouped (beds, re-admission, clinics with telemedicine and appointments).
 // Version 11: official Q3 2026 maintenance figures (474 reported, 472 completed).
-const KPI_LAYOUT_V = 11;
+// Version 12: maintenance completion target from Q3 (99.58%); Ainati lab 98% for Q1–Q3 2026.
+const KPI_LAYOUT_V = 12;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1342,7 +1343,8 @@ const KPI_TARGETS = {
     OCC_HEALTH:               { v: 9, target: 90, direction: "higher" },
     MYSTERY_SHOPPER:          { v: 9, target: 90, direction: "higher" },
     MAINT_REQUESTS:           { v: 9, target: 30, targetBasis: "weekly", direction: "lower" },
-    MAINT_COMPLETION_PCT:     { v: 9, target: 100, direction: "higher" },
+    // Q3 2026 rate 472 ÷ 474 (shown as 99.58%).
+    MAINT_COMPLETION_PCT:     { v: 12, target: 99.578, direction: "higher" },
     SWITCH_INCOMING_CALLS:    { v: 9, target: 16000, targetBasis: "annual", direction: "lower" },
     APPT_OUTGOING_CALLS:      { v: 9, target: 32000, targetBasis: "annual", direction: "higher" },
     // Entered (it feeds the completion rate) but not shown on the dashboard.
@@ -1352,7 +1354,8 @@ const KPI_TARGETS = {
 // Official quarter figures supplied by the departments; shown with the ✎ mark like any admin-set quarter value.
 const OFFICIAL_QUARTERS = {
     MAINT_REQUESTS:  { v: 11, values: { "2026-Q3": 474 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" },
-    MAINT_COMPLETED: { v: 11, values: { "2026-Q3": 472 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" }
+    MAINT_COMPLETED: { v: 11, values: { "2026-Q3": 472 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" },
+    LAB_COMPLETION_PCT: { v: 12, values: { "2026-Q1": 98, "2026-Q2": 98, "2026-Q3": 98 }, reason: "اعتماد وحدة مؤشرات الأداء: نسب إنجاز عينتي 98% فأعلى" }
 };
 // code → layout version that removed it (a KPI stored at an older version is dropped once).
 const KPI_REMOVED_AT = {
@@ -2597,6 +2600,11 @@ function getPeriodValue(code, year, q){
     if(q === "ALL" && kpi.aggregation === "SUM" && hasManualQuarters(kpi, year)){
         const parts = QUARTERS.map(qq => getPeriodValue(code, year, qq)).filter(isNum);
         return parts.length ? parts.reduce((a, v) => a + Number(v), 0) : null;
+    }
+    // A rate or average with official quarter values: the year is the mean of its quarters.
+    if(q === "ALL" && kpi.aggregation !== "SUM" && !DERIVED_KPIS[code] && hasManualQuarters(kpi, year)){
+        const parts = QUARTERS.map(qq => getPeriodValue(code, year, qq)).filter(isNum);
+        return parts.length ? parts.reduce((a, v) => a + Number(v), 0) / parts.length : null;
     }
     const parts = derivedManualParts(kpi, year, q);
     if(parts) return parts[1] > 0 ? parts[0] / parts[1] * 100 : null;
