@@ -926,7 +926,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div><label class="block font-bold text-slate-700 mb-1">كود المؤشر (KPI Code)</label><input id="kpiCode"></div>
             <div><label class="block font-bold text-slate-700 mb-1">اسم المؤشر الرسمي</label><input id="kpiName"></div>
-            <div><label class="block font-bold text-slate-700 mb-1">الفئة الإدارية</label><input id="kpiCategory"></div>
+            <div><label class="block font-bold text-slate-700 mb-1">الفئة الإدارية</label><input id="kpiCategory" list="kpiCategoryList"><datalist id="kpiCategoryList"></datalist></div>
             <div><label class="block font-bold text-slate-700 mb-1">القسم / الإدارة المسؤولة</label><input id="kpiDepartment"></div>
             <div><label class="block font-bold text-slate-700 mb-1">وحدة القياس</label><input id="kpiUnit"></div>
             <div><label class="block font-bold text-slate-700 mb-1">دورية القياس</label>
@@ -1141,7 +1141,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.8 — 2026-10-03";
+const APP_VERSION = "الإصدار 3.9 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1161,7 +1161,9 @@ const permissions = {
 // KPIs added after the official workbook list. They are kept when a workbook import replaces the KPI list.
 const ADDED_KPIS = [
     {code:"ED_LOS_HOURS",name:"معدل بقاء المريض بالطوارئ",category:"الطوارئ",department:"الطوارئ",unit:"ساعة",definition:"متوسط مدة بقاء المريض في الطوارئ من التسجيل حتى الخروج أو التنويم، بالساعات.",frequency:"daily",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"lower",dataSource:"الطوارئ"},
-    {code:"DISCHARGES_DAILY",name:"عدد حالات الخروج اليومي",category:"السعة السريرية",department:"الخدمات العلاجية",unit:"عدد",definition:"عدد المرضى المخرَّجين من التنويم في اليوم.",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"higher",dataSource:"الخدمات العلاجية"},
+    {code:"MYSTERY_SHOPPER",name:"الزائر السري",category:"الجودة",department:"إدارة الجودة",unit:"%",definition:"نتيجة تقييم الزائر السري للفترة (نسبة الالتزام بالمعايير).",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدارة الجودة"},
+    {code:"OCC_HEALTH",name:"مؤشر الصحة المهنية",category:"الجودة",department:"الصحة المهنية",unit:"%",definition:"نتيجة مؤشر الصحة المهنية الشهري.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"الصحة المهنية"},
+    {code:"DISCHARGES_DAILY",name:"عدد حالات الخروج اليومي",category:"الخدمات العلاجية",department:"الخدمات العلاجية",unit:"عدد",definition:"عدد المرضى المخرَّجين من التنويم في اليوم.",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"higher",dataSource:"الخدمات العلاجية"},
     {code:"SELF_REVENUE",name:"الموارد الذاتية",category:"الموارد الذاتية",department:"الإدارة المالية",unit:"ريال",definition:"إجمالي إيرادات الموارد الذاتية المحصلة خلال الفترة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"SUM",direction:"higher",dataSource:"الإدارة المالية"}
 ];
 // Highlighted at the top of the dashboard in the quarterly view, in this order.
@@ -1194,6 +1196,78 @@ function applyDirectionRules(list){
         if(k.direction === "range" && !(isNum(k.rangeMin) && isNum(k.rangeMax))) Object.assign(k, DEFAULT_RANGE);
     }));
     return list;
+}
+
+// ---- KPI categories, in the order of the hospital's daily sheet ----
+// A parent category includes its sub-categories when chosen in the filter.
+const CATEGORY_TREE = [
+    { name: "الخدمات العلاجية", children: ["الصيدلية", "المختبر (عينتي)"] },
+    { name: "الطوارئ" }, { name: "العيادات" }, { name: "الجودة" }, { name: "الشؤون الهندسية" },
+    { name: "التنسيق الطبي" }, { name: "بلاغات 937" }, { name: "تجربة المريض" }, { name: "الموارد الذاتية" }
+];
+const CATEGORY_ORDER = CATEGORY_TREE.flatMap(c => [c.name, ...(c.children || [])]);
+const CATEGORY_PARENT = Object.fromEntries(CATEGORY_TREE.flatMap(c => (c.children || []).map(ch => [ch, c.name])));
+const catRank = c => { const i = CATEGORY_ORDER.indexOf(c); return i < 0 ? 999 : i; };
+const catLabel = c => CATEGORY_PARENT[c] ? `${CATEGORY_PARENT[c]} — ${c}` : (c || "أخرى");
+function inCategory(k, cat){
+    if(cat === "ALL" || k.category === cat) return true;
+    return (CATEGORY_TREE.find(c => c.name === cat)?.children || []).includes(k.category);
+}
+// Groups [category, rows] in the sheet's order; categories outside it follow alphabetically.
+function groupByCategory(items, catOf){
+    const groups = new Map();
+    items.forEach(x => { const c = catOf(x) || "أخرى"; if(!groups.has(c)) groups.set(c, []); groups.get(c).push(x); });
+    return [...groups.entries()].sort((a, b) => catRank(a[0]) - catRank(b[0]) || String(a[0]).localeCompare(String(b[0]), "ar"));
+}
+
+// Layout version 2: categories and order of the daily sheet, APEX clinic statistics, No-Show %.
+const KPI_LAYOUT_V = 2;
+const KPI_LAYOUT = {
+    "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","DISCHARGES_DAILY","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
+    "الصيدلية": ["MED_ERR_REPORTING_DOCTORS","MED_ERR_REPORTING_NURSES","MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY","DRUGMAIL_SHIPMENTS_WEEKLY","DRUGMAIL_SHIPMENTS_MONTHLY"],
+    "المختبر (عينتي)": ["LAB_COMPLETION_PCT"],
+    "الطوارئ": ["ED_VISITS","ED_LOS_HOURS","ED_REVISIT_72H"],
+    "العيادات": ["PSY_CLINIC_VISITS","PSY_NOSHOW_COUNT","PSY_NOSHOW_PCT","CLINIC_CONFIRM_PCT_OF_VISITS"],
+    "الجودة": ["SENTINEL_EVENTS","MYSTERY_SHOPPER","OCC_HEALTH"],
+    "الشؤون الهندسية": ["MAINT_REQUESTS","MAINT_COMPLETED","MAINT_COMPLETION_PCT","SECURITY_OBS","SWITCH_INCOMING_CALLS","APPT_OUTGOING_CALLS"],
+    "التنسيق الطبي": ["REFERRALS_OUT","REFERRALS_IN"],
+    "بلاغات 937": ["CALLS937_REPORTS","CALLS937_CLOSED","CALLS937_REPORTS_WEEKLY","CALLS937_CLOSURE_RATE","CALLS937_SATISFACTION","CALLS937_OVERALL_INDEX"],
+    "تجربة المريض": ["PATIENT_EXP_INPATIENT","PATIENT_EXP_OPD","PATIENT_EXP_ADDICTION"],
+    "الموارد الذاتية": ["SELF_REVENUE"]
+};
+const KPI_RENAMES = {
+    PSY_CLINIC_VISITS: { name: "عدد مراجعي العيادات (APEX)", department: "العيادات الخارجية", dataSource: "إحصائية APEX" },
+    PSY_NOSHOW_COUNT: { name: "المرضى الذين لم يحضروا للمواعيد (APEX)", department: "العيادات الخارجية", dataSource: "إحصائية APEX" },
+    PSY_NOSHOW_PCT: { name: "نسبة عدم الحضور للمواعيد (No Show)", department: "العيادات الخارجية",
+        definition: "المرضى الذين لم يحضروا للمواعيد ÷ عدد مراجعي العيادات (إحصائية APEX) × 100، ويُحسب من مجموع الفترة (الشهر أو الربع)." },
+    CALLS937_SATISFACTION: { name: "الرضا عن الإغلاق" }
+};
+// The same statistic was listed twice; the copy without readings is dropped.
+const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_COUNT: "PSY_NOSHOW_COUNT" };
+const LAYOUT_ORDER = Object.values(KPI_LAYOUT).flat();
+
+// Applies the layout to KPIs not yet on it; returns { changed, removed } for saving.
+function applyKpiLayout(list, recs){
+    const changed = [], removed = [];
+    const catOf = Object.fromEntries(Object.entries(KPI_LAYOUT).flatMap(([c, codes]) => codes.map(code => [code, c])));
+    const hasReadings = code => recs.some(r => r.kpiCode === code);
+    Object.entries(KPI_DUPLICATES).forEach(([dup, keep]) => {
+        const i = list.findIndex(k => k.code === dup);
+        if(i >= 0 && list.some(k => k.code === keep) && !hasReadings(dup) && (list[i].layoutV || 0) < KPI_LAYOUT_V){ removed.push(dup); list.splice(i, 1); }
+    });
+    list.forEach(k => {
+        if((k.layoutV || 0) >= KPI_LAYOUT_V) return;
+        if(catOf[k.code]) k.category = catOf[k.code];
+        Object.assign(k, KPI_RENAMES[k.code] || {});
+        k.layoutV = KPI_LAYOUT_V;
+        changed.push(k);
+    });
+    if(changed.length || removed.length){
+        const rank = code => { const i = LAYOUT_ORDER.indexOf(code); return i < 0 ? 900 + list.findIndex(k => k.code === code) : i; };
+        list.sort((a, b) => rank(a.code) - rank(b.code));
+        list.forEach((k, i) => { if(k.sortOrder !== i){ k.sortOrder = i; if(!changed.includes(k)) changed.push(k); } });
+    }
+    return { changed, removed };
 }
 
 // Adds any ADDED_KPIS missing from the list; returns the ones added.
@@ -1374,6 +1448,8 @@ async function init(){
     }else if(addMissingKpis(kpis).length) save(STORAGE.kpis, kpis);
     applyDirectionRules(kpis);
     records = unpackRecords(load(STORAGE.records, null) || load(LEGACY_STORAGE.records, []));
+    const layout = applyKpiLayout(kpis, records);
+    if(layout.changed.length || layout.removed.length) save(STORAGE.kpis, kpis);
     auditLogs = load(STORAGE.audit, null) || load(LEGACY_STORAGE.audit, []);
     targetYears = load(STORAGE.targetYears, {});
     renderLoginUsers();
@@ -1501,6 +1577,11 @@ function recordToRow(r){
              denominator: r.denominator, weight: r.weight, dataSource: r.dataSource, notes: r.notes, dq: r.dq, approved: r.approved, createdBy: r.createdBy };
 }
 
+function normalizeKpis(list){
+    addMissingKpis(list); applyDirectionRules(list); applyKpiLayout(list, records);
+    return list;
+}
+
 function sortKpisByOrder(list){
     const defaultOrder = new Map(defaultKpis.map((k, i) => [k.code, i]));
     return list.sort((a, b) => (a.sortOrder ?? defaultOrder.get(a.code) ?? 999) - (b.sortOrder ?? defaultOrder.get(b.code) ?? 999));
@@ -1521,6 +1602,14 @@ async function cloudLoadAll(){
     const tRows = await fetchAll("target_years", q => q.order("year"));
     targetYears = Object.fromEntries(tRows.map(r => [r.year, r.data]));
     overlayPending();
+    const layout = applyKpiLayout(kpis, records);
+    if((layout.changed.length || layout.removed.length) && kRows.length && currentUser?.role === "admin" && currentUser.token){
+        // The admin's sign-in stores the new layout for everyone.
+        rpc("save_kpis", withToken({ p_kpis: layout.changed.map(k => ({ ...k })), p_replace: false }))
+            .then(() => Promise.all(layout.removed.map(code => rpc("delete_kpi", withToken({ p_code: code })))))
+            .then(() => addAudit("EDIT_KPI", "ترتيب المؤشرات", "", `${layout.changed.length} مؤشر${layout.removed.length ? `، حذف المكرر: ${layout.removed.join("، ")}` : ""}`, "تصنيفات وترتيب ورقة البيانات اليومية"))
+            .catch(() => {});
+    }
     recordIndex = null;
 }
 
@@ -1549,9 +1638,10 @@ async function cloudSync(fromOthers){
         });
         if(changed){ records = [...byId.values()]; recordIndex = null; overlayPending(); }
         const kRows = await fetchAll("kpis", q => q.order("code"));
-        const newKpis = kRows.length ? sortKpisByOrder(kRows.map(r => r.data)) : kpis;
+        // Normalized the same way as on load, so only real changes on the server count.
+        const newKpis = kRows.length ? normalizeKpis(sortKpisByOrder(kRows.map(r => r.data))) : kpis;
         const kpisChanged = JSON.stringify(newKpis) !== JSON.stringify(kpis);
-        if(kpisChanged){ kpis = applyDirectionRules(newKpis); records.forEach(r => r.kpiName = kpis.find(k => k.code === r.kpiCode)?.name || r.kpiName); recordIndex = null; }
+        if(kpisChanged){ kpis = newKpis; records.forEach(r => r.kpiName = kpis.find(k => k.code === r.kpiCode)?.name || r.kpiName); recordIndex = null; }
         const tRows = await fetchAll("target_years", q => q.order("year"));
         const newYears = Object.fromEntries(tRows.map(r => [r.year, r.data]));
         const yearsChanged = JSON.stringify(newYears) !== JSON.stringify(targetYears);
@@ -1925,9 +2015,19 @@ function populateFilters(){
 
     const cSel = document.getElementById("filterCategory");
     const selectedCat = cSel.value;
-    const cats = [...new Set(activeKpis().map(k=>k.category).filter(Boolean))];
-    cSel.innerHTML = `<option value="ALL">جميع الفئات</option>` + cats.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join("");
-    if(selectedCat && (selectedCat === "ALL" || cats.includes(selectedCat))) cSel.value = selectedCat;
+    // The sheet's categories in order (a parent includes its sub-categories), then any others.
+    const used = new Set(activeKpis().map(k => k.category).filter(Boolean));
+    const opts = [];
+    CATEGORY_TREE.forEach(c => {
+        const kids = (c.children || []).filter(ch => used.has(ch));
+        if(used.has(c.name) || kids.length) opts.push([c.name, c.name]);
+        kids.forEach(ch => opts.push([ch, `\u00A0\u00A0\u00A0— ${ch}`]));
+    });
+    [...used].filter(c => !CATEGORY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b, "ar")).forEach(c => opts.push([c, c]));
+    const dl = document.getElementById("kpiCategoryList");
+    if(dl) dl.innerHTML = [...new Set([...CATEGORY_ORDER, ...used])].map(c => `<option value="${escapeAttr(c)}"></option>`).join("");
+    cSel.innerHTML = `<option value="ALL">جميع الفئات</option>` + opts.map(([v, l]) => `<option value="${escapeAttr(v)}">${escapeHtml(l)}</option>`).join("");
+    if(selectedCat && (selectedCat === "ALL" || opts.some(o => o[0] === selectedCat))) cSel.value = selectedCat;
 }
 
 // ---- Direct entry ----
@@ -1977,10 +2077,9 @@ function populateRecordKpis(){
     });
     const sel = document.getElementById("recordKpi");
     const prev = sel.value;
-    const groups = new Map();
-    entryKpis(entryFreq).forEach(k => { const c = k.category || "أخرى"; if(!groups.has(c)) groups.set(c, []); groups.get(c).push(k); });
-    sel.innerHTML = `<option value="">اختر المؤشر...</option>` + [...groups.entries()].map(([c, list]) =>
-        `<optgroup label="${escapeAttr(c)}">${list.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("")}</optgroup>`).join("");
+    const groups = groupByCategory(entryKpis(entryFreq), k => k.category);
+    sel.innerHTML = `<option value="">اختر المؤشر...</option>` + groups.map(([c, list]) =>
+        `<optgroup label="${escapeAttr(catLabel(c))}">${list.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("")}</optgroup>`).join("");
     if([...sel.options].some(o => o.value === prev)) sel.value = prev;
     const derivedNames = activeKpis().filter(k => DERIVED_KPIS[k.code]).map(k => k.name);
     document.getElementById("entryDerivedNote").textContent = derivedNames.length ? `تُحسب تلقائياً عند الحفظ ولا تحتاج إدخالاً: ${derivedNames.join("، ")}.` : "";
@@ -2563,7 +2662,7 @@ function getFilters(){
 function activeKpis(){ return kpis.filter(k => k.active !== false); }
 
 function computeResults(year, q, cat){
-    return activeKpis().filter(k => cat === "ALL" || k.category === cat).map(kpi => {
+    return activeKpis().filter(k => inCategory(k, cat)).map(kpi => {
         const act = getPeriodValue(kpi.code, year, q);
         const prev = getPrevValue(kpi.code, year, q);
         const sameY = getSameQPrevYear(kpi.code, year, q);
@@ -2781,15 +2880,13 @@ function trendPill(t){
 function renderKpiCards(results, year){
     const box = document.getElementById("kpiCards");
     if(!results.length){ box.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">لا توجد مؤشرات مطابقة للبحث أو الفلتر</div>`; return; }
-    const groups = new Map();
-    results.forEach(r => { const c = r.kpi.category || "أخرى"; if(!groups.has(c)) groups.set(c, []); groups.get(c).push(r); });
-    box.innerHTML = [...groups.entries()].map(([cat, rows]) => {
+    box.innerHTML = groupByCategory(results, r => r.kpi.category).map(([cat, rows]) => {
         const counts = { green:0, yellow:0, red:0 };
         rows.forEach(r => { if(counts[r.status.key] != null) counts[r.status.key]++; });
         return `
         <div>
             <div class="cat-head">
-                <h4>${escapeHtml(cat)} <span class="text-[11px] font-semibold text-slate-400">(${rows.length})</span></h4>
+                <h4>${escapeHtml(catLabel(cat))} <span class="text-[11px] font-semibold text-slate-400">(${rows.length})</span></h4>
                 <div class="flex gap-1.5 text-[10px] font-bold">
                     ${counts.green ? `<span class="pill status-green !py-0.5 !px-2">${counts.green} محقق</span>` : ""}
                     ${counts.yellow ? `<span class="pill status-yellow !py-0.5 !px-2">${counts.yellow} تحذير</span>` : ""}
@@ -3169,9 +3266,7 @@ function printReport(){
         return `<tr><td><b>${escapeHtml(label)}</b></td>${qs.map(x => `<td class="${x.q === q ? "sel" : ""}">${dot(x.status.key)}${fmt(x.act, k)}${manualQuarter(k, year, x.q) != null ? " ✎" : ""}</td>`).join("")}
             <td>${targetText(k, (cur || qs[qs.length - 1]).target)}</td><td>${cur ? `${dot(cur.status.key)}${escapeHtml(cur.status.label)}` : "—"}</td></tr>`;
     }).join("");
-    const groups = new Map();
-    results.forEach(r => { const c = r.kpi.category || "أخرى"; if(!groups.has(c)) groups.set(c, []); groups.get(c).push(r); });
-    const allRows = [...groups.entries()].map(([c, rows]) => `<tr class="cat"><td colspan="7">${escapeHtml(c)} (${rows.length})</td></tr>` + rows.map(r => `
+    const allRows = groupByCategory(results, r => r.kpi.category).map(([c, rows]) => `<tr class="cat"><td colspan="7">${escapeHtml(catLabel(c))} (${rows.length})</td></tr>` + rows.map(r => `
         <tr><td>${escapeHtml(r.kpi.name)}</td><td>${fmt(r.act, r.kpi)}</td><td>${targetText(r.kpi, r.target)}</td>
             <td>${r.ach != null ? r.ach.toFixed(0) + "%" : "—"}</td><td>${dot(r.status.key)}${escapeHtml(r.status.label)}</td>
             <td>${fmt(r.prev, r.kpi)}</td><td>${r.act != null && r.prev != null ? escapeHtml(r.trend.label) : "—"}</td></tr>`).join("")).join("");
@@ -3803,6 +3898,8 @@ async function confirmWorkbookImport(){
         const keep = {};
         ["target","greenMin","yellowMin"].forEach(f => { if(fk[f] == null && old[f] != null) keep[f] = old[f]; });
         if(fk.direction === "none" && old.direction && old.direction !== "none") keep.direction = old.direction;
+        // The platform's categories, names and order (daily-sheet layout) win over the file's labels.
+        if((old.layoutV || 0) >= KPI_LAYOUT_V) ["category","name","department","definition","dataSource","sortOrder","layoutV"].forEach(f => { if(old[f] != null) keep[f] = old[f]; });
         return { ...old, ...fk, ...keep };
     });
     if(mayEditKpis){
@@ -3833,11 +3930,17 @@ async function confirmWorkbookImport(){
         records.push(rec); added++;
         addedRecords.push(rec);
     });
+    // Keep the daily-sheet layout: a duplicate the file brings back without readings is dropped again.
+    const layout = mayEditKpis ? applyKpiLayout(kpis, records) : { changed: [], removed: [] };
 
     if(CLOUD.on){
         closeImportModal();
         try{
-            if(mayEditKpis){ setLoading(true, "جاري حفظ تعريفات المؤشرات..."); await rpc("save_kpis", withToken({ p_kpis: kpis.map((k, i) => ({ ...k, sortOrder: i })), p_replace: replaceKpis })); }
+            if(mayEditKpis){
+                setLoading(true, "جاري حفظ تعريفات المؤشرات...");
+                await rpc("save_kpis", withToken({ p_kpis: kpis.map((k, i) => ({ ...k, sortOrder: i })), p_replace: replaceKpis }));
+                for(const code of layout.removed) await rpc("delete_kpi", withToken({ p_code: code }));
+            }
             const CHUNK = 1000;
             for(let i = 0; i < addedRecords.length; i += CHUNK){
                 setLoading(true, `جاري رفع القراءات إلى قاعدة البيانات... ${Math.min(i + CHUNK, addedRecords.length).toLocaleString("en-US")} من ${addedRecords.length.toLocaleString("en-US")}`);
@@ -4001,13 +4104,13 @@ function renderTargets(){
         : (!can("editTarget") ? `<div class="bg-slate-50 border border-slate-200 text-slate-600 rounded-xl p-3 text-xs font-semibold">عرض فقط — يحدد المستهدفات مدير النظام أو مدير الأداء.</div>` : "");
 
     const dirOptions = d => ["higher","lower","target","range","conditional","none"].map(v => `<option value="${v}" ${d === v ? "selected" : ""}>${directionName(v)}</option>`).join("");
-    const sorted = [...kpis].sort((a,b) => String(a.category).localeCompare(String(b.category), "ar"));
+    const sorted = groupByCategory(kpis, k => k.category).flatMap(([, list]) => list);
     let lastCat = null;
     document.getElementById("targetsTableBody").innerHTML = sorted.map(k => {
         const t = k.targets?.[year];
         const prevActual = getPeriodValue(k.code, year - 1, "ALL");
         const ref = k.direction === "range" ? `الافتراضي: ${isNum(k.rangeMin) ? `${fmt(k.rangeMin, k)} – ${fmt(k.rangeMax, k)}` : "—"}` : isNum(k.target) ? `مستهدف الملف: ${fmt(k.target, k)}` : isNum(k.greenMin) ? `حد الأخضر: ${fmt(k.greenMin, k)}` : (k.targets?.[year-1] && isNum(k.targets[year-1].value) ? `مستهدف ${year-1}: ${fmt(k.targets[year-1].value, k)}` : "—");
-        const catRow = k.category !== lastCat ? `<tr><td colspan="8" class="!bg-slate-50 !py-2 text-[11px] font-black text-slate-500">${escapeHtml(k.category || "بدون فئة")}</td></tr>` : "";
+        const catRow = k.category !== lastCat ? `<tr><td colspan="8" class="!bg-slate-50 !py-2 text-[11px] font-black text-slate-500">${escapeHtml(k.category ? catLabel(k.category) : "بدون فئة")}</td></tr>` : "";
         lastCat = k.category;
         return `${catRow}
         <tr>
@@ -4331,7 +4434,7 @@ function exportDashboard(){
     };
     addSheet(rows, "ملخص الأداء");
 
-    const quarterly = activeKpis().filter(k => cat === "ALL" || k.category === cat).map(k => {
+    const quarterly = activeKpis().filter(k => inCategory(k, cat)).map(k => {
         const row = { "الكود": k.code, "المؤشر": k.name, "المستهدف": targetFor(k, year) };
         QUARTERS.forEach((qq, i) => { row[`${QUARTER_LABELS[i]} ${year}`] = round(getPeriodValue(k.code, year, qq)); });
         QUARTERS.forEach((qq, i) => { row[`${QUARTER_LABELS[i]} ${year-1}`] = round(getPeriodValue(k.code, year-1, qq)); });
@@ -4341,7 +4444,7 @@ function exportDashboard(){
 
     const raw = records
         .filter(r => Number(r.year) === periodYear(year, q) && inPeriod(r, q))
-        .filter(r => { const k = kpis.find(x => x.code === r.kpiCode); return k && (cat === "ALL" || k.category === cat); })
+        .filter(r => { const k = kpis.find(x => x.code === r.kpiCode); return k && inCategory(k, cat); })
         .sort((a,b) => String(a.date).localeCompare(String(b.date)))
         .map(r => ({ "التاريخ": r.date, "الكود": r.kpiCode, "المؤشر": r.kpiName, "القيمة": r.actualValue, "البسط": r.numerator, "المقام": r.denominator, "المصدر": r.dataSource, "أدخله": r.createdBy, "الحالة": r.approved ? "معتمد" : "بانتظار الاعتماد الشهري" }));
     addSheet(raw, "السجلات");
