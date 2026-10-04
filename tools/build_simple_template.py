@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Builds the simple data entry workbook: one sheet with every date of the year (one row per day) and one column per
-indicator (two for ratio indicators: البسط and المقام). All visible text is Arabic. The platform's Data Management page
-imports it (dmLocateSimpleSheet in index.html): columns are matched by the hidden code row, or by the Arabic header.
+"""Builds the simple data entry workbook: one sheet per month, horizontal, one row per indicator (two for ratio
+indicators: البسط and المقام) and one column per day. All visible text is Arabic. The platform's Data Management page
+imports it (dmLocateSimpleSheet in index.html): rows are matched by the hidden code column, or by the Arabic indicator name.
 
 Usage: python3 tools/build_simple_template.py [--year 2026] [--out templates/APH_KPI_Simple_2026.xlsx]
 """
@@ -13,7 +13,8 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SHEET_DATA, SHEET_KPIS, SHEET_HELP = "البيانات", "المؤشرات", "التعليمات"
+SHEET_KPIS, SHEET_HELP = "المؤشرات", "التعليمات"
+MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
 DATE_HEADER, DAY_HEADER = "التاريخ", "اليوم"
 NUM_SUFFIX, DEN_SUFFIX = "البسط", "المقام"
 WEEKDAYS = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"]
@@ -69,53 +70,51 @@ def build(year, out):
         else: cols.append((k, ""))
 
     wb = Workbook()
-    ws = wb.active
-    ws.title = SHEET_DATA
-    ws.sheet_view.rightToLeft = True
-    # Row 1 (hidden): indicator codes, read by the platform so renamed headers still import.
-    # Row 2: department. Row 3: indicator (Arabic). Rows 4+: one row per day of the year.
-    ws.cell(row=1, column=1, value="DATE")
-    ws.cell(row=3, column=1, value=DATE_HEADER)
-    ws.cell(row=3, column=2, value=DAY_HEADER)
-    ws.cell(row=2, column=1, value="الإدارة")
-    for j, (k, part) in enumerate(cols, 3):
-        ws.cell(row=1, column=j, value=k["code"] + (":" + part if part else ""))
-        ws.cell(row=2, column=j, value=k["department"])
-        label = k["name"] + (f" — {NUM_SUFFIX}" if part == "NUM" else f" — {DEN_SUFFIX}" if part == "DEN" else "")
-        ws.cell(row=3, column=j, value=label)
-    ws.row_dimensions[1].hidden = True
-    ws.row_dimensions[3].height = 66
-    for j in range(1, len(cols) + 3):
-        c2, c3 = ws.cell(row=2, column=j), ws.cell(row=3, column=j)
-        c2.font, c2.fill, c2.alignment, c2.border = F_DEP, FILL_DEP, CENTER, BORDER
-        c3.font, c3.fill, c3.alignment, c3.border = F_HEAD, FILL_HEAD, CENTER, BORDER
-    ws.column_dimensions["A"].width = 12
-    ws.column_dimensions["B"].width = 10
-    for j in range(3, len(cols) + 3): ws.column_dimensions[get_column_letter(j)].width = 15
-
-    d, r = dt.date(year, 1, 1), 4
-    while d.year == year:
-        a = ws.cell(row=r, column=1, value=d)
-        a.number_format, a.font, a.fill, a.border, a.alignment = "dd/mm/yyyy", F_BODY, FILL_DATE, BORDER, CENTER
-        b = ws.cell(row=r, column=2, value=WEEKDAYS[d.weekday()])
-        b.font, b.fill, b.border, b.alignment = F_BODY, FILL_DATE, BORDER, CENTER
-        for j, (k, _) in enumerate(cols, 3):
-            c = ws.cell(row=r, column=j)
-            c.border = BORDER
-            c.protection = Protection(locked=False)
-            if not entry_day(k["frequency"], d, year): c.fill = FILL_OFF
-        d += dt.timedelta(days=1); r += 1
-    last = r - 1
-
-    dv = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1="0", allow_blank=True)
-    dv.error, dv.errorTitle = "اكتب رقماً فقط (صفر أو أكثر) بدون رموز أو نص.", "قيمة غير صحيحة"
-    dv.prompt, dv.promptTitle = "رقم فقط. الخلايا الرمادية ليست يوم إدخال هذا المؤشر.", "إدخال"
-    dv.add(f"C4:{get_column_letter(len(cols) + 2)}{last}")
-    ws.add_data_validation(dv)
-    ws.freeze_panes = "C4"
-    ws.protection.sheet = True          # protects dates and headers from accidental edits; no password
-    ws.protection.formatColumns = ws.protection.formatRows = False
-
+    wb.remove(wb.active)
+    # One sheet per month, horizontal: one row per indicator (two for ratio indicators), one column per day.
+    # Column A (hidden) holds the indicator code, read by the platform so a renamed row still imports.
+    # Row 1: dates. Row 2: weekday. Rows 3+: indicators. Column B: department. Column C: indicator (Arabic).
+    dv_err = ("اكتب رقماً فقط (صفر أو أكثر) بدون رموز أو نص.", "قيمة غير صحيحة")
+    for month in range(1, 13):
+        ws = wb.create_sheet(MONTHS[month - 1])
+        ws.sheet_view.rightToLeft = True
+        days = []
+        d = dt.date(year, month, 1)
+        while d.month == month: days.append(d); d += dt.timedelta(days=1)
+        ws.cell(row=1, column=1, value="CODE")
+        for col, text in ((2, "الإدارة"), (3, DATE_HEADER)):
+            ws.cell(row=1, column=col, value=text)
+        ws.cell(row=2, column=3, value=DAY_HEADER)
+        for j, day in enumerate(days, 4):
+            a = ws.cell(row=1, column=j, value=day)
+            a.number_format = "dd/mm"
+            ws.cell(row=2, column=j, value=WEEKDAYS[day.weekday()])
+        for j in range(1, len(days) + 4):
+            for r in (1, 2):
+                c = ws.cell(row=r, column=j)
+                c.font, c.fill, c.alignment, c.border = (F_HEAD, FILL_HEAD, CENTER, BORDER) if r == 1 else (F_DEP, FILL_DEP, CENTER, BORDER)
+        for i, (k, part) in enumerate(cols, 3):
+            ws.cell(row=i, column=1, value=k["code"] + (":" + part if part else ""))
+            b = ws.cell(row=i, column=2, value=k["department"])
+            label = k["name"] + (f" — {NUM_SUFFIX}" if part == "NUM" else f" — {DEN_SUFFIX}" if part == "DEN" else "")
+            c = ws.cell(row=i, column=3, value=label)
+            for x in (b, c): x.font, x.fill, x.border, x.alignment = F_BODY, FILL_DATE, BORDER, RIGHT
+            for j, day in enumerate(days, 4):
+                v = ws.cell(row=i, column=j)
+                v.border = BORDER
+                v.protection = Protection(locked=False)
+                if not entry_day(k["frequency"], day, year): v.fill = FILL_OFF
+        ws.column_dimensions["A"].hidden = True
+        ws.column_dimensions["B"].width = 20
+        ws.column_dimensions["C"].width = 44
+        for j in range(4, len(days) + 4): ws.column_dimensions[get_column_letter(j)].width = 8
+        dv = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1="0", allow_blank=True)
+        dv.error, dv.errorTitle = dv_err
+        dv.add(f"D3:{get_column_letter(len(days) + 3)}{len(cols) + 2}")
+        ws.add_data_validation(dv)
+        ws.freeze_panes = "D3"
+        ws.protection.sheet = True      # protects dates and names from accidental edits; no password
+        ws.protection.formatColumns = ws.protection.formatRows = False
     # ---- indicators sheet
     wk = wb.create_sheet(SHEET_KPIS)
     wk.sheet_view.rightToLeft = True
@@ -139,10 +138,10 @@ def build(year, out):
     lines = [
         (f"قالب إدخال بيانات المؤشرات — {year}", F_TITLE),
         ("", None),
-        (f"1. ورقة «{SHEET_DATA}» فيها كل أيام السنة من 01/01/{year} إلى 31/12/{year}، سطر لكل يوم، وعمود لكل مؤشر.", F_BODY),
-        ("2. اكتب الرقم في خلية المؤشر عند تاريخ اليوم. الخلايا البيضاء هي أيام الإدخال، والرمادية ليست يوم إدخال هذا المؤشر.", F_BODY),
+        (f"1. لكل شهر ورقة باسمه (يناير إلى ديسمبر)، فيها كل أيام الشهر من 01/01/{year} إلى 31/12/{year}: المؤشرات في الصفوف والأيام في الأعمدة.", F_BODY),
+        ("2. اكتب الرقم في صف المؤشر تحت تاريخ اليوم. الخلايا البيضاء هي أيام الإدخال، والرمادية ليست يوم إدخال هذا المؤشر.", F_BODY),
         ("3. المؤشر اليومي يُدخل كل يوم، والأسبوعي يوم الأحد، والشهري أول يوم في الشهر، والربعي أول يوم في الربع.", F_BODY),
-        ("4. مؤشرات النسب لها عمودان: البسط والمقام. أدخلهما، وتحسب المنصة النسبة بنفسها.", F_BODY),
+        ("4. مؤشرات النسب لها صفّان: البسط والمقام. أدخلهما، وتحسب المنصة النسبة بنفسها.", F_BODY),
         ("5. أرقام فقط بدون رموز (اكتب 92.5 وليس 92.5%). اترك الخلية فارغة إذا لم تتوفر القراءة، ولا تكتب صفراً بدلاً منها.", F_BODY),
         ("6. لا تغيّر عناوين الأعمدة ولا ترتيب التواريخ.", F_BODY),
         ("7. للرفع: من المنصة افتح «إدارة البيانات» ثم «رفع ملف» واختر هذا الملف. تظهر شاشة فحص بالسجلات الجديدة والمحدّثة والأخطاء قبل الحفظ.", F_BODY),
@@ -156,12 +155,12 @@ def build(year, out):
         c.alignment = Alignment(horizontal="right", vertical="center", wrap_text=True)
     wh.column_dimensions["A"].width = 120
 
-    wb.move_sheet(SHEET_HELP, offset=-2)
+    wb.move_sheet(SHEET_HELP, offset=-13)
     wb.active = 1
     wb.properties.title = f"قالب إدخال بيانات المؤشرات {year}"
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     wb.save(out)
-    print(f"{out}: {last - 3} days x {len(cols)} columns ({len(kpis)} indicators), {os.path.getsize(out) / 1e3:.0f} KB")
+    print(f"{out}: 12 monthly sheets x {len(cols)} rows ({len(kpis)} indicators), {os.path.getsize(out) / 1e3:.0f} KB")
 
 
 if __name__ == "__main__":

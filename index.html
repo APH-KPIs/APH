@@ -5437,51 +5437,82 @@ function dmLocateSheet(wb){
 // indicator's Arabic name. Each filled cell becomes one staged record for the indicator's department and the primary facility.
 const SIMPLE_DATE_HEADERS = ["التاريخ", "تاريخ القياس", "Date"];
 function dmLocateSimpleSheet(wb){
-    const norm = v => String(v ?? "").replace(/[\u064B-\u0652\u0640]/g, "").replace(/[إأآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[\s\-—–_:()|/]+/g, " ").trim().toLowerCase();
+    const norm = v => String(v ?? "").replace(/[ً-ْـ]/g, "").replace(/[إأآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[\s\-—–_:()|/]+/g, " ").trim().toLowerCase();
     const byName = new Map([...kpis.map(k => [norm(k.name), k]), ...kpis.filter(k => KPI_ARABIC_LABELS[k.code]?.label).map(k => [norm(KPI_ARABIC_LABELS[k.code].label), k])]);
     const byCode = new Map(kpis.map(k => [String(k.code).toUpperCase(), k]));
-    const partOf = text => { const t = norm(text); if(t.endsWith(" " + norm("البسط"))) return ["NUM", t.slice(0, -norm("البسط").length - 1)]; if(t.endsWith(" " + norm("المقام"))) return ["DEN", t.slice(0, -norm("المقام").length - 1)]; return ["", t]; };
+    const NUM = norm("البسط"), DEN = norm("المقام");
+    // A cell's indicator: the code ("ED_VISITS", "READMIT30_PSY:NUM") or the Arabic name, with "— البسط" / "— المقام".
+    const fromCode = c => { const [code, part] = String(c ?? "").trim().split(":"); const k = byCode.get(String(code).toUpperCase()); return k ? { k, part: (part || "").toUpperCase() } : null; };
+    const fromName = c => {
+        const t = norm(c);
+        for(const [suf, part] of [[NUM, "NUM"], [DEN, "DEN"]]) if(t.endsWith(" " + suf)){ const k = byName.get(t.slice(0, -suf.length - 1)); if(k) return { k, part }; }
+        const k = byName.get(t); return k ? { k, part: "" } : null;
+    };
+    const groups = new Map();   // indicator|date → { k, date, rowNumber, VAL/NUM/DEN: { v, header } }
+    const put = (k, part, date, v, rowNumber, header) => {
+        const key = k.code + "|" + String(date);
+        if(!groups.has(key)) groups.set(key, { k, date, rowNumber });
+        groups.get(key)[part || "VAL"] = { v, header };
+    };
+    let found = [];
     for(const name of wb.SheetNames){
         const ws = wb.Sheets[name];
         if(!ws || !ws["!ref"]) continue;
         const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true, blankrows:true });
         const origin = XLSX.utils.decode_range(ws["!ref"]).s.r;
+        const top = aoa.slice(0, 10);
+        // Horizontal (one sheet per month): a row of dates across the columns, one indicator per row.
+        // The date row: at least 7 Excel dates in a row, one day apart (so a row of large readings is never taken for it).
+        const isSerial = c => typeof c === "number" && Number.isInteger(c) && c > 40000 && c < 60000;
+        const dateColsOf = r => (r || []).map((c, i) => isSerial(c) ? i : -1).filter(i => i >= 0);
+        const dateRowIdx = top.findIndex(r => { const cs = dateColsOf(r); return cs.length >= 7 && cs.every((ci, x) => x === 0 || r[ci] === r[cs[x - 1]] + 1); });
+        if(dateRowIdx >= 0){
+            const dateRow = aoa[dateRowIdx];
+            const dateCols = dateColsOf(dateRow);
+            const first = dateCols[0];
+            let n = 0;
+            aoa.slice(dateRowIdx + 1).forEach((r, idx) => {
+                if(!r) return;
+                const lead = r.slice(0, first);
+                const hit = lead.map(fromCode).find(Boolean) || lead.map(fromName).find(Boolean);
+                if(!hit) return;
+                n++;
+                const label = String(lead.find(c => fromName(c)) ?? hit.k.name).trim();
+                dateCols.forEach(ci => { const v = r[ci]; if(v != null && v !== "") put(hit.k, hit.part, dateRow[ci], v, origin + dateRowIdx + 2 + idx, `${label} (${name})`); });
+            });
+            if(n) found.push(name);
+            continue;
+        }
+        // Vertical: a "التاريخ" column, one indicator per column.
         for(let h = 0; h < Math.min(aoa.length, 10); h++){
             const head = aoa[h] || [];
             const dateCol = head.findIndex(c => SIMPLE_DATE_HEADERS.some(x => norm(x) === norm(c)));
             if(dateCol < 0) continue;
-            // A code row above the headers ("ED_VISITS", "READMIT30_PSY:NUM") wins over the header text.
-            const codeRow = aoa.slice(0, h).find(r => (r || []).some(c => byCode.has(String(c ?? "").split(":")[0].trim().toUpperCase())));
+            const codeRow = aoa.slice(0, h).find(r => (r || []).some(c => fromCode(c)));
             const cols = [];
             head.forEach((cell, i) => {
                 if(i === dateCol || cell == null || cell === "") return;
-                let k = null, part = "";
-                const code = codeRow ? String(codeRow[i] ?? "").trim() : "";
-                if(code && byCode.has(code.split(":")[0].toUpperCase())){ k = byCode.get(code.split(":")[0].toUpperCase()); part = (code.split(":")[1] || "").toUpperCase(); }
-                else { const [p, base] = partOf(cell); k = byName.get(base) || byName.get(norm(cell)); part = byName.get(base) ? p : ""; }
-                if(k) cols.push({ i, k, part, header: String(cell).trim() });
+                const hit = (codeRow && fromCode(codeRow[i])) || fromName(cell);
+                if(hit) cols.push({ i, ...hit, header: String(cell).trim() });
             });
             if(!cols.length) continue;
-            const groups = new Map();
-            cols.forEach(c => { if(!groups.has(c.k.code)) groups.set(c.k.code, { k: c.k }); groups.get(c.k.code)[c.part || "VAL"] = c; });
-            const staged = [];
-            let empty = 0;
+            found.push(name);
             aoa.slice(h + 1).forEach((r, idx) => {
                 if(!r || r[dateCol] == null || r[dateCol] === "") return;
-                groups.forEach(g => {
-                    const v = c => c ? r[c.i] : null;
-                    const val = v(g.VAL), num = v(g.NUM), den = v(g.DEN);
-                    if([val, num, den].every(x => x == null || x === "")){ empty++; return; }
-                    const labels = { numerator: g.NUM?.header, denominator: g.DEN?.header, actualValue: g.VAL?.header, measurementDate: String(head[dateCol]), indicatorId: g.k.name };
-                    staged.push({ rowNumber: origin + h + 2 + idx, facilityId: primaryFacilityId(), departmentId: kpiDepartmentId(g.k), indicatorId: g.k.code,
-                        periodType: periodTypeOf(g.k), measurementDate: r[dateCol], numerator: num, denominator: den, actualValue: g.VAL ? val : null,
-                        recordKey: null, dataSource: null, dataEntryBy: null, dataEntryDate: null, notes: null, labels });
-                });
+                cols.forEach(c => { const v = r[c.i]; if(v != null && v !== "") put(c.k, c.part, r[dateCol], v, origin + h + 2 + idx, c.header); });
             });
-            return { name, headerRow: origin + h, staged, empty, columns: cols.length, unknown: head.filter((c, i) => c != null && c !== "" && i !== dateCol && !cols.some(x => x.i === i)).map(String) };
+            break;
         }
     }
-    return null;
+    if(!found.length) return null;
+    const staged = [...groups.values()].map(g => ({
+        rowNumber: g.rowNumber, facilityId: primaryFacilityId(), departmentId: kpiDepartmentId(g.k), indicatorId: g.k.code,
+        periodType: periodTypeOf(g.k), measurementDate: g.date, numerator: g.NUM?.v ?? null, denominator: g.DEN?.v ?? null, actualValue: g.VAL?.v ?? null,
+        recordKey: null, dataSource: null, dataEntryBy: null, dataEntryDate: null, notes: null,
+        labels: { numerator: g.NUM?.header || g.VAL?.header || g.DEN?.header, denominator: g.DEN?.header || g.NUM?.header, actualValue: g.VAL?.header || g.NUM?.header,
+                  measurementDate: (g.VAL || g.NUM || g.DEN)?.header, indicatorId: g.k.name }
+    }));
+    return { name: found.join("، "), staged };
 }
 
 function dmTemplateVersion(wb){
@@ -5511,7 +5542,9 @@ async function dmProcessFile(file, buffer){
         if(!/\.(xlsx|xlsm|xls)$/i.test(file.name)) throw new Error("صيغة الملف غير مدعومة: ارفع ملف Excel (.xlsx).");
         const buf = buffer || await file.arrayBuffer();
         hash = await sha256(buf);
-        wb = XLSX.read(buf, { type:"array", cellDates:true, cellFormula:false });
+        // Dates stay Excel serial numbers (parsed by dmParseDate): converting them to JS dates goes through the
+        // browser's historical time zone and moves some dates back a day (e.g. Asia/Riyadh).
+        wb = XLSX.read(buf, { type:"array", cellDates:false, cellFormula:false });
     }catch(e){
         setLoading(false);
         dmState = { fileName: file.name, fileSize: file.size, fileErrors: [e.message || "تعذر قراءة الملف."], rows: [], issues: [] };
