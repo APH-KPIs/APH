@@ -736,6 +736,27 @@
                             </div>
                         </div>
                     </div>
+                    <div id="readmitCard" class="hidden border border-sky-200 bg-sky-50/50 rounded-2xl p-4 space-y-3">
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-900"><i class="fa-solid fa-file-import text-sky-600 ml-1"></i> استقبال ملفات Re-admission (التنويم والطوارئ)</h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">إعادة التنويم خلال 30 يوماً (الطب النفسي والإدمان) والعودة للطوارئ خلال 72 ساعة تُستقبل شهرياً بملف Excel من الأقسام، ويرفعه مدخل البيانات هنا.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="step"><span class="step-num">1</span><div class="flex-1">
+                                <div class="text-xs font-bold text-slate-900">أرسل القالب للأقسام</div>
+                                <div class="text-[11px] text-slate-500 mt-0.5 mb-3">سطر لكل شهر: عدد العائدين والعدد الكلي لكل مؤشر. يأتي معبأً بما سبق إدخاله.</div>
+                                <button onclick="downloadReadmitTemplate()" class="btn btn-secondary text-[11px] py-2 px-3 w-full"><i class="fa-solid fa-download text-emerald-600 ml-1"></i> تحميل قالب Re-admission</button>
+                            </div></div>
+                            <div class="step"><span class="step-num">2</span><div class="flex-1">
+                                <div class="text-xs font-bold text-slate-900">ارفع الملف المستلم</div>
+                                <div class="text-[11px] text-slate-500 mt-0.5 mb-3">تُحسب النسب تلقائياً، ويُحدَّث المؤشر الإجمالي لإعادة التنويم.</div>
+                                <label class="btn btn-primary cursor-pointer inline-block text-[11px] py-2 px-3 w-full text-center">
+                                    <i class="fa-solid fa-file-arrow-up ml-1"></i> رفع ملف Re-admission
+                                    <input type="file" id="readmitFile" accept=".xlsx,.xls" class="hidden" onchange="importReadmitFile(event)">
+                                </label>
+                            </div></div>
+                        </div>
+                    </div>
                     <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
                         <h4 class="text-xs font-bold text-slate-700">السجلات المدخلة <span id="recordsCount" class="text-slate-400 font-semibold mr-1"></span></h4>
                         <div class="flex items-center gap-2">
@@ -1141,7 +1162,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.10 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.11 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1162,7 +1183,6 @@ const permissions = {
 const ADDED_KPIS = [
     {code:"MYSTERY_SHOPPER",name:"الزائر السري",category:"الجودة",department:"إدارة الجودة",unit:"%",definition:"نتيجة تقييم الزائر السري للفترة (نسبة الالتزام بالمعايير). تُدخل شهرياً يدوياً في المنصة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدخال يدوي في المنصة"},
     {code:"OCC_HEALTH",name:"مؤشر الصحة المهنية",category:"الجودة",department:"الصحة المهنية",unit:"%",definition:"نتيجة مؤشر الصحة المهنية الشهري. تُدخل شهرياً يدوياً في المنصة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدخال يدوي في المنصة"},
-    {code:"DISCHARGES_DAILY",name:"عدد حالات الخروج اليومي",category:"الخدمات العلاجية",department:"الخدمات العلاجية",unit:"عدد",definition:"عدد المرضى المخرَّجين من التنويم في اليوم.",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"higher",dataSource:"الخدمات العلاجية"},
     {code:"SELF_REVENUE",name:"الموارد الذاتية",category:"الموارد الذاتية",department:"الإدارة المالية",unit:"ريال",definition:"إجمالي إيرادات الموارد الذاتية المحصلة خلال الفترة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"SUM",direction:"higher",dataSource:"الإدارة المالية"}
 ];
 // Highlighted at the top of the dashboard in the quarterly view, in this order.
@@ -1223,7 +1243,7 @@ function groupByCategory(items, catOf){
 // Version 3: 937 report counts from the daily sheet; satisfaction and the overall index from the weekly 937 sheet.
 const KPI_LAYOUT_V = 3;
 const KPI_LAYOUT = {
-    "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","DISCHARGES_DAILY","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
+    "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
     "الصيدلية": ["MED_ERR_REPORTING_DOCTORS","MED_ERR_REPORTING_NURSES","MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY","DRUGMAIL_SHIPMENTS_WEEKLY","DRUGMAIL_SHIPMENTS_MONTHLY"],
     "المختبر (عينتي)": ["LAB_COMPLETION_PCT"],
     "الطوارئ": ["ED_VISITS","ED_REVISIT_72H"],
@@ -1242,6 +1262,7 @@ const KPI_RENAMES = {
         definition: "المرضى الذين لم يحضروا للمواعيد ÷ عدد مراجعي العيادات (إحصائية APEX) × 100، ويُحسب من مجموع الفترة (الشهر أو الربع)." },
     CALLS937_SATISFACTION: { name: "الرضا عن الإغلاق" },
     MYSTERY_SHOPPER: { frequency: "monthly", dataSource: "إدخال يدوي في المنصة" },
+    READMIT30_PSY: { intake: "excel" }, READMIT30_DETOX: { intake: "excel" }, ED_REVISIT_72H: { intake: "excel" }, READMIT30_ALL: { intake: "excel" },
     OCC_HEALTH: { frequency: "monthly", dataSource: "إدخال يدوي في المنصة" },
     CALLS937_REPORTS: { name: "عدد البلاغات 937" },
     CALLS937_CLOSED: { name: "عدد البلاغات 937 التي تم إغلاقها" }
@@ -1252,7 +1273,7 @@ const KPI_HIDDEN = ["CALLS937_REPORTS_WEEKLY", "CALLS937_CLOSURE_RATE"];
 // The same statistic was listed twice; the copy without readings is dropped.
 const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_COUNT: "PSY_NOSHOW_COUNT" };
 // Removed from the platform at the owner's request (layout 3).
-const KPI_REMOVED = ["ED_LOS_HOURS"];
+const KPI_REMOVED = ["ED_LOS_HOURS", "DISCHARGES_DAILY"];
 const LAYOUT_ORDER = Object.values(KPI_LAYOUT).flat();
 
 // Applies the layout to KPIs not yet on it; returns { changed, removed } for saving.
@@ -1984,6 +2005,7 @@ function updatePermissions(){
     document.getElementById("exportDashboardBtn").classList.toggle("hidden", !can("export"));
     document.getElementById("addKpiBtn").classList.toggle("hidden", !can("editKpi"));
     document.getElementById("importSteps").classList.toggle("hidden", !can("import"));
+    document.getElementById("readmitCard").classList.toggle("hidden", !can("data"));
     document.getElementById("exportRecordsBtn").classList.toggle("hidden", !can("exportRecords"));
     document.getElementById("changePwBtn").classList.toggle("hidden", !currentUser.username);
     updateLiveBadge();
@@ -2079,7 +2101,8 @@ const DATE_HINTS = {
 let entryFreq = "daily";
 
 function entryFreqOf(k){ return ENTRY_FREQS.includes(k.frequency) ? k.frequency : (k.frequency === "annual" ? "quarterly" : "daily"); }
-function entryKpis(freq){ return activeKpis().filter(k => !DERIVED_KPIS[k.code] && (!freq || entryFreqOf(k) === freq)); }
+// KPIs received as Excel files (Re-admission) are imported from their own card, not typed.
+function entryKpis(freq){ return activeKpis().filter(k => !DERIVED_KPIS[k.code] && k.intake !== "excel" && (!freq || entryFreqOf(k) === freq)); }
 function entryMode(k){ return k.aggregation === "RATIO" ? "ratio" : k.aggregation === "WEIGHTED_AVERAGE" ? "weighted" : "value"; }
 
 function populateRecordKpis(){
@@ -2968,7 +2991,8 @@ function openKpiDetail(code){
         def("التعريف", escapeHtml(k.definition)), def("الوحدة", escapeHtml(k.unit)), def("دورية القياس", frequencyName(k.frequency)),
         def("طريقة الحساب", aggregationName(k.aggregation) + (k.aggregation === "RATIO" ? " — مجموع البسط ÷ مجموع المقام" : "")),
         def("اتجاه الأداء", directionName(k.direction)), def("عتبات الألوان", isNum(k.greenMin) ? `أخضر ${k.direction === "lower" ? "≤" : "≥"} ${fmt(k.greenMin, k)}${isNum(k.yellowMin) ? ` · أصفر ${k.direction === "lower" ? "≤" : "≥"} ${fmt(k.yellowMin, k)}` : ""}` : ""),
-        def("مصدر البيانات", escapeHtml(k.dataSource)), def("مالك المؤشر", escapeHtml(k.owner))
+        def("مصدر البيانات", escapeHtml(k.dataSource)), def("مالك المؤشر", escapeHtml(k.owner)),
+        def("طريقة الاستقبال", k.intake === "excel" ? "ملف Excel شهري — «استقبال ملفات Re-admission» في صفحة الإدخال" : DERIVED_KPIS[k.code] ? "يُحسب تلقائياً من مؤشرات أخرى" : "إدخال في المنصة")
     ].join("");
 
     const readings = records.filter(x => x.kpiCode === code).sort((a,b) => String(b.date).localeCompare(String(a.date))).slice(0, 15);
@@ -3648,6 +3672,107 @@ async function deleteKpi(code){
     addAudit("DELETE_KPI", code, "", "", "حذف مؤشر");
     renderKpis(); populateRecordKpis(); populateFilters(); renderDashboard(); runQualityCheck();
     showToast("تم حذف المؤشر.");
+}
+
+// ---- Re-admission files: monthly counts sent by the departments as Excel ----
+const READMIT_IMPORT = [
+    { code: "READMIT30_PSY",   label: "إعادة التنويم 30 يوماً — الطب النفسي", num: "عدد العائدين بنفس التشخيص", den: "عدد المرضى المخرَّجين" },
+    { code: "READMIT30_DETOX", label: "إعادة التنويم 30 يوماً — الإدمان",     num: "عدد العائدين بنفس التشخيص", den: "عدد المرضى المخرَّجين" },
+    { code: "ED_REVISIT_72H",  label: "العودة للطوارئ خلال 72 ساعة",           num: "عدد العائدين خلال 72 ساعة", den: "إجمالي زيارات الطوارئ" }
+];
+const READMIT_MONTH_COL = "الشهر (YYYY-MM)";
+const readmitCol = (x, part) => `${x.label} | ${part === "num" ? x.num : x.den}`;
+
+function downloadReadmitTemplate(){
+    const now = new Date(), year = now.getFullYear();
+    const rows = [];
+    for(let m = 1; m <= now.getMonth() + 1; m++){
+        const month = `${year}-${String(m).padStart(2, "0")}`, date = month + "-01";
+        const row = { [READMIT_MONTH_COL]: month };
+        READMIT_IMPORT.forEach(x => {
+            const r = records.find(rr => rr.kpiCode === x.code && rr.date === date);
+            row[readmitCol(x, "num")] = r && isNum(r.numerator) ? Number(r.numerator) : "";
+            row[readmitCol(x, "den")] = r && isNum(r.denominator) ? Number(r.denominator) : "";
+        });
+        rows.push(row);
+    }
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows, { header: [READMIT_MONTH_COL, ...READMIT_IMPORT.flatMap(x => [readmitCol(x, "num"), readmitCol(x, "den")])] });
+    ws["!cols"] = [{ wch: 16 }, ...READMIT_IMPORT.flatMap(() => [{ wch: 34 }, { wch: 34 }])];
+    XLSX.utils.book_append_sheet(wb, ws, "Re-admission");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+        { "التعليمات": "سطر واحد لكل شهر. اكتب الشهر بالشكل 2026-09." },
+        { "التعليمات": "لكل مؤشر عمودان: عدد العائدين، والعدد الكلي (المخرَّجون أو زيارات الطوارئ). تُحسب النسبة في المنصة." },
+        { "التعليمات": "اترك الخانتين فارغتين إذا لم تتوفر بيانات المؤشر لذلك الشهر. لا تغيّر عناوين الأعمدة." }
+    ]), "تعليمات");
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.writeFile(wb, `APH_ReAdmission_Template_${year}.xlsx`);
+}
+
+function parseReadmitMonth(v){
+    if(v == null || v === "") return null;
+    if(typeof v === "number"){ const d = XLSX.SSF.parse_date_code(v); return d ? `${d.y}-${String(d.m).padStart(2, "0")}` : null; }
+    if(v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, "0")}`;
+    const t = String(v).trim().replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+    let m = t.match(/^(\d{4})[-/.](\d{1,2})/); if(m) return `${m[1]}-${m[2].padStart(2, "0")}`;
+    m = t.match(/^(\d{1,2})[-/.](\d{4})$/); if(m) return `${m[2]}-${m[1].padStart(2, "0")}`;
+    return null;
+}
+
+async function importReadmitFile(event){
+    const file = event.target.files[0];
+    event.target.value = "";
+    if(!file) return;
+    if(!can("data")){ showToast("ليس لديك صلاحية لإدخال البيانات."); return; }
+    let rows;
+    try{
+        const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+        const name = wb.SheetNames.find(n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1 })[0]?.includes(READMIT_MONTH_COL));
+        if(!name) throw new Error("لم أجد عمود «" + READMIT_MONTH_COL + "». استخدم قالب Re-admission من المنصة دون تغيير العناوين.");
+        rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: "" });
+    }catch(e){ showToast(e.message); return; }
+    const today = formatDateInput(new Date());
+    const changed = [], skipped = [], problems = [];
+    rows.forEach((row, i) => {
+        const month = parseReadmitMonth(row[READMIT_MONTH_COL]);
+        const hasAny = READMIT_IMPORT.some(x => row[readmitCol(x, "num")] !== "" || row[readmitCol(x, "den")] !== "");
+        if(!month){ if(hasAny) problems.push(`السطر ${i + 2}: الشهر غير صحيح`); return; }
+        const date = month + "-01";
+        if(date > today){ problems.push(`${month}: شهر مستقبلي`); return; }
+        READMIT_IMPORT.forEach(x => {
+            const kpi = kpis.find(k => k.code === x.code);
+            const n = row[readmitCol(x, "num")], d = row[readmitCol(x, "den")];
+            if(!kpi || (n === "" && d === "")) return;
+            if(!isNum(n) || !isNum(d) || Number(n) < 0 || Number(d) < 0){ problems.push(`${month} — ${x.label}: أدخل العددين بأرقام موجبة`); return; }
+            if(Number(n) > Number(d)){ problems.push(`${month} — ${x.label}: العائدون أكثر من العدد الكلي`); return; }
+            const existing = records.find(r => r.kpiCode === x.code && r.date === date);
+            if(existing && Number(existing.numerator) === Number(n) && Number(existing.denominator) === Number(d)) return;
+            if(existing && !canEditRecord(existing)){ skipped.push(`${month} — ${x.label}`); return; }
+            const value = Number(d) > 0 ? round(Number(n) / Number(d) * 100 * 1e4) / 1e4 : null;
+            const rec = normalizeRecord({ id: existing?.id, date, kpiCode: x.code, kpiName: kpi.name, actualValue: value, numerator: Number(n), denominator: Number(d),
+                dataSource: "ملف Re-admission: " + file.name, notes: "", approved: can("approve"),
+                createdBy: existing?.createdBy || currentUser.displayName, createdAt: existing?.createdAt || new Date().toISOString() });
+            if(existing){ rec.updatedBy = currentUser.displayName; rec.updatedAt = new Date().toISOString(); }
+            changed.push({ rec, existing });
+        });
+    });
+    if(!changed.length){
+        showToast("لا توجد قيم جديدة للاستيراد" + (skipped.length ? ` (${readingsText(skipped.length)} معتمدة لا تُعدَّل)` : "") + (problems.length ? ". ملاحظات الملف: " + problems.slice(0, 3).join("؛ ") : "."));
+        return;
+    }
+    const months = [...new Set(changed.map(c => c.rec.date.slice(0, 7)))].sort();
+    let msg = `استيراد ملف Re-admission:\n• ${readingsText(changed.length)}${changed.some(c => c.existing) ? ` (منها ${changed.filter(c => c.existing).length} تحديث)` : ""}\n• الأشهر: ${months.join("، ")}`;
+    if(skipped.length) msg += `\n• لن تُعدَّل ${readingsText(skipped.length)} معتمدة: ${skipped.slice(0, 4).join("، ")}${skipped.length > 4 ? "…" : ""}`;
+    if(problems.length) msg += `\n• تجاهل ${problems.length} سطر به مشكلة: ${problems.slice(0, 3).join("؛ ")}${problems.length > 3 ? "…" : ""}`;
+    if(!confirm(msg + "\n\nمتابعة؟")) return;
+    const before = records.slice();
+    changed.forEach(({ rec, existing }) => { if(existing) records[records.indexOf(existing)] = rec; else records.push(rec); });
+    const recs = changed.map(c => c.rec);
+    const [derived, derivedRemoved] = deriveRecords(recs);
+    if(!await persistRecords([...recs, ...derived], derivedRemoved)){ records = before; recordIndex = null; refreshData(); return; }
+    addAudit("IMPORT_READMISSION", file.name, "", `${recs.length} قراءة — ${months.join("، ")}`, "استقبال ملف Re-admission");
+    refreshData();
+    showToast(`تم استيراد ${readingsText(recs.length)} من ملف Re-admission${derived.length ? ` وتحديث ${derived.length} قراءة محسوبة` : ""}.`);
 }
 
 async function handleExcelUpload(event){
@@ -4482,7 +4607,7 @@ function exportAudit(){
 function frequencyName(f){ return { daily:"يومي", weekly:"أسبوعي", monthly:"شهري", quarterly:"ربع سنوي", annual:"سنوي" }[f] || f || "—"; }
 function aggregationName(a){ return { SUM:"مجموع", AVERAGE:"متوسط", WEIGHTED_AVERAGE:"متوسط موزون", RATIO:"بسط/مقام", LAST_VALUE:"آخر قيمة" }[a] || a || "—"; }
 function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف", range:"ضمن نطاق مثالي", conditional:"مؤشر مشروط", none:"يحتاج مراجعة" }[d] || d || "—"; }
-function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_USER:"إضافة مستخدم", EDIT_USER:"تعديل مستخدم", CHANGE_PASSWORD:"تغيير كلمة المرور", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر", EDIT_QUARTER_VALUE:"تعديل قيمة ربعية", SYNC_PENDING:"إرسال قراءات محفوظة على الجهاز", FULL_BACKUP:"نسخة احتياطية كاملة", RESTORE_BACKUP:"استعادة نسخة احتياطية" }[a] || a; }
+function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_USER:"إضافة مستخدم", EDIT_USER:"تعديل مستخدم", CHANGE_PASSWORD:"تغيير كلمة المرور", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر", EDIT_QUARTER_VALUE:"تعديل قيمة ربعية", SYNC_PENDING:"إرسال قراءات محفوظة على الجهاز", IMPORT_READMISSION:"استقبال ملف Re-admission", FULL_BACKUP:"نسخة احتياطية كاملة", RESTORE_BACKUP:"استعادة نسخة احتياطية" }[a] || a; }
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 function pad2(n){ return String(n).padStart(2, "0"); }
 // Local-date formatting/parsing: toISOString() would shift dates by the UTC offset.
