@@ -1184,7 +1184,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.13 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.14 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1224,7 +1224,7 @@ const KEY_KPIS = [
 const DIRECTION_RULES = {
     lower: ["ED_VISITS","CALLS937_REPORTS","CALLS937_REPORTS_WEEKLY","MAINT_REQUESTS","SECURITY_OBS","SWITCH_INCOMING_CALLS","REFERRALS_OUT","INPATIENTS_WITH_HOME"],
     higher: ["PSY_CLINIC_VISITS","TELE_APPTS","CALLS937_CLOSED","APPT_OUTGOING_CALLS","CLINIC_CONFIRM_PCT_OF_VISITS","REFERRALS_IN","DRUGMAIL_SHIPMENTS_DAILY","DRUGMAIL_SHIPMENTS_WEEKLY","DRUGMAIL_SHIPMENTS_MONTHLY"],
-    range: ["OCC_WITH_HOME_PCT","OCC_NO_HOME_PCT"],
+    range: [],
     conditional: ["APPT_POSTPONE_REQ","INPATIENTS_NO_HOME"]
 };
 // Bed occupancy is good inside 75%–85%; below is waste, above is congestion.
@@ -1264,7 +1264,8 @@ function groupByCategory(items, catOf){
 // Layout version 2: categories and order of the daily sheet, APEX clinic statistics, No-Show %.
 // Version 3: 937 report counts from the daily sheet; satisfaction and the overall index from the weekly 937 sheet.
 // Version 4: the standing targets set by the performance unit (KPI_TARGETS).
-const KPI_LAYOUT_V = 4;
+// Version 5: bed occupancy is judged against a 75% target instead of the 75–85% band.
+const KPI_LAYOUT_V = 5;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1298,11 +1299,12 @@ const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_CO
 // Standing targets from the performance unit (layout 4). Counts are per quarter and scale to the period shown;
 // rates hold for every period. A year's approved target on the targets page still takes precedence.
 const KPI_TARGETS = {
-    DRUGMAIL_SHIPMENTS_DAILY: { target: 6000, direction: "higher" },
-    PSY_CLINIC_VISITS:        { target: 9000, direction: "higher" },
-    PSY_NOSHOW_PCT:           { target: 15,   direction: "lower" },
-    CALLS937_OVERALL_INDEX:   { target: 95 },
-    OCC_WITH_HOME_PCT:        { rangeMin: 75, rangeMax: 85, direction: "range" }
+    DRUGMAIL_SHIPMENTS_DAILY: { v: 4, target: 6000, direction: "higher" },
+    PSY_CLINIC_VISITS:        { v: 4, target: 9000, direction: "higher" },
+    PSY_NOSHOW_PCT:           { v: 4, target: 15,   direction: "lower" },
+    CALLS937_OVERALL_INDEX:   { v: 4, target: 95 },
+    OCC_WITH_HOME_PCT:        { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null },
+    OCC_NO_HOME_PCT:          { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null }
 };
 // Removed from the platform at the owner's request (layout 3).
 const KPI_REMOVED = ["ED_LOS_HOURS", "DISCHARGES_DAILY", "MED_ERR_REPORTING_DOCTORS", "MED_ERR_REPORTING_NURSES", "DRUGMAIL_SHIPMENTS_WEEKLY", "DRUGMAIL_SHIPMENTS_MONTHLY"];
@@ -1326,7 +1328,13 @@ function applyKpiLayout(list, recs){
         if(catOf[k.code]) k.category = catOf[k.code];
         Object.assign(k, KPI_RENAMES[k.code] || {});
         if(KPI_HIDDEN.includes(k.code) && (k.layoutV || 0) < 3) k.active = false;
-        if(KPI_TARGETS[k.code] && (k.layoutV || 0) < 4) Object.assign(k, KPI_TARGETS[k.code], { targetLastUpdated: new Date().toISOString(), targetUpdatedBy: "وحدة مؤشرات الأداء (المستهدف المعتمد)" });
+        const t = KPI_TARGETS[k.code];
+        if(t && (k.layoutV || 0) < t.v){
+            const { v, ...fields } = t;
+            Object.assign(k, fields, { targetLastUpdated: new Date().toISOString(), targetUpdatedBy: "وحدة مؤشرات الأداء (المستهدف المعتمد)" });
+            // A band set for a year on the targets page no longer applies once the KPI has a single target.
+            if(fields.direction && fields.direction !== "range" && k.targets) Object.values(k.targets).forEach(e => { delete e.rangeMin; delete e.rangeMax; });
+        }
         k.layoutV = KPI_LAYOUT_V;
         changed.push(k);
     });
