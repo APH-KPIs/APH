@@ -1141,7 +1141,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.9 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.10 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1221,7 +1221,8 @@ function groupByCategory(items, catOf){
 }
 
 // Layout version 2: categories and order of the daily sheet, APEX clinic statistics, No-Show %.
-const KPI_LAYOUT_V = 2;
+// Version 3: 937 counts only from the weekly 937 sheet (the one with satisfaction).
+const KPI_LAYOUT_V = 3;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","DISCHARGES_DAILY","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
     "الصيدلية": ["MED_ERR_REPORTING_DOCTORS","MED_ERR_REPORTING_NURSES","MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY","DRUGMAIL_SHIPMENTS_WEEKLY","DRUGMAIL_SHIPMENTS_MONTHLY"],
@@ -1231,7 +1232,7 @@ const KPI_LAYOUT = {
     "الجودة": ["SENTINEL_EVENTS","MYSTERY_SHOPPER","OCC_HEALTH"],
     "الشؤون الهندسية": ["MAINT_REQUESTS","MAINT_COMPLETED","MAINT_COMPLETION_PCT","SECURITY_OBS","SWITCH_INCOMING_CALLS","APPT_OUTGOING_CALLS"],
     "التنسيق الطبي": ["REFERRALS_OUT","REFERRALS_IN"],
-    "بلاغات 937": ["CALLS937_REPORTS","CALLS937_CLOSED","CALLS937_REPORTS_WEEKLY","CALLS937_CLOSURE_RATE","CALLS937_SATISFACTION","CALLS937_OVERALL_INDEX"],
+    "بلاغات 937": ["CALLS937_REPORTS_WEEKLY","CALLS937_CLOSURE_RATE","CALLS937_SATISFACTION","CALLS937_OVERALL_INDEX","CALLS937_REPORTS","CALLS937_CLOSED"],
     "تجربة المريض": ["PATIENT_EXP_INPATIENT","PATIENT_EXP_OPD","PATIENT_EXP_ADDICTION"],
     "الموارد الذاتية": ["SELF_REVENUE"]
 };
@@ -1240,8 +1241,12 @@ const KPI_RENAMES = {
     PSY_NOSHOW_COUNT: { name: "المرضى الذين لم يحضروا للمواعيد (APEX)", department: "العيادات الخارجية", dataSource: "إحصائية APEX" },
     PSY_NOSHOW_PCT: { name: "نسبة عدم الحضور للمواعيد (No Show)", department: "العيادات الخارجية",
         definition: "المرضى الذين لم يحضروا للمواعيد ÷ عدد مراجعي العيادات (إحصائية APEX) × 100، ويُحسب من مجموع الفترة (الشهر أو الربع)." },
-    CALLS937_SATISFACTION: { name: "الرضا عن الإغلاق" }
+    CALLS937_SATISFACTION: { name: "الرضا عن الإغلاق" },
+    CALLS937_REPORTS_WEEKLY: { name: "عدد بلاغات 937" },
+    CALLS937_CLOSURE_RATE: { name: "نسبة البلاغات التي تم إغلاقها" }
 };
+// Daily copies of the 937 counts; the weekly 937 sheet is the source. Hidden, readings kept.
+const KPI_HIDDEN = ["CALLS937_REPORTS", "CALLS937_CLOSED"];
 // The same statistic was listed twice; the copy without readings is dropped.
 const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_COUNT: "PSY_NOSHOW_COUNT" };
 const LAYOUT_ORDER = Object.values(KPI_LAYOUT).flat();
@@ -1259,6 +1264,7 @@ function applyKpiLayout(list, recs){
         if((k.layoutV || 0) >= KPI_LAYOUT_V) return;
         if(catOf[k.code]) k.category = catOf[k.code];
         Object.assign(k, KPI_RENAMES[k.code] || {});
+        if(KPI_HIDDEN.includes(k.code) && (k.layoutV || 0) < 3) k.active = false;
         k.layoutV = KPI_LAYOUT_V;
         changed.push(k);
     });
@@ -3899,7 +3905,7 @@ async function confirmWorkbookImport(){
         ["target","greenMin","yellowMin"].forEach(f => { if(fk[f] == null && old[f] != null) keep[f] = old[f]; });
         if(fk.direction === "none" && old.direction && old.direction !== "none") keep.direction = old.direction;
         // The platform's categories, names and order (daily-sheet layout) win over the file's labels.
-        if((old.layoutV || 0) >= KPI_LAYOUT_V) ["category","name","department","definition","dataSource","sortOrder","layoutV"].forEach(f => { if(old[f] != null) keep[f] = old[f]; });
+        if((old.layoutV || 0) >= KPI_LAYOUT_V) ["category","name","department","definition","dataSource","sortOrder","layoutV","active"].forEach(f => { if(old[f] != null) keep[f] = old[f]; });
         return { ...old, ...fk, ...keep };
     });
     if(mayEditKpis){
