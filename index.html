@@ -320,6 +320,9 @@
         .kq-labels b { display: block; font-size: 10.5px; color: #0f172a; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .kq-labels .sel { color: #0b1f33; font-weight: 900; }
         .kq-dot { display: inline-block; width: 8px; height: 8px; border-radius: 3px; }
+        .kpi-subhead { grid-column: 1 / -1; font-size: 11px; font-weight: 800; color: #0369a1; display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+        .kpi-subhead::after { content: ""; flex: 1; border-top: 1px dashed #bae6fd; }
+        #printArea .kpi-subhead { font-size: 9.5px; margin-top: 0; }
         .cat-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
         .cat-head h4 { font-size: 13px; font-weight: 900; color: #0b1f33; }
         .detail-tile { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; }
@@ -1094,7 +1097,7 @@
                 <button onclick="closeKpiDetail()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none" aria-label="إغلاق">&times;</button>
             </div>
         </div>
-        <div id="detailTiles" class="grid grid-cols-2 lg:grid-cols-5 gap-3"></div>
+        <div id="detailTiles" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3"></div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="rounded-2xl border border-slate-200 p-4">
                 <h4 class="font-bold text-xs text-slate-900 mb-3">الأداء الربعي عبر السنوات</h4>
@@ -1184,7 +1187,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.13 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.19 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1224,7 +1227,7 @@ const KEY_KPIS = [
 const DIRECTION_RULES = {
     lower: ["ED_VISITS","CALLS937_REPORTS","CALLS937_REPORTS_WEEKLY","MAINT_REQUESTS","SECURITY_OBS","SWITCH_INCOMING_CALLS","REFERRALS_OUT","INPATIENTS_WITH_HOME"],
     higher: ["PSY_CLINIC_VISITS","TELE_APPTS","CALLS937_CLOSED","APPT_OUTGOING_CALLS","CLINIC_CONFIRM_PCT_OF_VISITS","REFERRALS_IN","DRUGMAIL_SHIPMENTS_DAILY","DRUGMAIL_SHIPMENTS_WEEKLY","DRUGMAIL_SHIPMENTS_MONTHLY"],
-    range: ["OCC_WITH_HOME_PCT","OCC_NO_HOME_PCT"],
+    range: [],
     conditional: ["APPT_POSTPONE_REQ","INPATIENTS_NO_HOME"]
 };
 // Bed occupancy is good inside 75%–85%; below is waste, above is congestion.
@@ -1264,28 +1267,53 @@ function groupByCategory(items, catOf){
 // Layout version 2: categories and order of the daily sheet, APEX clinic statistics, No-Show %.
 // Version 3: 937 report counts from the daily sheet; satisfaction and the overall index from the weekly 937 sheet.
 // Version 4: the standing targets set by the performance unit (KPI_TARGETS).
-const KPI_LAYOUT_V = 4;
+// Version 5: bed occupancy is judged against a 75% target instead of the 75–85% band.
+// Version 6: patient experience (OPD) target 88.69%.
+// Version 7: telemedicine appointments target 339 per week.
+// Version 8: telemedicine no-shows, unanswered calls and invalid numbers removed; medication safety named.
+// Version 9: quality, engineering and call targets; completed-maintenance count entry-only; one patient-experience KPI.
+// Version 10: related KPIs grouped (beds, re-admission, clinics with telemedicine and appointments).
+const KPI_LAYOUT_V = 10;
 const KPI_LAYOUT = {
-    "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
+    "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
     "المختبر (عينتي)": ["LAB_COMPLETION_PCT"],
     "الطوارئ": ["ED_VISITS","ED_REVISIT_72H"],
-    "العيادات": ["PSY_CLINIC_VISITS","PSY_NOSHOW_COUNT","PSY_NOSHOW_PCT","CLINIC_CONFIRM_PCT_OF_VISITS"],
+    "العيادات": ["PSY_CLINIC_VISITS","PSY_NOSHOW_COUNT","PSY_NOSHOW_PCT","TELE_APPTS","APPT_OUTGOING_CALLS","APPT_CONFIRMED","APPT_CONFIRM_PCT","CLINIC_CONFIRM_PCT_OF_VISITS","APPT_POSTPONE_REQ"],
     "الجودة": ["SENTINEL_EVENTS","MYSTERY_SHOPPER","OCC_HEALTH"],
-    "الشؤون الهندسية": ["MAINT_REQUESTS","MAINT_COMPLETED","MAINT_COMPLETION_PCT","SECURITY_OBS","SWITCH_INCOMING_CALLS","APPT_OUTGOING_CALLS"],
+    "الشؤون الهندسية": ["MAINT_REQUESTS","MAINT_COMPLETED","MAINT_COMPLETION_PCT","SECURITY_OBS","SWITCH_INCOMING_CALLS"],
     "التنسيق الطبي": ["REFERRALS_OUT","REFERRALS_IN"],
     "بلاغات 937": ["CALLS937_REPORTS","CALLS937_CLOSED","CALLS937_SATISFACTION","CALLS937_OVERALL_INDEX","CALLS937_REPORTS_WEEKLY","CALLS937_CLOSURE_RATE"],
-    "تجربة المريض": ["PATIENT_EXP_INPATIENT","PATIENT_EXP_OPD","PATIENT_EXP_ADDICTION"],
+    "تجربة المريض": ["PATIENT_EXP_OPD"],
     "الموارد الذاتية": ["SELF_REVENUE"]
 };
+// Related KPIs sit together under a small heading inside their category (layout 10).
+const KPI_GROUPS = {
+    "التنويم وإشغال الأسرّة": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT"],
+    "إعادة التنويم (Re-admission)": ["READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
+    "مراجعو العيادات والحضور": ["PSY_CLINIC_VISITS","PSY_NOSHOW_COUNT","PSY_NOSHOW_PCT"],
+    "الطب الاتصالي": ["TELE_APPTS"],
+    "تنسيق المواعيد": ["APPT_OUTGOING_CALLS","APPT_CONFIRMED","APPT_CONFIRM_PCT","CLINIC_CONFIRM_PCT_OF_VISITS","APPT_POSTPONE_REQ"],
+    "الصيانة": ["MAINT_REQUESTS","MAINT_COMPLETED","MAINT_COMPLETION_PCT"],
+    "الأمن والسنترال": ["SECURITY_OBS","SWITCH_INCOMING_CALLS"],
+    "مراجعو الطوارئ": ["ED_VISITS"],
+    "العودة للطوارئ (Re-admission)": ["ED_REVISIT_72H"],
+    "عدد البلاغات": ["CALLS937_REPORTS","CALLS937_CLOSED"],
+    "الرضا والأداء": ["CALLS937_SATISFACTION","CALLS937_OVERALL_INDEX"]
+};
+const GROUP_OF = Object.fromEntries(Object.entries(KPI_GROUPS).flatMap(([g, codes]) => codes.map(c => [c, g])));
 const KPI_RENAMES = {
     PSY_CLINIC_VISITS: { name: "عدد مراجعي العيادات (APEX)", department: "العيادات الخارجية", dataSource: "إحصائية APEX" },
     PSY_NOSHOW_COUNT: { name: "المرضى الذين لم يحضروا للمواعيد (APEX)", department: "العيادات الخارجية", dataSource: "إحصائية APEX" },
     PSY_NOSHOW_PCT: { name: "نسبة عدم الحضور للمواعيد (No Show)", department: "العيادات الخارجية",
         definition: "المرضى الذين لم يحضروا للمواعيد ÷ عدد مراجعي العيادات (إحصائية APEX) × 100، ويُحسب من مجموع الفترة (الشهر أو الربع)." },
     CALLS937_SATISFACTION: { name: "الرضا عن الإغلاق" },
+    READMIT30_ALL: { name: "إعادة التنويم خلال 30 يوماً بنفس التشخيص — الإجمالي", intake: "excel" },
+    READMIT30_PSY: { name: "إعادة التنويم خلال 30 يوماً بنفس التشخيص — الطب النفسي", intake: "excel" },
+    READMIT30_DETOX: { name: "إعادة التنويم خلال 30 يوماً بنفس التشخيص — الإدمان وما بعده", intake: "excel" },
+    ED_REVISIT_72H: { name: "العودة غير المخطط لها للطوارئ خلال 72 ساعة", intake: "excel" },
+    MED_ERR_REPORTING_PHARMACISTS: { name: "مؤشر السلامة الدوائية", definition: "الأخطاء الدوائية المرفوعة ÷ عدد الأخطاء المطلوبة (الصيادلة) × 100." },
     MYSTERY_SHOPPER: { frequency: "monthly", dataSource: "إدخال يدوي في المنصة" },
-    READMIT30_PSY: { intake: "excel" }, READMIT30_DETOX: { intake: "excel" }, ED_REVISIT_72H: { intake: "excel" }, READMIT30_ALL: { intake: "excel" },
     OCC_HEALTH: { frequency: "monthly", dataSource: "إدخال يدوي في المنصة" },
     CALLS937_REPORTS: { name: "عدد البلاغات 937" },
     CALLS937_CLOSED: { name: "عدد البلاغات 937 التي تم إغلاقها" }
@@ -1295,17 +1323,38 @@ const KPI_RENAMES = {
 const KPI_HIDDEN = ["CALLS937_REPORTS_WEEKLY", "CALLS937_CLOSURE_RATE"];
 // The same statistic was listed twice; the copy without readings is dropped.
 const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_COUNT: "PSY_NOSHOW_COUNT" };
-// Standing targets from the performance unit (layout 4). Counts are per quarter and scale to the period shown;
+// Standing targets from the performance unit (layout 4). Counts are per quarter (or per week with
+// targetBasis "weekly") and scale to the period shown;
 // rates hold for every period. A year's approved target on the targets page still takes precedence.
 const KPI_TARGETS = {
-    DRUGMAIL_SHIPMENTS_DAILY: { target: 6000, direction: "higher" },
-    PSY_CLINIC_VISITS:        { target: 9000, direction: "higher" },
-    PSY_NOSHOW_PCT:           { target: 15,   direction: "lower" },
-    CALLS937_OVERALL_INDEX:   { target: 95 },
-    OCC_WITH_HOME_PCT:        { rangeMin: 75, rangeMax: 85, direction: "range" }
+    DRUGMAIL_SHIPMENTS_DAILY: { v: 4, target: 6000, direction: "higher" },
+    PSY_CLINIC_VISITS:        { v: 4, target: 9000, direction: "higher" },
+    PSY_NOSHOW_PCT:           { v: 4, target: 15,   direction: "lower" },
+    CALLS937_OVERALL_INDEX:   { v: 4, target: 95 },
+    OCC_WITH_HOME_PCT:        { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null },
+    OCC_NO_HOME_PCT:          { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null },
+    PATIENT_EXP_OPD:          { v: 6, target: 88.69, direction: "higher" },
+    TELE_APPTS:               { v: 7, target: 339, targetBasis: "weekly", direction: "higher" },
+    SENTINEL_EVENTS:          { v: 9, target: 0, direction: "lower" },
+    SECURITY_OBS:             { v: 9, target: 0, direction: "lower" },
+    OCC_HEALTH:               { v: 9, target: 90, direction: "higher" },
+    MYSTERY_SHOPPER:          { v: 9, target: 90, direction: "higher" },
+    MAINT_REQUESTS:           { v: 9, target: 30, targetBasis: "weekly", direction: "lower" },
+    MAINT_COMPLETION_PCT:     { v: 9, target: 100, direction: "higher" },
+    SWITCH_INCOMING_CALLS:    { v: 9, target: 16000, targetBasis: "annual", direction: "lower" },
+    APPT_OUTGOING_CALLS:      { v: 9, target: 32000, targetBasis: "annual", direction: "higher" },
+    // Entered (it feeds the completion rate) but not shown on the dashboard.
+    MAINT_COMPLETED:          { v: 9, entryOnly: true }
 };
 // Removed from the platform at the owner's request (layout 3).
-const KPI_REMOVED = ["ED_LOS_HOURS", "DISCHARGES_DAILY", "MED_ERR_REPORTING_DOCTORS", "MED_ERR_REPORTING_NURSES", "DRUGMAIL_SHIPMENTS_WEEKLY", "DRUGMAIL_SHIPMENTS_MONTHLY"];
+// code → layout version that removed it (a KPI stored at an older version is dropped once).
+const KPI_REMOVED_AT = {
+    ED_LOS_HOURS: 3, DISCHARGES_DAILY: 3, MED_ERR_REPORTING_DOCTORS: 3, MED_ERR_REPORTING_NURSES: 3,
+    DRUGMAIL_SHIPMENTS_WEEKLY: 3, DRUGMAIL_SHIPMENTS_MONTHLY: 3,
+    TELE_NOSHOW: 8, CALLS_UNANSWERED: 8, INVALID_NUMBERS: 8,
+    PATIENT_EXP_INPATIENT: 9, PATIENT_EXP_ADDICTION: 9
+};
+const KPI_REMOVED = Object.keys(KPI_REMOVED_AT);
 const LAYOUT_ORDER = Object.values(KPI_LAYOUT).flat();
 
 // Applies the layout to KPIs not yet on it; returns { changed, removed } for saving.
@@ -1319,14 +1368,21 @@ function applyKpiLayout(list, recs){
     });
     KPI_REMOVED.forEach(code => {
         const i = list.findIndex(k => k.code === code);
-        if(i >= 0 && (list[i].layoutV || 0) < 3){ removed.push(code); list.splice(i, 1); }
+        if(i >= 0 && (list[i].layoutV || 0) < KPI_REMOVED_AT[code]){ removed.push(code); list.splice(i, 1); }
     });
     list.forEach(k => {
         if((k.layoutV || 0) >= KPI_LAYOUT_V) return;
         if(catOf[k.code]) k.category = catOf[k.code];
+        k.group = GROUP_OF[k.code] || null;
         Object.assign(k, KPI_RENAMES[k.code] || {});
         if(KPI_HIDDEN.includes(k.code) && (k.layoutV || 0) < 3) k.active = false;
-        if(KPI_TARGETS[k.code] && (k.layoutV || 0) < 4) Object.assign(k, KPI_TARGETS[k.code], { targetLastUpdated: new Date().toISOString(), targetUpdatedBy: "وحدة مؤشرات الأداء (المستهدف المعتمد)" });
+        const t = KPI_TARGETS[k.code];
+        if(t && (k.layoutV || 0) < t.v){
+            const { v, ...fields } = t;
+            Object.assign(k, fields, { targetLastUpdated: new Date().toISOString(), targetUpdatedBy: "وحدة مؤشرات الأداء (المستهدف المعتمد)" });
+            // A band set for a year on the targets page no longer applies once the KPI has a single target.
+            if(fields.direction && fields.direction !== "range" && k.targets) Object.values(k.targets).forEach(e => { delete e.rangeMin; delete e.rangeMax; });
+        }
         k.layoutV = KPI_LAYOUT_V;
         changed.push(k);
     });
@@ -2085,7 +2141,7 @@ function populateFilters(){
     const cSel = document.getElementById("filterCategory");
     const selectedCat = cSel.value;
     // The sheet's categories in order (a parent includes its sub-categories), then any others.
-    const used = new Set(activeKpis().map(k => k.category).filter(Boolean));
+    const used = new Set(dashboardKpis().map(k => k.category).filter(Boolean));
     const opts = [];
     CATEGORY_TREE.forEach(c => {
         const kids = (c.children || []).filter(ch => used.has(ch));
@@ -2147,9 +2203,11 @@ function populateRecordKpis(){
     });
     const sel = document.getElementById("recordKpi");
     const prev = sel.value;
-    const groups = groupByCategory(entryKpis(entryFreq), k => k.category);
-    sel.innerHTML = `<option value="">اختر المؤشر...</option>` + groups.map(([c, list]) =>
-        `<optgroup label="${escapeAttr(catLabel(c))}">${list.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("")}</optgroup>`).join("");
+    const groups = groupByCategory(entryKpis(entryFreq), k => k.category)
+        .flatMap(([c, list]) => { const parts = []; list.forEach(k => { const lbl = c + (k.group ? "|" + k.group : ""); const last = parts[parts.length - 1]; if(last && last[0] === lbl) last[1].push(k); else parts.push([lbl, [k]]); }); return parts; })
+        .map(([lbl, list]) => { const [c, g] = lbl.split("|"); return [c, list, g]; });
+    sel.innerHTML = `<option value="">اختر المؤشر...</option>` + groups.map(([c, list, g]) =>
+        `<optgroup label="${escapeAttr(catLabel(c) + (g ? " — " + g : ""))}">${list.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("")}</optgroup>`).join("");
     if([...sel.options].some(o => o.value === prev)) sel.value = prev;
     const derivedNames = activeKpis().filter(k => DERIVED_KPIS[k.code]).map(k => k.name);
     document.getElementById("entryDerivedNote").textContent = derivedNames.length ? `تُحسب تلقائياً عند الحفظ ولا تحتاج إدخالاً: ${derivedNames.join("، ")}.` : "";
@@ -2577,7 +2635,7 @@ function targetFor(kpi, year){
 function targetSource(kpi, year){
     const t = kpi.targets && kpi.targets[year];
     if(t && isNum(t.value)) return `مستهدف ${year} المعتمد`;
-    if(isNum(kpi.target)) return "مستهدف الملف";
+    if(isNum(kpi.target)) return standingTargetLabel(kpi);
     if(isNum(kpi.greenMin)) return "حد الأخضر";
     return "";
 }
@@ -2613,21 +2671,28 @@ function periodTarget(kpi, year, q, base){
         if(!byQuarter.has(key)) byQuarter.set(key, new Set());
         byQuarter.get(key).add(unitKey(r, kpi.frequency));
     });
+    // A target set per week (kpi.targetBasis "weekly") is turned into each quarter's total by its days.
+    const daysInYear = yy => (new Date(yy, 1, 29).getMonth() === 1 ? 366 : 365);
+    const qBase = (qy, qq) => kpi.targetBasis === "weekly" ? base * unitsInQuarter(Number(qy), qq, "daily") / 7
+        : kpi.targetBasis === "annual" ? base * unitsInQuarter(Number(qy), qq, "daily") / daysInYear(Number(qy)) : base;
     if(!byQuarter.size){
         // No readings yet: use the calendar share of the period.
-        if(q === "ALL") return base * 4;
-        if(q[0] === "Q") return base;
+        if(q === "ALL") return QUARTERS.reduce((sum, qq) => sum + qBase(y, qq), 0);
+        if(q[0] === "Q") return qBase(y, q);
         const qOf = m => "Q" + Math.ceil(m / 3);
-        if(q[0] === "M"){ const m = Number(q.slice(1)); const qq = qOf(m); return base * new Date(y, m, 0).getDate() / unitsInQuarter(y, qq, "daily"); }
-        const m = Number(q.slice(6, 8)); return base * 7 / unitsInQuarter(y, qOf(m), "daily");
+        if(q[0] === "M"){ const m = Number(q.slice(1)); const qq = qOf(m); return qBase(y, qq) * new Date(y, m, 0).getDate() / unitsInQuarter(y, qq, "daily"); }
+        const m = Number(q.slice(6, 8)), qq = qOf(m); return qBase(y, qq) * 7 / unitsInQuarter(y, qq, "daily");
     }
-    let share = 0;
+    let total = 0;
     byQuarter.forEach((units, key) => {
         const [qy, qq] = key.split("|");
-        share += units.size / unitsInQuarter(Number(qy), qq, kpi.frequency);
+        total += qBase(qy, qq) * units.size / unitsInQuarter(Number(qy), qq, kpi.frequency);
     });
-    return base * share;
+    return total;
 }
+
+// Standing targets come from the KPI file or from the performance unit's approved list (KPI_TARGETS).
+function standingTargetLabel(k){ return KPI_TARGETS[k.code] && "target" in KPI_TARGETS[k.code] ? "المستهدف المعتمد" : "مستهدف الملف"; }
 
 // The target used for achievement: the year's target, or the green threshold when a KPI only has thresholds.
 function effectiveTarget(kpi, year){
@@ -2638,7 +2703,8 @@ function effectiveTarget(kpi, year){
 function calcAchievement(act, target, dir){
     if(!isNum(act) || !isNum(target)) return null;
     act = Number(act); target = Number(target);
-    if(target === 0) return null;
+    // A zero target (e.g. sentinel events, security observations): met only when nothing happened.
+    if(target === 0) return dir === "lower" ? (act <= 0 ? 100 : 0) : null;
     // Same rules as the source's 04_KPI_QUARTERLY: HIGHER = actual/target; LOWER = 100 when within target, else target/actual.
     if(dir === "higher") return (act/target)*100;
     if(dir === "lower") return act <= target ? 100 : (target/act)*100;
@@ -2730,9 +2796,11 @@ function getFilters(){
 }
 
 function activeKpis(){ return kpis.filter(k => k.active !== false); }
+// KPIs entered only to feed another (e.g. completed maintenance for the completion rate) stay off the dashboard.
+function dashboardKpis(){ return activeKpis().filter(k => !k.entryOnly); }
 
 function computeResults(year, q, cat){
-    return activeKpis().filter(k => inCategory(k, cat)).map(kpi => {
+    return dashboardKpis().filter(k => inCategory(k, cat)).map(kpi => {
         const act = getPeriodValue(kpi.code, year, q);
         const prev = getPrevValue(kpi.code, year, q);
         const sameY = getSameQPrevYear(kpi.code, year, q);
@@ -2999,8 +3067,18 @@ function renderKpiCards(results, year){
                     ${counts.red ? `<span class="pill status-red !py-0.5 !px-2">${counts.red} غير محقق</span>` : ""}
                 </div>
             </div>
-            <div class="kpi-grid">${rows.map(r => kpiCard(r, year)).join("")}</div>
+            <div class="kpi-grid">${withGroupHeads(rows, r => r.kpi, r => kpiCard(r, year))}</div>
         </div>`;
+    }).join("");
+}
+
+// Cards in order, with a small heading where a group of related KPIs starts.
+function withGroupHeads(items, kpiOf, render){
+    let last = null;
+    return items.map(x => {
+        const g = kpiOf(x).group || null, head = g && g !== last ? `<div class="kpi-subhead">${escapeHtml(g)}</div>` : "";
+        last = g;
+        return head + render(x);
     }).join("");
 }
 
@@ -3022,6 +3100,21 @@ function kpiCard(r, year){
         <div class="mt-auto">${periodColumns(k, year, getFilters().q)}</div>
         <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}${staleNote(k)}</div>
     </button>`;
+}
+
+// The counts behind a rate for the period shown, e.g. completed ÷ reported maintenance requests.
+function ratioCountsTile(k, year, q, tile){
+    if(k.aggregation !== "RATIO") return "";
+    const rows = periodRecords(k.code, year, q);
+    const num = rows.filter(r => isNum(r.numerator)).reduce((a, r) => a + Number(r.numerator), 0);
+    const den = rows.filter(r => isNum(r.denominator)).reduce((a, r) => a + Number(r.denominator), 0);
+    if(!rows.some(r => isNum(r.denominator))) return "";
+    const d = DERIVED_KPIS[k.code];
+    const nameOf = parts => parts.map(([c]) => kpis.find(x => x.code === c)?.name || c).join(" + ");
+    const hint = (ENTRY_HINTS[k.code] || "").match(/البسط = (.+?) \| المقام = (.+)/);
+    const [nl, dl] = d ? [nameOf(d.num), nameOf(d.den)] : hint ? [hint[1], hint[2]] : ["البسط", "المقام"];
+    const n = v => Number(v).toLocaleString("en-US", { maximumFractionDigits: 2 });
+    return tile("العدد", `${n(num)} <span class="text-slate-400 text-sm">من</span> ${n(den)}`, `${escapeHtml(nl)} ÷ ${escapeHtml(dl)}`);
 }
 
 // ---- KPI detail view ----
@@ -3047,7 +3140,8 @@ function openKpiDetail(code){
         tile(hasRange(k) ? "النطاق المثالي" : `المستهدف ${year}`, targetText(k, tgt), hasRange(k) ? "خارج النطاق سلبي (هدر أو اختناق)" : (targetSource(k, year) || "يحدده مدير النظام أو مدير الأداء") + (k.aggregation === "SUM" && tgt != null && !/^Q/.test(q) ? " · متناسب مع الفترة" : "")),
         tile("نسبة الإنجاز", r?.ach != null ? r.ach.toFixed(1) + "%" : "—", r?.ach != null ? `<div class="progress mt-1"><div style="width:${Math.min(r.ach,100)}%;background:${statusColor(r.status.key)}"></div></div>` : ""),
         tile(q === "ALL" ? "السنة السابقة" : "الفترة السابقة", fmt(r?.prev, k), delta != null ? `${delta > 0 ? "+" : ""}${fmt(delta, k)} · ${r.trend.label}` : ""),
-        tile("نفس الفترة العام الماضي", fmt(r?.sameY, k))
+        tile("نفس الفترة العام الماضي", fmt(r?.sameY, k)),
+        ratioCountsTile(k, year, q, tile)
     ].join("");
 
     renderDetailQuarterChart(k);
@@ -3476,7 +3570,7 @@ function printAllKpiCards(){
     const type = q === "ALL" ? "سنوي" : q[0] === "Q" ? "ربع سنوي" : q[0] === "M" ? "شهري" : "أسبوعي";
     const period = `${periodName(q)} ${q === "ALL" || /^[QM]/.test(q) ? year : ""}`.trim();
     const groups = groupByCategory(results, r => r.kpi.category).map(([c, rows]) =>
-        `<div class="pa-cat">${escapeHtml(catLabel(c))} (${rows.length})</div><div class="pa-grid">${rows.map(r => kpiCard(r, year)).join("")}</div>`).join("");
+        `<div class="pa-cat">${escapeHtml(catLabel(c))} (${rows.length})</div><div class="pa-grid">${withGroupHeads(rows, r => r.kpi, r => kpiCard(r, year))}</div>`).join("");
     document.getElementById("printArea").innerHTML = `<div class="kp-page">
         <div class="kp-band">
             <div style="display:flex;align-items:center;gap:10px"><img src="logo.png" alt=""><div>
@@ -4358,14 +4452,16 @@ function renderTargets(){
 
     const dirOptions = d => ["higher","lower","target","range","conditional","none"].map(v => `<option value="${v}" ${d === v ? "selected" : ""}>${directionName(v)}</option>`).join("");
     const sorted = groupByCategory(kpis, k => k.category).flatMap(([, list]) => list);
-    let lastCat = null;
+    let lastCat = null, lastGroup = null;
     document.getElementById("targetsTableBody").innerHTML = sorted.map(k => {
         const t = k.targets?.[year];
         const prevActual = getPeriodValue(k.code, year - 1, "ALL");
-        const ref = k.direction === "range" ? `الافتراضي: ${isNum(k.rangeMin) ? `${fmt(k.rangeMin, k)} – ${fmt(k.rangeMax, k)}` : "—"}` : isNum(k.target) ? `مستهدف الملف: ${fmt(k.target, k)}` : isNum(k.greenMin) ? `حد الأخضر: ${fmt(k.greenMin, k)}` : (k.targets?.[year-1] && isNum(k.targets[year-1].value) ? `مستهدف ${year-1}: ${fmt(k.targets[year-1].value, k)}` : "—");
+        const ref = k.direction === "range" ? `الافتراضي: ${isNum(k.rangeMin) ? `${fmt(k.rangeMin, k)} – ${fmt(k.rangeMax, k)}` : "—"}` : isNum(k.target) ? `${standingTargetLabel(k)}: ${fmt(k.target, k)}` : isNum(k.greenMin) ? `حد الأخضر: ${fmt(k.greenMin, k)}` : (k.targets?.[year-1] && isNum(k.targets[year-1].value) ? `مستهدف ${year-1}: ${fmt(k.targets[year-1].value, k)}` : "—");
+        const grpRow = k.group && (k.category !== lastCat || k.group !== lastGroup) ? `<tr><td colspan="8" class="!py-1 text-[10.5px] font-bold text-sky-700">— ${escapeHtml(k.group)}</td></tr>` : "";
+        lastGroup = k.group;
         const catRow = k.category !== lastCat ? `<tr><td colspan="8" class="!bg-slate-50 !py-2 text-[11px] font-black text-slate-500">${escapeHtml(k.category ? catLabel(k.category) : "بدون فئة")}</td></tr>` : "";
         lastCat = k.category;
-        return `${catRow}
+        return `${catRow}${grpRow}
         <tr>
             <td class="kpi-name-cell"><div class="font-bold text-slate-900">${escapeHtml(k.name)}</div><div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}</div></td>
             <td class="text-xs">${escapeHtml(k.category || "—")}</td>
@@ -4406,6 +4502,8 @@ function targetBasisHtml(k){
     const tag = (txt, cls) => `<span class="pill ${cls} !py-0.5 !px-2 !text-[10.5px]">${txt}</span>`;
     if(k.direction === "range") return `${tag("نطاق ثابت", "status-green")}<div class="text-slate-500 mt-0.5">نفس النطاق لأي فترة</div>`;
     if(k.direction === "conditional") return `${tag("مشروط", "status-gray")}<div class="text-slate-500 mt-0.5">لا يُقيَّم بمستهدف</div>`;
+    if(k.aggregation === "SUM" && k.targetBasis === "annual") return `${tag("سنوي (إجمالي السنة)", "status-yellow")}<div class="text-slate-500 mt-0.5">أدخل إجمالي السنة</div>`;
+    if(k.aggregation === "SUM" && k.targetBasis === "weekly") return `${tag("أسبوعي (إجمالي الأسبوع)", "status-yellow")}<div class="text-slate-500 mt-0.5">أدخل إجمالي الأسبوع الواحد</div>`;
     if(k.aggregation === "SUM") return `${tag("ربع سنوي (إجمالي الربع)", "status-yellow")}<div class="text-slate-500 mt-0.5">أدخل إجمالي الربع الواحد</div>`;
     const kind = k.unit === "%" || k.aggregation === "RATIO" || k.aggregation === "WEIGHTED_AVERAGE" ? "نسبة"
         : k.aggregation === "AVERAGE" ? "متوسط" : "قيمة الفترة";
@@ -4415,6 +4513,8 @@ function targetScaleText(k, v){
     if(k.aggregation !== "SUM" || k.direction === "range" || k.direction === "conditional" || !isNum(v)) return "";
     v = Number(v);
     const r = x => x >= 10 ? Math.round(x) : Math.round(x * 10) / 10;
+    if(k.targetBasis === "annual") return `ربع سنوي ≈ ${fmt(r(v / 4), k)} · شهري ≈ ${fmt(r(v / 12), k)} · أسبوعي ≈ ${fmt(r(v * 7 / 365), k)} · يومي ≈ ${fmt(r(v / 365), k)}`;
+    if(k.targetBasis === "weekly") return `ربع سنوي ≈ ${fmt(r(v * 13), k)} · شهري ≈ ${fmt(r(v * 30.44 / 7), k)} · سنوي ≈ ${fmt(r(v * 365 / 7), k)} · يومي ≈ ${fmt(r(v / 7), k)}`;
     return `سنوي ${fmt(v * 4, k)} · شهري ≈ ${fmt(r(v / 3), k)} · أسبوعي ≈ ${fmt(r(v / 13), k)}${k.frequency === "daily" ? ` · يومي ≈ ${fmt(r(v / 91), k)}` : ""}`;
 }
 // Range KPIs take a band (from–to) instead of a single target.
@@ -4687,7 +4787,7 @@ function exportDashboard(){
     };
     addSheet(rows, "ملخص الأداء");
 
-    const quarterly = activeKpis().filter(k => inCategory(k, cat)).map(k => {
+    const quarterly = dashboardKpis().filter(k => inCategory(k, cat)).map(k => {
         const row = { "الكود": k.code, "المؤشر": k.name, "المستهدف": targetFor(k, year) };
         QUARTERS.forEach((qq, i) => { row[`${QUARTER_LABELS[i]} ${year}`] = round(getPeriodValue(k.code, year, qq)); });
         QUARTERS.forEach((qq, i) => { row[`${QUARTER_LABELS[i]} ${year-1}`] = round(getPeriodValue(k.code, year-1, qq)); });
