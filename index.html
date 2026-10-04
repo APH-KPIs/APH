@@ -1184,7 +1184,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.14 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.15 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1265,7 +1265,8 @@ function groupByCategory(items, catOf){
 // Version 3: 937 report counts from the daily sheet; satisfaction and the overall index from the weekly 937 sheet.
 // Version 4: the standing targets set by the performance unit (KPI_TARGETS).
 // Version 5: bed occupancy is judged against a 75% target instead of the 75–85% band.
-const KPI_LAYOUT_V = 5;
+// Version 6: patient experience (OPD) target 88.69%.
+const KPI_LAYOUT_V = 6;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1304,7 +1305,8 @@ const KPI_TARGETS = {
     PSY_NOSHOW_PCT:           { v: 4, target: 15,   direction: "lower" },
     CALLS937_OVERALL_INDEX:   { v: 4, target: 95 },
     OCC_WITH_HOME_PCT:        { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null },
-    OCC_NO_HOME_PCT:          { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null }
+    OCC_NO_HOME_PCT:          { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null },
+    PATIENT_EXP_OPD:          { v: 6, target: 88.69, direction: "higher" }
 };
 // Removed from the platform at the owner's request (layout 3).
 const KPI_REMOVED = ["ED_LOS_HOURS", "DISCHARGES_DAILY", "MED_ERR_REPORTING_DOCTORS", "MED_ERR_REPORTING_NURSES", "DRUGMAIL_SHIPMENTS_WEEKLY", "DRUGMAIL_SHIPMENTS_MONTHLY"];
