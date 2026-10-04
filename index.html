@@ -346,6 +346,18 @@
         .entry-tabs button.on span { color: #7dd3fc; }
         .entry-tabs button:disabled { opacity: .4; cursor: not-allowed; }
         .entry-hint { background: #f0f9ff; border: 1px solid #bae6fd; color: #075985; border-radius: 12px; padding: 10px 12px; font-size: 11.5px; line-height: 1.8; }
+        /* Data management (official Excel template) */
+        .dm-tabs { display: flex; flex-wrap: wrap; gap: 4px; background: #eef2f6; border-radius: 14px; padding: 4px; }
+        .dm-tabs button { font-size: 12px; font-weight: 800; color: #475569; padding: 9px 14px; border-radius: 10px; }
+        .dm-tabs button.on { background: #0b1f33; color: #fff; }
+        .dm-tile { border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; background: #fff; }
+        .dm-tile .lbl { font-size: 10.5px; font-weight: 800; color: #64748b; }
+        .dm-tile .val { font-size: 22px; font-weight: 900; color: #0f172a; margin-top: 4px; font-variant-numeric: tabular-nums; }
+        .dm-tile .sub { font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+        .dm-tile.good .val { color: #047857; } .dm-tile.warn .val { color: #b45309; } .dm-tile.bad .val { color: #b91c1c; } .dm-tile.info .val { color: #0369a1; }
+        .dm-file-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 12px; padding: 10px 12px; font-size: 12px; font-weight: 600; }
+        .dm-success { border: 1px solid #a7f3d0; background: #ecfdf5; border-radius: 16px; padding: 20px; }
+        td.dm-wrap { white-space: normal; min-width: 220px; max-width: 360px; line-height: 1.5; }
         .entry-warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 12px; padding: 10px 12px; font-size: 11.5px; font-weight: 600; }
         .entry-block { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 12px; padding: 10px 12px; font-size: 11.5px; font-weight: 600; }
 
@@ -471,6 +483,7 @@
             <nav class="desktop-nav items-center gap-1 bg-sky-950/40 p-1.5 rounded-2xl border border-sky-800/50">
                 <button data-section="dashboard" onclick="showSection('dashboard')" class="tab-btn active px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-chart-pie ml-1"></i> اللوحة</button>
                 <button data-section="data" onclick="showSection('data')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-pen-to-square ml-1"></i> إدخال واستيراد</button>
+                <button data-section="dataMgmt" onclick="showSection('dataMgmt')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-database ml-1"></i> إدارة البيانات</button>
                 <button data-section="kpis" onclick="showSection('kpis')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-bullseye ml-1"></i> المؤشرات</button>
                 <button data-section="targets" onclick="showSection('targets')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-flag-checkered ml-1"></i> المستهدفات</button>
                 <button data-section="quality" onclick="showSection('quality')" class="tab-btn px-4 py-2 rounded-xl text-xs whitespace-nowrap"><i class="fa-solid fa-shield-halved ml-1"></i> الجودة</button>
@@ -495,6 +508,7 @@
     <div class="mobile-nav bg-slate-900 text-white px-4 py-2 overflow-x-auto gap-2">
         <button data-section="dashboard" onclick="showSection('dashboard')" class="tab-btn active px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">اللوحة</button>
         <button data-section="data" onclick="showSection('data')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">إدخال البيانات</button>
+        <button data-section="dataMgmt" onclick="showSection('dataMgmt')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">إدارة البيانات</button>
         <button data-section="kpis" onclick="showSection('kpis')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">المؤشرات</button>
         <button data-section="targets" onclick="showSection('targets')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">المستهدفات</button>
         <button data-section="quality" onclick="showSection('quality')" class="tab-btn px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">الجودة</button>
@@ -519,7 +533,7 @@
             <div id="backupReminder" class="hidden"></div>
             <!-- FILTERS -->
             <div class="card p-4">
-                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">السنة المالية</label>
                         <select id="filterYear" onchange="populatePeriodOptions(); renderDashboard()"></select>
@@ -543,6 +557,18 @@
                         <label class="block text-xs font-bold text-slate-600 mb-1">فئة المؤشرات</label>
                         <select id="filterCategory" onchange="renderDashboard()">
                             <option value="ALL">جميع الفئات</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">الإدارة</label>
+                        <select id="filterDepartment" onchange="renderDashboard()">
+                            <option value="ALL">جميع الإدارات</option>
+                        </select>
+                    </div>
+                    <div id="filterFacilityBox" class="hidden">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">المنشأة</label>
+                        <select id="filterFacility" onchange="recordIndex = null; renderDashboard()">
+                            <option value="ALL">جميع المنشآت</option>
                         </select>
                     </div>
                     <div class="flex items-end">
@@ -826,6 +852,138 @@
             </div>
         </section>
 
+        <!-- ================= SECTION: DATA MANAGEMENT (official Excel template) ================= -->
+        <section id="sectionDataMgmt" class="hidden space-y-6">
+            <div class="card p-5 flex flex-wrap items-center justify-between gap-4">
+                <div class="min-w-0">
+                    <h3 class="font-bold text-sm text-slate-900">قالب Excel الرسمي — مصدر البيانات الرئيسي للمنصة</h3>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Excel ← فحص ← ربط الحقول ← قاعدة البيانات ← محرك المؤشرات ← اللوحة. لا يُحفظ أي سجل قبل اجتياز الفحص، ولا تتكرر السجلات: المفتاح الموجود يُحدَّث.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a id="dmTemplateLink" href="templates/APH_KPI_Data_Template_2026.xlsx" download class="btn btn-secondary text-xs whitespace-nowrap"><i class="fa-solid fa-download text-emerald-600 ml-1"></i> تحميل القالب</a>
+                    <button onclick="dmExportCurrent()" class="btn btn-secondary text-xs whitespace-nowrap" title="القراءات الحالية بأعمدة ورقة DATA، للصقها في القالب"><i class="fa-solid fa-file-export text-sky-600 ml-1"></i> البيانات الحالية بصيغة القالب</button>
+                    <label class="btn btn-primary text-xs whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-file-arrow-up ml-1"></i> رفع ملف Excel
+                        <input type="file" id="dmFile" accept=".xlsx,.xlsm,.xls" class="hidden" onchange="dmHandleFile(event)">
+                    </label>
+                </div>
+            </div>
+            <div id="dmSetupNotice" class="hidden entry-warn"></div>
+
+            <div class="dm-tabs" role="tablist" aria-label="إدارة البيانات">
+                <button type="button" data-dm="upload" onclick="dmTab('upload')"><i class="fa-solid fa-file-circle-check ml-1"></i> رفع وفحص</button>
+                <button type="button" data-dm="history" onclick="dmTab('history')"><i class="fa-solid fa-list-check ml-1"></i> سجل الاستيراد</button>
+                <button type="button" data-dm="quality" onclick="dmTab('quality')"><i class="fa-solid fa-gauge-high ml-1"></i> جودة البيانات</button>
+                <button type="button" data-dm="changes" onclick="dmTab('changes')"><i class="fa-solid fa-clock-rotate-left ml-1"></i> سجل التعديلات</button>
+                <button type="button" data-dm="master" onclick="dmTab('master')"><i class="fa-solid fa-sitemap ml-1"></i> البيانات المرجعية</button>
+            </div>
+
+            <!-- Upload & validation -->
+            <div id="dmPaneUpload" class="space-y-4">
+                <div id="dmUploadEmpty" class="card p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="step"><span class="step-num">1</span><div class="flex-1"><div class="text-xs font-bold text-slate-900">حمّل القالب وعبّئه</div><div class="text-[11px] text-slate-500 mt-0.5">ورقة DATA: سطر لكل قراءة، الخلايا الصفراء فقط.</div></div></div>
+                        <div class="step"><span class="step-num">2</span><div class="flex-1"><div class="text-xs font-bold text-slate-900">ارفع الملف</div><div class="text-[11px] text-slate-500 mt-0.5">تُقرأ ورقة IMPORT_TEMPLATE بأسماء الأعمدة لا بمواقعها.</div></div></div>
+                        <div class="step"><span class="step-num">3</span><div class="flex-1"><div class="text-xs font-bold text-slate-900">راجع شاشة الفحص</div><div class="text-[11px] text-slate-500 mt-0.5">الجديد والمحدَّث والمكرر والأخطاء مع الإجراء المقترح.</div></div></div>
+                        <div class="step"><span class="step-num">4</span><div class="flex-1"><div class="text-xs font-bold text-slate-900">IMPORT &amp; SAVE</div><div class="text-[11px] text-slate-500 mt-0.5">تُحفظ السجلات الصحيحة فقط وتتحدث اللوحة فوراً.</div></div></div>
+                    </div>
+                </div>
+                <div id="dmPreview" class="hidden space-y-4">
+                    <div class="card p-5 space-y-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-3">
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-sm text-slate-900">DATA VALIDATION — <span id="dmFileName" class="font-mono text-sky-700"></span></h3>
+                                <p id="dmFileMeta" class="text-[11px] text-slate-500 mt-0.5"></p>
+                            </div>
+                            <button onclick="dmReset()" class="btn btn-secondary text-xs">إلغاء</button>
+                        </div>
+                        <div id="dmFileErrors" class="hidden"></div>
+                        <div id="dmTiles" class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3"></div>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <label id="dmApproveBox" class="hidden flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer"><input type="checkbox" id="dmApprove" checked class="!w-4 !h-4"> اعتماد السجلات المستوردة مباشرة</label>
+                            <div class="flex flex-wrap items-center gap-2 mr-auto">
+                                <button id="dmErrorReportBtn" onclick="dmDownloadErrorReport()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-rose-600 ml-1"></i> Download Error Report</button>
+                                <button id="dmImportBtn" onclick="dmImport()" class="btn btn-primary text-xs"><i class="fa-solid fa-database ml-1"></i> VALIDATE &amp; IMPORT</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-5 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <h4 class="font-bold text-xs text-slate-900">الأخطاء والتحذيرات <span id="dmIssueCount" class="text-slate-400 font-semibold mr-1"></span></h4>
+                            <select id="dmIssueFilter" onchange="dmRenderIssues()" class="!w-48 !py-2 !text-xs" aria-label="تصفية">
+                                <option value="ALL">الكل</option><option value="ERROR">الأخطاء فقط</option><option value="WARNING">التحذيرات فقط</option><option value="DUPLICATE">المكررة فقط</option>
+                            </select>
+                        </div>
+                        <div class="overflow-auto max-h-[480px]">
+                            <table><thead><tr><th>Row</th><th>Field</th><th>Value</th><th>Error</th><th>Suggested Fix</th><th>المفتاح</th></tr></thead><tbody id="dmIssueBody"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+                <div id="dmResult" class="hidden"></div>
+            </div>
+
+            <!-- Import history -->
+            <div id="dmPaneHistory" class="hidden card p-5 space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                    <h3 class="font-bold text-sm text-slate-900">سجل الاستيراد (Import History)</h3>
+                    <button onclick="dmLoadHistory()" class="btn btn-secondary text-xs"><i class="fa-solid fa-rotate ml-1"></i> تحديث</button>
+                </div>
+                <div class="overflow-auto max-h-[560px]">
+                    <table><thead><tr><th>Batch</th><th>File</th><th>Date</th><th>User</th><th>Records</th><th>Inserted</th><th>Updated</th><th>Unchanged</th><th>Errors</th><th>Status</th><th></th></tr></thead><tbody id="dmHistoryBody"></tbody></table>
+                </div>
+            </div>
+
+            <!-- Data quality -->
+            <div id="dmPaneQuality" class="hidden space-y-4">
+                <div id="dmQualityTiles" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3"></div>
+                <div class="card p-5 space-y-3">
+                    <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-200 pb-3">
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-900">اكتمال البيانات لكل مؤشر منذ 01/01/2026</h3>
+                            <p class="text-[11px] text-slate-500">الفترات المتوقعة حسب دورية المؤشر حتى اليوم، مقابل الفترات التي لها قراءة.</p>
+                        </div>
+                        <button onclick="dmRenderQuality()" class="btn btn-secondary text-xs"><i class="fa-solid fa-rotate ml-1"></i> إعادة الحساب</button>
+                    </div>
+                    <div class="overflow-auto max-h-[520px]">
+                        <table><thead><tr><th>المؤشر</th><th>الدورية</th><th>المتوقع</th><th>المعبأ</th><th>الاكتمال</th><th>قيم شاذة</th><th>آخر قراءة</th></tr></thead><tbody id="dmQualityBody"></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Record change history -->
+            <div id="dmPaneChanges" class="hidden card p-5 space-y-3">
+                <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-200 pb-3">
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900">سجل تعديلات السجلات (Audit Log)</h3>
+                        <p class="text-[11px] text-slate-500">كل إضافة أو تعديل أو حذف منطقي: القيمة القديمة والجديدة، المستخدم، الوقت، الدفعة والسبب. لا تُحذف السجلات نهائياً.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="dmChangesKpi" class="!w-56 !py-2 !text-xs" aria-label="المؤشر" onchange="dmLoadChanges()"></select>
+                        <input id="dmChangesSince" type="date" class="!w-40 !py-2 !text-xs" aria-label="منذ" onchange="dmLoadChanges()">
+                        <button onclick="dmExportChanges()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير</button>
+                    </div>
+                </div>
+                <div class="overflow-auto max-h-[560px]">
+                    <table><thead><tr><th>الوقت</th><th>المستخدم</th><th>الإجراء</th><th>المؤشر</th><th>التاريخ</th><th>الحقول</th><th>القيمة القديمة</th><th>القيمة الجديدة</th><th>الدفعة</th><th>السبب</th></tr></thead><tbody id="dmChangesBody"></tbody></table>
+                </div>
+            </div>
+
+            <!-- Master data -->
+            <div id="dmPaneMaster" class="hidden grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div class="card p-5 space-y-3">
+                    <h3 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-3">المنشآت (FACILITIES)</h3>
+                    <div class="overflow-auto"><table><thead><tr><th>Facility_ID</th><th>المنشأة</th><th>التجمع</th><th>المنطقة</th><th>الحالة</th></tr></thead><tbody id="dmFacilitiesBody"></tbody></table></div>
+                    <div class="border-b border-slate-200 pb-3 pt-2"><h3 class="font-bold text-sm text-slate-900">التصنيفات (Categories)</h3></div>
+                    <div class="overflow-auto"><table><thead><tr><th>Category_ID</th><th>التصنيف</th><th>الأب</th></tr></thead><tbody id="dmCategoriesBody"></tbody></table></div>
+                </div>
+                <div class="card p-5 space-y-3">
+                    <h3 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-3">الإدارات والأقسام (DEPARTMENTS)</h3>
+                    <div class="overflow-auto"><table><thead><tr><th>Department_ID</th><th>الإدارة</th><th>الأم</th><th>النوع</th><th>الحالة</th></tr></thead><tbody id="dmDepartmentsBody"></tbody></table></div>
+                    <p id="dmMasterNote" class="text-[11px] text-slate-500 leading-5"></p>
+                </div>
+            </div>
+        </section>
+
         <!-- ================= SECTION: KPIS ================= -->
         <section id="sectionKpis" class="hidden space-y-6">
             <div class="card p-5 flex flex-wrap justify-between items-center gap-3">
@@ -981,8 +1139,8 @@
             <div><label class="block font-bold text-slate-700 mb-1">دورية رفع التقارير</label>
                 <select id="kpiReportingFrequency"><option value="monthly">شهري</option><option value="quarterly">ربع سنوي</option><option value="annual">سنوي</option></select>
             </div>
-            <div><label class="block font-bold text-slate-700 mb-1">معادلة الحساب والتجميع</label>
-                <select id="kpiAggregation"><option value="SUM">مجموع (SUM)</option><option value="AVERAGE">متوسط (AVERAGE)</option><option value="WEIGHTED_AVERAGE">متوسط موزون</option><option value="RATIO">نسبة مئوية (بسط/مقام)</option><option value="LAST_VALUE">آخر قيمة مسجلة</option></select>
+            <div><label class="block font-bold text-slate-700 mb-1">نوع الحساب (Calculation_Type)</label>
+                <select id="kpiCalcType"></select>
             </div>
             <div>
                 <label class="block font-bold text-slate-700 mb-1">مستهدف الملف (افتراضي)</label>
@@ -990,7 +1148,7 @@
                 <p id="targetLockMessage" class="text-[10px] text-slate-400 mt-1"></p>
             </div>
             <div><label class="block font-bold text-slate-700 mb-1">اتجاه الأداء المفضل</label>
-                <select id="kpiDirection"><option value="higher">الأعلى أفضل (Higher is Better)</option><option value="lower">الأقل أفضل (Lower is Better)</option><option value="target">مرتبط بقيمة مستهدفة دقيقة</option><option value="none">غير محدد (يحتاج مراجعة)</option></select>
+                <select id="kpiDirection"><option value="higher">الأعلى أفضل (Higher is Better)</option><option value="lower">الأقل أفضل (Lower is Better)</option><option value="target">مرتبط بقيمة مستهدفة دقيقة</option><option value="info">معلوماتي (Informational)</option><option value="none">غير محدد (يحتاج مراجعة)</option></select>
             </div>
             <div><label class="block font-bold text-slate-700 mb-1">مصدر البيانات</label><input id="kpiDataSource"></div>
             <div><label class="block font-bold text-slate-700 mb-1">مالك المؤشر</label><input id="kpiOwner"></div>
@@ -1072,6 +1230,28 @@
         <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button onclick="closeQuarterModal()" class="btn btn-secondary text-xs">إلغاء</button>
             <button onclick="saveQuarterValues()" class="btn btn-primary text-xs"><i class="fa-solid fa-floppy-disk ml-1"></i> حفظ القيم</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: IMPORT BATCH ================= -->
+<div id="batchModal" class="modal hidden" onclick="if(event.target === this) closeBatchModal()">
+    <div class="modal-box modal-wide space-y-4" role="dialog" aria-modal="true" aria-labelledby="batchTitle">
+        <div class="flex justify-between items-start gap-3 border-b border-slate-200 pb-3">
+            <div class="min-w-0">
+                <h3 id="batchTitle" class="text-base font-bold text-slate-900"></h3>
+                <p id="batchSub" class="text-[11px] text-slate-500 mt-0.5"></p>
+            </div>
+            <button onclick="closeBatchModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold" aria-label="إغلاق">&times;</button>
+        </div>
+        <div id="batchTiles" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3"></div>
+        <div class="overflow-auto max-h-[420px] rounded-2xl border border-slate-200">
+            <table><thead><tr><th>Row</th><th>Field</th><th>Value</th><th>Error</th><th>Suggested Fix</th><th>المفتاح</th></tr></thead><tbody id="batchErrors"></tbody></table>
+        </div>
+        <div class="flex flex-wrap justify-end gap-3 pt-3 border-t border-slate-200">
+            <button id="batchChangesBtn" onclick="dmShowBatchChanges()" class="btn btn-secondary text-xs"><i class="fa-solid fa-clock-rotate-left ml-1"></i> تعديلات هذه الدفعة</button>
+            <button onclick="dmDownloadBatchReport()" class="btn btn-secondary text-xs"><i class="fa-solid fa-file-excel text-rose-600 ml-1"></i> Download Error Report</button>
+            <button onclick="closeBatchModal()" class="btn btn-primary text-xs">إغلاق</button>
         </div>
     </div>
 </div>
@@ -1183,13 +1363,13 @@
 
 <!-- ================= SCRIPT ================= -->
 <script>
-const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V5", users: "ASEER_USERS_V5", kpis: "ASEER_KPIS_V5", records: "ASEER_RECORDS_V5", audit: "ASEER_AUDIT_V5", session: "ASEER_SESSION_V5", pending: "ASEER_PENDING_SYNC_V5", lastBackup: "ASEER_LAST_BACKUP_V5" };
+const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V5", users: "ASEER_USERS_V5", kpis: "ASEER_KPIS_V5", records: "ASEER_RECORDS_V5", audit: "ASEER_AUDIT_V5", session: "ASEER_SESSION_V5", pending: "ASEER_PENDING_SYNC_V5", lastBackup: "ASEER_LAST_BACKUP_V5", batches: "ASEER_IMPORT_BATCHES_V5" };
 // Keys used by the previous version, so existing data entries are carried over.
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.21 — 2026-10-04";
-const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
+const APP_VERSION = "الإصدار 4.0 — 2026-10-04";
+const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
     { username: "admin", password: "admin123", displayName: "عبدالعزيز عبدالله ال زربه", role: "admin", active: true },
@@ -1198,11 +1378,162 @@ const defaultUsers = [
 ];
 
 const permissions = {
-    admin: { exportRecords:true, dashboard:true, data:true, kpis:true, targets:true, quality:true, users:true, audit:true, import:true, approve:true, editTarget:true, editKpi:true, deleteKpi:true, export:true },
-    manager: { exportRecords:true, dashboard:true, data:true, kpis:false, targets:true, quality:true, users:false, audit:false, import:true, approve:true, editTarget:true, editKpi:false, deleteKpi:false, export:true },
-    data: { exportRecords:true, dashboard:true, data:true, kpis:false, targets:false, quality:true, users:false, audit:false, import:true, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false },
-    visitor: { dashboard:true, data:false, kpis:false, targets:false, quality:false, users:false, audit:false, import:false, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false }
+    admin: { exportRecords:true, dashboard:true, data:true, dataMgmt:true, kpis:true, targets:true, quality:true, users:true, audit:true, import:true, approve:true, editTarget:true, editKpi:true, deleteKpi:true, export:true },
+    manager: { exportRecords:true, dashboard:true, data:true, dataMgmt:true, kpis:false, targets:true, quality:true, users:false, audit:false, import:true, approve:true, editTarget:true, editKpi:false, deleteKpi:false, export:true },
+    data: { exportRecords:true, dashboard:true, data:true, dataMgmt:true, kpis:false, targets:false, quality:true, users:false, audit:false, import:true, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false },
+    visitor: { dashboard:true, data:false, dataMgmt:false, kpis:false, targets:false, quality:false, users:false, audit:false, import:false, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false }
 };
+
+// =====================================================================
+// Official Excel template (templates/APH_KPI_Data_Template_<year>.xlsx) and its import.
+// Facility, department and category codes are shared with supabase/setup.sql and the template:
+// tools/build_excel_template.py reads them (and the KPI list) from this file, rebuilds the template
+// and rewrites the seed block in setup.sql. Change them here, then run the builder.
+// =====================================================================
+const TEMPLATE_VERSION = "1.0";
+const TEMPLATE_FILE = "templates/APH_KPI_Data_Template_2026.xlsx";
+// First date accepted; there is no end date (any date up to today).
+const DATA_START_DATE = "2026-01-01";
+const MASTER_FACILITIES = [
+    { id:"FAC001", name:"Eradah and Mental Health Hospital - Abha", nameAr:"مستشفى إرادة والصحة النفسية بأبها", cluster:"تجمع عسير الصحي", region:"عسير", primary:true, active:true }
+];
+const MASTER_DEPARTMENTS = [
+    { id:"DEP001", name:"Medical Services", nameAr:"الخدمات العلاجية", parentId:"", type:"إدارة", active:true },
+    { id:"DEP002", name:"Pharmacy / Medication Safety", nameAr:"الصيدلية / السلامة الدوائية", parentId:"DEP001", type:"قسم", active:true },
+    { id:"DEP003", name:"Support Services", nameAr:"الخدمات المساندة", parentId:"", type:"إدارة", active:true },
+    { id:"DEP004", name:"Laboratory", nameAr:"المختبر", parentId:"DEP001", type:"قسم", active:true },
+    { id:"DEP005", name:"Emergency Department", nameAr:"الطوارئ", parentId:"DEP001", type:"قسم", active:true },
+    { id:"DEP006", name:"Outpatient Clinics", nameAr:"العيادات الخارجية", parentId:"DEP001", type:"قسم", active:true },
+    { id:"DEP007", name:"Medical Coordination", nameAr:"التنسيق الطبي", parentId:"", type:"إدارة", active:true },
+    { id:"DEP008", name:"Quality Management", nameAr:"إدارة الجودة", parentId:"", type:"إدارة", active:true },
+    { id:"DEP009", name:"Occupational Health", nameAr:"الصحة المهنية", parentId:"DEP008", type:"قسم", active:true },
+    { id:"DEP010", name:"Engineering Affairs", nameAr:"الشؤون الهندسية", parentId:"", type:"إدارة", active:true },
+    { id:"DEP011", name:"937 Call Center", nameAr:"مركز 937", parentId:"", type:"وحدة", active:true },
+    { id:"DEP012", name:"Patient Experience", nameAr:"تجربة المريض", parentId:"", type:"إدارة", active:true },
+    { id:"DEP013", name:"Finance", nameAr:"الإدارة المالية", parentId:"", type:"إدارة", active:true }
+];
+const MASTER_CATEGORIES = [
+    { id:"CAT01", name:"Medical Services", nameAr:"الخدمات العلاجية", parentId:"" },
+    { id:"CAT02", name:"Pharmacy", nameAr:"الصيدلية", parentId:"CAT01" },
+    { id:"CAT03", name:"Laboratory (Enayati)", nameAr:"المختبر (عينتي)", parentId:"CAT01" },
+    { id:"CAT04", name:"Emergency", nameAr:"الطوارئ", parentId:"" },
+    { id:"CAT05", name:"Clinics", nameAr:"العيادات", parentId:"" },
+    { id:"CAT06", name:"Quality", nameAr:"الجودة", parentId:"" },
+    { id:"CAT07", name:"Engineering Affairs", nameAr:"الشؤون الهندسية", parentId:"" },
+    { id:"CAT08", name:"Medical Coordination", nameAr:"التنسيق الطبي", parentId:"" },
+    { id:"CAT09", name:"937 Reports", nameAr:"بلاغات 937", parentId:"" },
+    { id:"CAT10", name:"Patient Experience", nameAr:"تجربة المريض", parentId:"" },
+    { id:"CAT11", name:"Self Revenue", nameAr:"الموارد الذاتية", parentId:"" }
+];
+// How a reading's value is formed and aggregated over a period. mult > 0: value = numerator ÷ denominator × mult;
+// mult 0: the value is entered. agg is the engine's aggregation (aggregateRows). Same list as app_calc_multiplier().
+const CALC_TYPES = {
+    COUNT:              { label:"عدد — يُجمع عبر الفترة", mult:0, agg:"SUM" },
+    SUM:                { label:"مجموع (مبالغ/كميات) — يُجمع عبر الفترة", mult:0, agg:"SUM" },
+    AVERAGE:            { label:"متوسط القراءات", mult:0, agg:"AVERAGE" },
+    WEIGHTED_AVERAGE:   { label:"متوسط موزون (الوزن يُدخل من المنصة)", mult:0, agg:"WEIGHTED_AVERAGE" },
+    LAST_VALUE:         { label:"آخر قيمة في الفترة", mult:0, agg:"LAST_VALUE" },
+    TARGET_ACHIEVEMENT: { label:"قيمة تُقارن بالمستهدف", mult:0, agg:"AVERAGE" },
+    PERCENTAGE:         { label:"نسبة مئوية = البسط ÷ المقام × 100", mult:100, agg:"RATIO" },
+    COMPLIANCE:         { label:"نسبة امتثال = الممتثل ÷ الإجمالي × 100", mult:100, agg:"RATIO" },
+    RATIO:              { label:"نسبة = البسط ÷ المقام", mult:1, agg:"RATIO" },
+    RATE:               { label:"معدل لكل 100", mult:100, agg:"RATIO" },
+    RATE_PER_1000:      { label:"معدل لكل 1,000", mult:1000, agg:"RATIO" },
+    RATE_PER_100000:    { label:"معدل لكل 100,000", mult:100000, agg:"RATIO" }
+};
+// A KPI's calculation type: its own, else inferred from the aggregation (same rule as app_calc_type()).
+function calcTypeOf(k){
+    if(k.calculationType && CALC_TYPES[k.calculationType]) return k.calculationType;
+    const agg = k.aggregation;
+    if(agg === "RATIO") return "PERCENTAGE";
+    if(agg === "SUM") return !k.unit || k.unit === "عدد" ? "COUNT" : "SUM";
+    return CALC_TYPES[agg] ? agg : "AVERAGE";
+}
+const ratioMultiplier = k => CALC_TYPES[calcTypeOf(k)].mult || 100;
+const PERIOD_TYPES = { daily:"DAILY", weekly:"WEEKLY", monthly:"MONTHLY", quarterly:"QUARTERLY", annual:"ANNUAL" };
+const periodTypeOf = k => PERIOD_TYPES[k.frequency] || "DAILY";
+const DIRECTION_CODES = { higher:"HIGHER_IS_BETTER", lower:"LOWER_IS_BETTER", target:"TARGET_BASED", info:"INFORMATIONAL", none:"INFORMATIONAL", range:"RANGE_BASED", conditional:"CONDITIONAL" };
+// Allowed value range: validMin / validMax on the KPI; by default no negatives, and values entered as
+// percentages stay within 100 (same rule as import_rows()).
+function validRange(k){
+    const min = "validMin" in k ? (isNum(k.validMin) ? Number(k.validMin) : null) : 0;
+    const max = "validMax" in k ? (isNum(k.validMax) ? Number(k.validMax) : null) : (k.unit === "%" && calcTypeOf(k) !== "PERCENTAGE" ? 100 : null);
+    return [min, max];
+}
+// Row checks: the same codes appear in the template's VALIDATION sheet, on the import screen and in the error report.
+const IMPORT_CODES = {
+    E01: { level:"ERROR", ar:"قيمة القياس ناقصة: مؤشرات النسب تحتاج البسط والمقام، وغيرها يحتاج القيمة الفعلية", en:"Missing measurement value", fix:"أدخل البسط والمقام لمؤشرات النسب، أو القيمة الفعلية لغيرها" },
+    E02: { level:"ERROR", ar:"تاريخ القياس غير صالح", en:"Invalid Measurement_Date", fix:"اكتب التاريخ كتاريخ Excel أو بصيغة DD/MM/YYYY" },
+    E03: { level:"ERROR", ar:"التاريخ خارج النطاق: قبل 01/01/2026 أو بعد تاريخ اليوم", en:"Date out of range", fix:"صحح التاريخ؛ لا تُقبل قراءات قبل 01/01/2026 أو لتواريخ مستقبلية" },
+    E04: { level:"ERROR", ar:"المؤشر غير موجود في جدول المؤشرات", en:"Indicator does not exist in Master Indicators", fix:"صحح Indicator_ID أو أضف المؤشر إلى INDICATORS وإلى المنصة" },
+    E05: { level:"ERROR", ar:"الإدارة غير موجودة أو غير نشطة", en:"Department not found or inactive", fix:"اختر Department_ID من القائمة أو أضف الإدارة إلى DEPARTMENTS" },
+    E06: { level:"ERROR", ar:"المنشأة غير موجودة أو غير نشطة", en:"Facility not found or inactive", fix:"اختر Facility_ID من القائمة أو أضف المنشأة إلى FACILITIES" },
+    E07: { level:"ERROR", ar:"قيمة نصية في حقل رقمي", en:"Text in a numeric field", fix:"اكتب أرقاماً فقط بدون رموز أو مسافات (مثال 92.5 وليس 92.5%)" },
+    E08: { level:"ERROR", ar:"المقام يساوي صفراً", en:"Denominator is zero", fix:"أدخل مقاماً أكبر من صفر، أو اترك السطر فارغاً إذا لم تتوفر البيانات" },
+    E09: { level:"ERROR", ar:"قيمة غير منطقية: سالبة أو خارج الحد المسموح للمؤشر (مثل نسبة أكبر من 100%)", en:"Value outside the allowed range", fix:"راجع القيمة أو البسط والمقام؛ الحدود في Minimum_Acceptable و Maximum_Acceptable" },
+    E11: { level:"ERROR", ar:"سجل بدون مفتاح فريد: المنشأة أو الإدارة أو المؤشر أو نوع الفترة أو التاريخ فارغ", en:"Record without Unique Key", fix:"عبّئ الحقول الخمسة الإلزامية" },
+    E12: { level:"ERROR", ar:"نوع الفترة غير صحيح أو لا يطابق دورية المؤشر", en:"Period_Type invalid or does not match indicator frequency", fix:"اختر نوع الفترة المطابق لعمود Frequency في INDICATORS" },
+    E13: { level:"ERROR", ar:"المؤشر غير نشط", en:"Indicator is inactive", fix:"فعّل المؤشر من المنصة أو احذف السطر" },
+    E14: { level:"ERROR", ar:"مؤشر محسوب تلقائياً لا يُدخل", en:"Calculated indicator; not entered", fix:"احذف السطر؛ تحسبه المنصة من مؤشراته المصدر" },
+    E16: { level:"ERROR", ar:"السجل معتمد أو أدخله مستخدم آخر، ولا يعدّله إلا مدير الأداء", en:"Approved or another user's record", fix:"اطلب من مدير الأداء رفع التعديل أو إلغاء الاعتماد" },
+    E17: { level:"ERROR", ar:"رفض الخادم السجل", en:"Rejected by the server", fix:"راجع السطر وأعد الرفع" },
+    W01: { level:"WARNING", ar:"لا يوجد مستهدف للمؤشر", en:"Target not set", fix:"يُستورد السجل؛ حدد المستهدف من صفحة المستهدفات في المنصة" },
+    W02: { level:"WARNING", ar:"التاريخ ليس بداية الفترة وسيُسجل على بداية الأسبوع/الشهر/الربع", en:"Date normalized to period start", fix:"لا يلزم إجراء؛ للدقة اكتب تاريخ بداية الفترة" },
+    W03: { level:"WARNING", ar:"البسط أكبر من المقام", en:"Numerator greater than denominator", fix:"تحقق من الأرقام" },
+    W05: { level:"DUPLICATE", ar:"سجل مكرر في الملف لنفس المفتاح — يُعتمد آخر سطر ويُتجاهل هذا", en:"Duplicate record in file; last one wins", fix:"احذف السطر المكرر أو وحّد القيمة" }
+};
+// Per-KPI template settings applied by layout 13 (English name, calculation type, allowed range,
+// numerator/denominator definitions). Fields already set on a KPI are kept.
+const KPI_TEMPLATE_META = {
+    INPATIENTS_WITH_HOME: { englishName:"Inpatients (incl. halfway house)" },
+    OCC_WITH_HOME_PCT: { englishName:"Bed occupancy % (incl. halfway house)", validMax:null, numeratorDefinition:"عدد المرضى المنومين مع المنزل (INPATIENTS_WITH_HOME)", denominatorDefinition:"153 سريراً معتمداً" },
+    INPATIENTS_NO_HOME: { englishName:"Inpatients (excl. halfway house)" },
+    OCC_NO_HOME_PCT: { englishName:"Bed occupancy % (excl. halfway house)", validMax:null, numeratorDefinition:"عدد المرضى المنومين بدون المنزل (INPATIENTS_NO_HOME)", denominatorDefinition:"123 سريراً معتمداً" },
+    READMIT30_ALL: { englishName:"30-day readmission rate - total", validMax:100, numeratorDefinition:"مجموع بسط الطب النفسي والإدمان", denominatorDefinition:"مجموع مقام الطب النفسي والإدمان" },
+    READMIT30_PSY: { englishName:"30-day readmission rate - psychiatry", validMax:100, numeratorDefinition:"المعادون خلال 30 يوماً بنفس التشخيص", denominatorDefinition:"المخرَّجون أحياء" },
+    READMIT30_DETOX: { englishName:"30-day readmission rate - detox & post-detox", validMax:100, numeratorDefinition:"المعادون خلال 30 يوماً بنفس التشخيص", denominatorDefinition:"المخرَّجون أحياء" },
+    MED_ERR_REPORTING_PHARMACISTS: { englishName:"Medication safety (error reporting)", validMax:null, numeratorDefinition:"الأخطاء الدوائية المرفوعة", denominatorDefinition:"عدد الأخطاء المطلوبة (الصيادلة)" },
+    DRUGMAIL_SHIPMENTS_DAILY: { englishName:"Drug mail shipments" },
+    LAB_COMPLETION_PCT: { englishName:"Enayati lab completion %", validMax:100, numeratorDefinition:"الفحوصات المنجزة", denominatorDefinition:"الفحوصات المستلمة" },
+    ED_VISITS: { englishName:"Emergency visits" },
+    ED_REVISIT_72H: { englishName:"Unplanned return to ED within 72 hours", validMax:100, numeratorDefinition:"حالات العودة غير المخططة خلال 72 ساعة", denominatorDefinition:"إجمالي مراجعي الطوارئ المعالجين" },
+    PSY_CLINIC_VISITS: { englishName:"Outpatient clinic visits (APEX)" },
+    PSY_NOSHOW_COUNT: { englishName:"Clinic no-shows (APEX)" },
+    PSY_NOSHOW_PCT: { englishName:"Clinic no-show rate", validMax:100, numeratorDefinition:"PSY_NOSHOW_COUNT", denominatorDefinition:"PSY_CLINIC_VISITS" },
+    TELE_APPTS: { englishName:"Telemedicine appointments" },
+    APPT_OUTGOING_CALLS: { englishName:"Appointment coordination calls" },
+    APPT_CONFIRMED: { englishName:"Confirmed appointments" },
+    APPT_CONFIRM_PCT: { englishName:"Confirmation rate of coordination calls", validMax:100, numeratorDefinition:"APPT_CONFIRMED", denominatorDefinition:"APPT_OUTGOING_CALLS" },
+    CLINIC_CONFIRM_PCT_OF_VISITS: { englishName:"Confirmed by call as % of clinic visits", validMax:null, numeratorDefinition:"APPT_CONFIRMED", denominatorDefinition:"PSY_CLINIC_VISITS" },
+    APPT_POSTPONE_REQ: { englishName:"Postponement requests" },
+    SENTINEL_EVENTS: { englishName:"Sentinel events" },
+    MYSTERY_SHOPPER: { englishName:"Mystery shopper score" },
+    OCC_HEALTH: { englishName:"Occupational health index" },
+    MAINT_REQUESTS: { englishName:"Maintenance requests" },
+    MAINT_COMPLETED: { englishName:"Maintenance requests completed" },
+    MAINT_COMPLETION_PCT: { englishName:"Maintenance completion rate", validMax:100, numeratorDefinition:"MAINT_COMPLETED", denominatorDefinition:"MAINT_REQUESTS" },
+    SECURITY_OBS: { englishName:"Security observations" },
+    SWITCH_INCOMING_CALLS: { englishName:"Switchboard incoming calls" },
+    REFERRALS_OUT: { englishName:"Referrals sent" },
+    REFERRALS_IN: { englishName:"Referrals received" },
+    CALLS937_REPORTS: { englishName:"937 reports" },
+    CALLS937_CLOSED: { englishName:"937 reports closed" },
+    CALLS937_SATISFACTION: { englishName:"937 closure satisfaction" },
+    CALLS937_OVERALL_INDEX: { englishName:"937 overall index" },
+    CALLS937_REPORTS_WEEKLY: { englishName:"937 reports (weekly sheet)" },
+    CALLS937_CLOSURE_RATE: { englishName:"937 closure rate (weekly)" },
+    PATIENT_EXP_OPD: { englishName:"Patient experience - OPD" },
+    SELF_REVENUE: { englishName:"Self revenue" }
+};
+// Layout 13: codes and calculation settings for the template (fields the admin already set are kept).
+function applyTemplateMeta(k){
+    const dep = MASTER_DEPARTMENTS.find(d => d.nameAr === k.department);
+    const cat = MASTER_CATEGORIES.find(c => c.nameAr === k.category);
+    if(!k.departmentId && dep) k.departmentId = dep.id;
+    if(!k.categoryId && cat) k.categoryId = cat.id;
+    if(!k.calculationType) k.calculationType = calcTypeOf(k);
+    Object.entries(KPI_TEMPLATE_META[k.code] || {}).forEach(([f, v]) => { if(!(f in k) || k[f] === "" ) k[f] = v; });
+}
 
 // Official KPI list from KPI_Dashboard_Ready.xlsx (03_KPI_MASTER); percentages are stored on a 0-100 scale.
 // KPIs added after the official workbook list. They are kept when a workbook import replaces the KPI list.
@@ -1276,7 +1607,8 @@ function groupByCategory(items, catOf){
 // Version 10: related KPIs grouped (beds, re-admission, clinics with telemedicine and appointments).
 // Version 11: official Q3 2026 maintenance figures (474 reported, 472 completed).
 // Version 12: maintenance completion target from Q3 (99.58%); Ainati lab 98% for Q1–Q3 2026.
-const KPI_LAYOUT_V = 12;
+// Version 13: department, category and calculation codes of the official Excel template (applyTemplateMeta).
+const KPI_LAYOUT_V = 13;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1382,9 +1714,12 @@ function applyKpiLayout(list, recs){
     });
     list.forEach(k => {
         if((k.layoutV || 0) >= KPI_LAYOUT_V) return;
-        if(catOf[k.code]) k.category = catOf[k.code];
-        k.group = GROUP_OF[k.code] || null;
-        Object.assign(k, KPI_RENAMES[k.code] || {});
+        // Categories, groups and names were set up to layout 12; a KPI already there keeps the admin's edits.
+        if((k.layoutV || 0) < 12){
+            if(catOf[k.code]) k.category = catOf[k.code];
+            k.group = GROUP_OF[k.code] || null;
+            Object.assign(k, KPI_RENAMES[k.code] || {});
+        }
         if(KPI_HIDDEN.includes(k.code) && (k.layoutV || 0) < 3) k.active = false;
         const official = OFFICIAL_QUARTERS[k.code];
         if(official && (k.layoutV || 0) < official.v)
@@ -1397,6 +1732,7 @@ function applyKpiLayout(list, recs){
             // A band set for a year on the targets page no longer applies once the KPI has a single target.
             if(fields.direction && fields.direction !== "range" && k.targets) Object.values(k.targets).forEach(e => { delete e.rangeMin; delete e.rangeMax; });
         }
+        if((k.layoutV || 0) < 13) applyTemplateMeta(k);
         k.layoutV = KPI_LAYOUT_V;
         changed.push(k);
     });
@@ -1634,7 +1970,10 @@ function indexedRecords(code, year){
     if(!recordIndex){
         recordIndex = new Map(); lastReading = new Map();
         // Every reading counts on the dashboard as soon as it is entered; approval is a monthly sign-off.
+        // The facility filter (shown once there is more than one facility) limits the readings counted.
+        const fac = document.getElementById("filterFacility")?.value || "ALL", primary = primaryFacilityId();
         records.forEach(r => {
+            if(fac !== "ALL" && (r.facilityId || primary) !== fac) return;
             if(isNum(r.actualValue) || isNum(r.numerator)){ const d = lastReading.get(r.kpiCode); if(!d || r.date > d) lastReading.set(r.kpiCode, r.date); }
             const key = r.kpiCode + "|" + r.year;
             if(!recordIndex.has(key)) recordIndex.set(key, []);
@@ -1707,7 +2046,9 @@ function rowToRecord(row){
         actualValue: row.actual, numerator: row.numerator, denominator: row.denominator, weight: row.weight,
         dataSource: row.data_source || "", notes: row.notes || "", dq: row.dq || "", approved: row.approved === true,
         createdBy: row.created_by || "", createdUser: row.created_user || undefined, createdAt: row.created_at,
-        updatedBy: row.updated_by, updatedAt: row.updated_at, approvedBy: row.approved_by, approvedAt: row.approved_at
+        updatedBy: row.updated_by, updatedAt: row.updated_at, approvedBy: row.approved_by, approvedAt: row.approved_at,
+        recordKey: row.record_key || undefined, facilityId: row.facility_id || undefined, departmentId: row.department_id || undefined,
+        batchId: row.batch_id || undefined
     };
 }
 function recordToRow(r){
@@ -1726,6 +2067,7 @@ function sortKpisByOrder(list){
 }
 
 async function cloudLoadAll(){
+    await loadMasterData();
     const kRows = await fetchAll("kpis", q => q.order("code"));
     kpis = kRows.length ? sortKpisByOrder(kRows.map(r => r.data)) : defaultKpis.map(k => ({ ...k }));
     // New KPIs show for everyone at once; the admin's next sign-in stores them in the database.
@@ -2128,6 +2470,7 @@ function showSection(section){
     const titles = {
         dashboard:["لوحة مؤشرات الأداء التنفيذية", "نظرة شاملة وتحليل دقيق لعمليات المستشفى الإكلينيكية والتشغيلية"],
         data:["إدخال واستيراد البيانات", "إدخال القراءات يدوياً أو استيرادها من ملفات Excel"],
+        dataMgmt:["إدارة البيانات", "رفع قالب Excel الرسمي وفحصه، سجل الاستيراد، جودة البيانات وسجل التعديلات"],
         kpis:["تعريف مؤشرات الأداء", "إدارة المؤشرات المعتمدة وتعريفاتها"],
         targets:["المستهدفات السنوية", "يحددها مدير النظام أو مدير الأداء مرة واحدة لكل سنة، بمبرر موثق، وتُقفل بعد الاعتماد"],
         quality:["فحص جودة البيانات", "اكتشاف القيم المفقودة والمكررة والسجلات غير المكتملة"],
@@ -2139,6 +2482,7 @@ function showSection(section){
     if(section === "targets" && currentUser) renderTargets();
     if(section === "users" && currentUser) loadUsers();
     if(section === "audit" && currentUser) loadAudit();
+    if(section === "dataMgmt" && currentUser) dmShow();
     document.getElementById("pageTitle").textContent = titles[section][0];
     document.getElementById("pageSubtitle").textContent = titles[section][1];
 }
@@ -2167,6 +2511,18 @@ function populateFilters(){
     if(dl) dl.innerHTML = [...new Set([...CATEGORY_ORDER, ...used])].map(c => `<option value="${escapeAttr(c)}"></option>`).join("");
     cSel.innerHTML = `<option value="ALL">جميع الفئات</option>` + opts.map(([v, l]) => `<option value="${escapeAttr(v)}">${escapeHtml(l)}</option>`).join("");
     if(selectedCat && (selectedCat === "ALL" || opts.some(o => o[0] === selectedCat))) cSel.value = selectedCat;
+
+    // Department (from the KPIs on the dashboard) and facility (only when there is more than one).
+    const dSel = document.getElementById("filterDepartment"), selDept = dSel.value;
+    const depts = [...new Set(dashboardKpis().map(kpiDepartmentId).filter(Boolean))]
+        .map(id => [id, departmentName(id)]).sort((a, b) => a[1].localeCompare(b[1], "ar"));
+    dSel.innerHTML = `<option value="ALL">جميع الإدارات</option>` + depts.map(([v, l]) => `<option value="${escapeAttr(v)}">${escapeHtml(l)}</option>`).join("");
+    if(depts.some(d => d[0] === selDept)) dSel.value = selDept;
+    const fSel = document.getElementById("filterFacility"), selFac = fSel.value;
+    const facs = masterList("facilities").filter(f => f.active !== false);
+    fSel.innerHTML = `<option value="ALL">جميع المنشآت</option>` + facs.map(f => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.nameAr)}</option>`).join("");
+    if(facs.some(f => f.id === selFac)) fSel.value = selFac;
+    document.getElementById("filterFacilityBox").classList.toggle("hidden", facs.length < 2);
 }
 
 // ---- Direct entry ----
@@ -2581,7 +2937,7 @@ function aggregateRows(rows, kpi){
         // Ratio of totals: Σ numerator ÷ Σ denominator over the period (as in the source's quarterly sheet).
         const withDen = rows.filter(r => isNum(r.denominator));
         const den = withDen.reduce((s,r)=>s+Number(r.denominator),0);
-        if(withDen.length && den > 0) return rows.filter(r => isNum(r.numerator)).reduce((s,r)=>s+Number(r.numerator),0) / den * 100;
+        if(withDen.length && den > 0) return rows.filter(r => isNum(r.numerator)).reduce((s,r)=>s+Number(r.numerator),0) / den * ratioMultiplier(kpi);
         return avg();
     }
     if(m === "LAST_VALUE"){
@@ -2777,6 +3133,7 @@ function targetText(k, tgt){
 
 function getStatus(kpi, act, ach, target){
     if(act == null) return { key:"gray", label:"بدون بيانات" };
+    if(kpi.direction === "info") return { key:"gray", label:"مؤشر معلوماتي" };
     if(kpi.direction === "none" || !kpi.direction) return { key:"gray", label:"يحتاج تحديد الاتجاه" };
     if(kpi.direction === "conditional") return { key:"gray", label:"مؤشر مشروط" };
     if(kpi.direction === "range"){
@@ -2808,7 +3165,7 @@ function calcTrend(act, prev, kpi, target){
     const a = Number(act), p = Number(prev);
     const tol = Math.max(Math.abs(p)*0.01, 0.0001);
     if(Math.abs(a - p) <= tol) return { key:"stable", label:"مستقر ➔" };
-    if(kpi.direction === "none" || kpi.direction === "conditional" || (kpi.direction === "range" && !hasRange(kpi))) return a > p ? { key:"neutral", label:"ارتفاع ↑" } : { key:"neutral", label:"انخفاض ↓" };
+    if(kpi.direction === "none" || kpi.direction === "info" || kpi.direction === "conditional" || (kpi.direction === "range" && !hasRange(kpi))) return a > p ? { key:"neutral", label:"ارتفاع ↑" } : { key:"neutral", label:"انخفاض ↓" };
     let better;
     if(kpi.direction === "range"){
         const [lo, hi] = rangeOf(kpi);
@@ -2840,7 +3197,8 @@ function activeKpis(){ return kpis.filter(k => k.active !== false); }
 function dashboardKpis(){ return activeKpis().filter(k => !k.entryOnly); }
 
 function computeResults(year, q, cat){
-    return dashboardKpis().filter(k => inCategory(k, cat)).map(kpi => {
+    const dept = document.getElementById("filterDepartment")?.value || "ALL";
+    return dashboardKpis().filter(k => inCategory(k, cat) && (dept === "ALL" || kpiDepartmentId(k) === dept)).map(kpi => {
         const act = getPeriodValue(kpi.code, year, q);
         const prev = getPrevValue(kpi.code, year, q);
         const sameY = getSameQPrevYear(kpi.code, year, q);
@@ -3821,7 +4179,7 @@ function renderKpis(){
             <td class="font-bold">${escapeHtml(k.name)}${k.active === false ? ` <span class="pill status-gray !py-0.5 !px-2 !text-[10px] mr-1">غير نشط</span>` : ""}</td>
             <td>${escapeHtml(k.category || "—")}</td>
             <td>${frequencyName(k.frequency)}</td>
-            <td>${aggregationName(k.aggregation)}</td>
+            <td title="${escapeAttr(CALC_TYPES[calcTypeOf(k)].label)}">${calcTypeOf(k)}</td>
             <td><span class="pill ${effectiveTarget(k, thisYear()) == null ? "status-yellow" : "status-green"}">${effectiveTarget(k, thisYear()) == null ? "غير محدد" : targetLabel(k, targetFor(k, thisYear()))}</span></td>
             <td>${directionName(k.direction)}</td>
             <td class="text-xs text-slate-400">${k.targets?.[thisYear()]?.setAt ? new Date(k.targets[thisYear()].setAt).toLocaleDateString("ar-SA") : "—"}</td>
@@ -3833,8 +4191,8 @@ function renderKpis(){
     `).join("") : `<tr><td colspan="9" class="text-center py-6 text-slate-400">لا توجد مؤشرات معرفة</td></tr>`;
 }
 
-const KPI_FIELDS = { kpiCode:"code", kpiName:"name", kpiCategory:"category", kpiDepartment:"department", kpiUnit:"unit", kpiFrequency:"frequency", kpiReportingFrequency:"reportingFrequency", kpiAggregation:"aggregation", kpiTarget:"target", kpiDirection:"direction", kpiDefinition:"definition", kpiDataSource:"dataSource", kpiOwner:"owner", kpiGreenMin:"greenMin", kpiYellowMin:"yellowMin", kpiActive:"active" };
-const KPI_FIELD_DEFAULTS = { frequency:"monthly", reportingFrequency:"quarterly", aggregation:"AVERAGE", direction:"higher", active:"true" };
+const KPI_FIELDS = { kpiCode:"code", kpiName:"name", kpiCategory:"category", kpiDepartment:"department", kpiUnit:"unit", kpiFrequency:"frequency", kpiReportingFrequency:"reportingFrequency", kpiCalcType:"calculationType", kpiTarget:"target", kpiDirection:"direction", kpiDefinition:"definition", kpiDataSource:"dataSource", kpiOwner:"owner", kpiGreenMin:"greenMin", kpiYellowMin:"yellowMin", kpiActive:"active" };
+const KPI_FIELD_DEFAULTS = { frequency:"monthly", reportingFrequency:"quarterly", calculationType:"AVERAGE", direction:"higher", active:"true" };
 
 function openKpiModal(code){
     if(!can("editKpi")){ showToast("تعريف المؤشرات متاح لمدير النظام فقط."); return; }
@@ -3843,8 +4201,9 @@ function openKpiModal(code){
     document.getElementById("kpiModal").classList.remove("hidden");
     document.getElementById("editKpiOriginalCode").value = code || "";
     document.getElementById("kpiModalTitle").textContent = k ? "تعديل بيانات المؤشر" : "إضافة مؤشر جديد";
+    document.getElementById("kpiCalcType").innerHTML = Object.entries(CALC_TYPES).map(([c, t]) => `<option value="${c}">${c} — ${escapeHtml(t.label)}</option>`).join("");
     Object.entries(KPI_FIELDS).forEach(([id, key]) => {
-        const v = k ? (key === "active" ? String(k.active !== false) : k[key]) : undefined;
+        const v = k ? (key === "active" ? String(k.active !== false) : key === "calculationType" ? calcTypeOf(k) : k[key]) : undefined;
         document.getElementById(id).value = v ?? KPI_FIELD_DEFAULTS[key] ?? "";
     });
     document.getElementById("targetChangeReason").value = "";
@@ -3874,7 +4233,15 @@ async function saveKpi(){
     Object.entries(KPI_FIELDS).forEach(([id, key]) => form[key] = document.getElementById(id).value.trim());
     ["target","greenMin","yellowMin"].forEach(f => form[f] = form[f] === "" ? null : Number(form[f]));
     form.active = form.active !== "false";
+    form.code = form.code.toUpperCase();
+    // The calculation type decides the engine's aggregation; the department code follows the department name.
+    form.aggregation = CALC_TYPES[form.calculationType]?.agg || "AVERAGE";
+    const dep = (dmMaster.departments || MASTER_DEPARTMENTS).find(d => d.nameAr === form.department);
+    if(dep) form.departmentId = dep.id;
+    const cat = (dmMaster.categories || MASTER_CATEGORIES).find(c => c.nameAr === form.category);
+    if(cat) form.categoryId = cat.id;
     if(!form.code || !form.name){ showToast("أدخل الكود واسم المؤشر."); return; }
+    if(!/^[A-Z0-9_]{2,40}$/.test(form.code)){ showToast("كود المؤشر: أحرف إنجليزية كبيرة وأرقام و _ فقط (مثال ED_VISITS)."); return; }
     if(["target","greenMin","yellowMin"].some(f => form[f] != null && !Number.isFinite(form[f]))){ showToast("قيم المستهدف أو العتبات غير صالحة."); return; }
     if(kpis.some(k => k.code === form.code && k.code !== orig)){ showToast("كود المؤشر موجود مسبقاً."); return; }
 
@@ -4039,6 +4406,13 @@ async function handleExcelUpload(event){
     try {
         const workbook = XLSX.read(await file.arrayBuffer(), { type:"array", cellDates:true });
         importedRows = [];
+        // The official template (IMPORT_TEMPLATE / DATA with Indicator_ID) goes through the data management import.
+        if(dmLocateSheet(workbook)){
+            input.value = "";
+            showSection("dataMgmt"); dmTab("upload");
+            await dmProcessFile(file);
+            return;
+        }
         importWorkbookInfo = { fileName: file.name, sheets: workbook.SheetNames, mode:"rows" };
         const dashboardSheets = locateDashboardSheets(workbook);
         if(dashboardSheets){
@@ -4437,7 +4811,7 @@ function runQualityCheck(manual){
         if(!isNum(r.actualValue) && !r.dq && !isNum(r.numerator) && !isNum(r.denominator)){
             missing++; issues.push({ type:"قيمة مفقودة", kpi:label, date:r.date, desc:"القيمة الفعلية فارغة أو غير رقمية", sev:"HIGH" });
         }
-        const key = r.kpiCode + "|" + r.date;
+        const key = r.recordKey || r.kpiCode + "|" + r.date;
         if(seen.has(key)){ dup++; issues.push({ type:"سجل مكرر", kpi:label, date:r.date, desc:"يوجد أكثر من سجل لنفس المؤشر في نفس التاريخ", sev:"MEDIUM" }); }
         else seen.set(key, true);
         if(!kpi) issues.push({ type:"مؤشر غير معرف", kpi:label, date:r.date, desc:"السجل مرتبط بمؤشر غير موجود في قائمة المؤشرات", sev:"HIGH" });
@@ -4869,8 +5243,8 @@ function exportAudit(){
 
 function frequencyName(f){ return { daily:"يومي", weekly:"أسبوعي", monthly:"شهري", quarterly:"ربع سنوي", annual:"سنوي" }[f] || f || "—"; }
 function aggregationName(a){ return { SUM:"مجموع", AVERAGE:"متوسط", WEIGHTED_AVERAGE:"متوسط موزون", RATIO:"بسط/مقام", LAST_VALUE:"آخر قيمة" }[a] || a || "—"; }
-function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف", range:"ضمن نطاق مثالي", conditional:"مؤشر مشروط", none:"يحتاج مراجعة" }[d] || d || "—"; }
-function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_USER:"إضافة مستخدم", EDIT_USER:"تعديل مستخدم", CHANGE_PASSWORD:"تغيير كلمة المرور", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر", EDIT_QUARTER_VALUE:"تعديل قيمة ربعية", SYNC_PENDING:"إرسال قراءات محفوظة على الجهاز", IMPORT_READMISSION:"استقبال ملف Re-admission", FULL_BACKUP:"نسخة احتياطية كاملة", RESTORE_BACKUP:"استعادة نسخة احتياطية" }[a] || a; }
+function directionName(d){ return { higher:"الأعلى أفضل", lower:"الأقل أفضل", target:"الأقرب للهدف", range:"ضمن نطاق مثالي", conditional:"مؤشر مشروط", info:"معلوماتي (بدون تقييم)", none:"يحتاج مراجعة" }[d] || d || "—"; }
+function auditActionName(a){ return { CHANGE_TARGET:"تغيير المستهدف", ADD_RECORD:"إضافة بيانات", APPROVE_RECORD:"اعتماد بيانات", DELETE_RECORD:"حذف بيانات", EDIT_RECORD:"تعديل بيانات", IMPORT_EXCEL:"استيراد Excel", IMPORT_TEMPLATE:"استيراد قالب Excel", EDIT_MASTER:"تعديل البيانات المرجعية", IMPORT_WORKBOOK:"استيراد ملف المؤشرات", APPROVE_TARGETS:"اعتماد المستهدفات", UNLOCK_TARGETS:"فتح المستهدفات للتعديل", ADD_USER:"إضافة مستخدم", EDIT_USER:"تعديل مستخدم", CHANGE_PASSWORD:"تغيير كلمة المرور", ADD_KPI:"إضافة مؤشر", EDIT_KPI:"تعديل مؤشر", DELETE_KPI:"حذف مؤشر", EDIT_QUARTER_VALUE:"تعديل قيمة ربعية", SYNC_PENDING:"إرسال قراءات محفوظة على الجهاز", IMPORT_READMISSION:"استقبال ملف Re-admission", FULL_BACKUP:"نسخة احتياطية كاملة", RESTORE_BACKUP:"استعادة نسخة احتياطية" }[a] || a; }
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 function pad2(n){ return String(n).padStart(2, "0"); }
 // Local-date formatting/parsing: toISOString() would shift dates by the UTC offset.
@@ -4886,6 +5260,805 @@ function shorten(s, max){ s = String(s||""); return s.length > max ? s.substring
 function escapeHtml(v){ return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 function escapeAttr(v){ return escapeHtml(v); }
 
+// =====================================================================
+// Data management: import of the official Excel template.
+// Excel → validation (file, columns, types, master data, duplicates, keys, values) → mapping → database
+// (import_start / import_rows / import_finish in setup.sql, which check every row again) → KPI engine → dashboard.
+// The workbook is read by header names through IMPORT_MAP, never by column position, colour or layout.
+// =====================================================================
+
+// Master data: facilities, departments, categories (database tables; built-in lists in local mode or before setup.sql is re-run).
+let dmMaster = { facilities: null, departments: null, categories: null, fromDb: false };
+function masterList(kind){
+    return dmMaster[kind] || { facilities: MASTER_FACILITIES, departments: MASTER_DEPARTMENTS, categories: MASTER_CATEGORIES }[kind];
+}
+function primaryFacilityId(){ const f = masterList("facilities"); return (f.find(x => x.primary && x.active !== false) || f[0] || {}).id || "FAC001"; }
+function kpiDepartmentId(k){
+    if(k.departmentId) return k.departmentId;
+    return (masterList("departments").find(d => d.nameAr === k.department) || {}).id || "";
+}
+function departmentName(id){ return (masterList("departments").find(d => d.id === id) || {}).nameAr || id || "—"; }
+function facilityName(id){ return (masterList("facilities").find(f => f.id === id) || {}).nameAr || id || "—"; }
+
+async function loadMasterData(){
+    if(!CLOUD.on) return;
+    try{
+        const [f, d, c] = await Promise.all([
+            fetchAll("facilities", q => q.order("facility_id")), fetchAll("departments", q => q.order("department_id")), fetchAll("categories", q => q.order("sort_order"))
+        ]);
+        dmMaster = {
+            facilities: f.map(x => ({ id:x.facility_id, name:x.facility_name, nameAr:x.facility_name_ar, cluster:x.cluster, region:x.region, primary:x.is_primary, active:x.active })),
+            departments: d.map(x => ({ id:x.department_id, name:x.department_name, nameAr:x.department_name_ar, parentId:x.parent_department_id || "", type:x.department_type, active:x.active })),
+            categories: c.map(x => ({ id:x.category_id, name:x.category_name, nameAr:x.category_name_ar, parentId:x.parent_category_id || "", active:x.active })),
+            fromDb: true
+        };
+        if(!dmMaster.facilities.length) dmMaster.facilities = null;
+        if(!dmMaster.departments.length) dmMaster.departments = null;
+        if(!dmMaster.categories.length) dmMaster.categories = null;
+    }catch(e){
+        // Tables missing: setup.sql has not been re-run since this version. The import screen says so.
+        dmMaster = { facilities: null, departments: null, categories: null, fromDb: false };
+    }
+}
+
+// ---- Mapping layer: template column → import field → database column (import_rows) ----
+// Headers are matched after normalizing (case, spaces, underscores, "*"), so English and Arabic headers both work.
+const IMPORT_MAP = [
+    { field:"recordKey",       db:"record_key",      headers:["Unique_Key", "المفتاح الفريد"],         type:"text" },
+    { field:"facilityId",      db:"facility_id",     headers:["Facility_ID", "كود المنشأة"],           type:"code", required:true },
+    { field:"departmentId",    db:"department_id",   headers:["Department_ID", "كود الإدارة"],          type:"code", required:true },
+    { field:"indicatorId",     db:"kpi_code",        headers:["Indicator_ID", "KPI_Code", "كود المؤشر"], type:"code", required:true },
+    { field:"periodType",      db:"period_type",     headers:["Period_Type", "نوع الفترة"],            type:"code", required:true },
+    { field:"measurementDate", db:"date",            headers:["Measurement_Date", "تاريخ القياس"],      type:"date", required:true },
+    { field:"numerator",       db:"numerator",       headers:["Numerator", "البسط"],                   type:"number", required:true },
+    { field:"denominator",     db:"denominator",     headers:["Denominator", "المقام"],                type:"number", required:true },
+    { field:"actualValue",     db:"actual",          headers:["Actual_Value", "القيمة الفعلية"],        type:"number", required:true },
+    { field:"dataSource",      db:"data_source",     headers:["Data_Source", "مصدر البيانات"],          type:"text" },
+    { field:"dataEntryBy",     db:"data_entry_by",   headers:["Data_Entry_By", "مدخل البيانات"],        type:"text" },
+    { field:"dataEntryDate",   db:"data_entry_date", headers:["Data_Entry_Date", "تاريخ الإدخال"],      type:"date" },
+    { field:"notes",           db:"notes",           headers:["Notes", "ملاحظات"],                     type:"text" }
+];
+const IMPORT_FIELD_LABEL = Object.fromEntries(IMPORT_MAP.map(m => [m.field, m.headers[0]]));
+const normHeader = h => String(h ?? "").trim().toLowerCase().replace(/[\s_*\-:()]+/g, "");
+const IMPORT_SHEETS = ["IMPORT_TEMPLATE", "DATA"];
+const MAX_IMPORT_ROWS = 100000, MAX_IMPORT_BYTES = 30 * 1024 * 1024, IMPORT_CHUNK = 500;
+
+let dmState = null;      // the file being validated
+let dmBatches = [];      // import history
+let dmBatchOpen = null;  // batch shown in the details modal
+let dmChanges = [];
+
+function dmShow(){
+    const notice = document.getElementById("dmSetupNotice");
+    const missing = CLOUD.on && !dmMaster.fromDb;
+    notice.classList.toggle("hidden", !missing);
+    if(missing) notice.innerHTML = "قاعدة البيانات لم تُحدَّث لهذا الإصدار بعد: شغّل ملف <b>supabase/setup.sql</b> في SQL Editor بمشروع Supabase ثم أعد تحميل الصفحة. إلى ذلك الحين يعمل الفحص بالبيانات المرجعية المدمجة ولا يمكن الحفظ.";
+    document.getElementById("dmTemplateLink").setAttribute("href", TEMPLATE_FILE);
+    document.querySelector('.dm-tabs [data-dm="changes"]').classList.toggle("hidden", !can("approve"));
+    dmTab(dmTabNow || "upload");
+}
+let dmTabNow = "upload";
+function dmTab(tab){
+    if(tab === "changes" && !can("approve")) tab = "upload";
+    dmTabNow = tab;
+    document.querySelectorAll(".dm-tabs button").forEach(b => b.classList.toggle("on", b.dataset.dm === tab));
+    ["upload","history","quality","changes","master"].forEach(t => document.getElementById("dmPane" + capitalize(t)).classList.toggle("hidden", t !== tab));
+    if(tab === "history") dmLoadHistory();
+    if(tab === "quality") dmRenderQuality();
+    if(tab === "changes") dmInitChanges();
+    if(tab === "master") dmRenderMaster();
+}
+
+// ---- Reading the file ----
+// Strict date parsing: a real Excel date, an Excel serial, YYYY-MM-DD or DD/MM/YYYY. "2026/15/03" is rejected, not rolled over.
+function dmParseDate(v){
+    if(v == null || v === "") return null;
+    const make = (y, m, d) => { const dt = new Date(y, m - 1, d); return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d ? formatDateInput(dt) : null; };
+    if(v instanceof Date) return isNaN(v) ? null : make(v.getFullYear(), v.getMonth() + 1, v.getDate());
+    if(typeof v === "number"){ const p = XLSX.SSF.parse_date_code(v); return p && v > 0 ? make(p.y, p.m, p.d) : null; }
+    const s = String(v).trim();
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$/);
+    if(m) return make(+m[1], +m[2], +m[3]);
+    m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+    if(m) return make(+m[3], +m[2], +m[1]);
+    return null;
+}
+// Numbers: numeric cells, or plain numeric text. Anything else (units, %, spaces inside) is text in a numeric field.
+function dmNum(v){
+    if(v == null || v === "") return { ok:true, val:null };
+    if(typeof v === "number") return Number.isFinite(v) ? { ok:true, val:v } : { ok:false, val:null };
+    const s = String(v).trim();
+    if(s === "") return { ok:true, val:null };
+    return /^-?\d+(\.\d+)?([eE][-+]?\d+)?$/.test(s) ? { ok:true, val:Number(s) } : { ok:false, val:null };
+}
+const dmText = v => v == null ? "" : String(v instanceof Date ? formatDateInput(v) : v).trim();
+
+async function sha256(buf){
+    try{ const h = await crypto.subtle.digest("SHA-256", buf); return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, "0")).join(""); }
+    catch(e){ return ""; }
+}
+
+// Finds the import sheet (IMPORT_TEMPLATE, then DATA, then any sheet with the required headers) and maps its columns.
+function dmLocateSheet(wb){
+    const tries = [...IMPORT_SHEETS.filter(n => wb.SheetNames.includes(n)), ...wb.SheetNames.filter(n => !IMPORT_SHEETS.includes(n))];
+    let best = null;
+    for(const name of tries){
+        const ws = wb.Sheets[name];
+        if(!ws || !ws["!ref"]) continue;
+        // Blank rows are kept so every row keeps its Excel row number (origin = first row of the used range).
+        const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true, blankrows:true });
+        const origin = XLSX.utils.decode_range(ws["!ref"]).s.r;
+        const headerCols = row => {
+            const cols = {};
+            (row || []).forEach((cell, i) => {
+                const n = normHeader(cell);
+                const m = IMPORT_MAP.find(x => x.headers.some(hh => normHeader(hh) === n));
+                if(m && cols[m.field] == null) cols[m.field] = i;
+            });
+            return { cols, keyCols: ["facilityId","departmentId","indicatorId","periodType","measurementDate"].filter(f => cols[f] != null).length };
+        };
+        for(let h = 0; h < Math.min(aoa.length, 15); h++){
+            let { cols, keyCols } = headerCols(aoa[h]);
+            if(keyCols >= 3){
+                // The template has Arabic labels above the machine column names: the last header row wins.
+                const next = headerCols(aoa[h + 1]);
+                if(next.keyCols >= 3){ h++; cols = { ...cols, ...next.cols }; }
+                const row = aoa[h] || [];
+                const data = aoa.slice(h + 1);
+                const withValues = data.filter(r => r && ["numerator","denominator","actualValue"].some(f => cols[f] != null && r[cols[f]] != null && r[cols[f]] !== "")).length;
+                const cand = { name, headerRow: origin + h, cols, rows: data, withValues, headers: row };
+                // IMPORT_TEMPLATE holds formulas: a file saved by a program that does not calculate them has no values there,
+                // so the DATA sheet (same columns, typed values) is used instead.
+                if(!best || (best.withValues === 0 && withValues > 0)) best = cand;
+                break;
+            }
+        }
+        if(best && best.withValues > 0) break;
+    }
+    return best;
+}
+
+function dmTemplateVersion(wb){
+    const ws = wb.Sheets.README;
+    if(!ws) return "";
+    const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true });
+    for(const row of aoa){ const i = (row || []).findIndex(c => String(c ?? "").trim() === "Template_Version"); if(i >= 0) return String(row.slice(i + 1).find(c => c != null && c !== "") ?? ""); }
+    return "";
+}
+
+async function dmHandleFile(event){
+    const input = event.target;
+    const file = input.files[0];
+    input.value = "";
+    if(!file) return;
+    if(!can("import")){ showToast("ليس لديك صلاحية الاستيراد."); return; }
+    showSection("dataMgmt"); dmTab("upload");
+    await dmProcessFile(file);
+}
+
+async function dmProcessFile(file, buffer){
+    const fileErrors = [];
+    let wb = null, hash = "";
+    setLoading(true, "STEP 1 — قراءة الملف...");
+    try{
+        if(file.size > MAX_IMPORT_BYTES) throw new Error(`حجم الملف ${(file.size / 1e6).toFixed(1)} MB يتجاوز الحد (30 MB).`);
+        if(!/\.(xlsx|xlsm|xls)$/i.test(file.name)) throw new Error("صيغة الملف غير مدعومة: ارفع ملف Excel (.xlsx).");
+        const buf = buffer || await file.arrayBuffer();
+        hash = await sha256(buf);
+        wb = XLSX.read(buf, { type:"array", cellDates:true, cellFormula:false });
+    }catch(e){
+        setLoading(false);
+        dmState = { fileName: file.name, fileSize: file.size, fileErrors: [e.message || "تعذر قراءة الملف."], rows: [], issues: [] };
+        dmRenderPreview(); return;
+    }
+    // STEP 2–3: sheets and columns
+    const loc = dmLocateSheet(wb);
+    if(!loc){
+        fileErrors.push(`لم يُعثر على ورقة الاستيراد: يجب أن يحتوي الملف على ورقة IMPORT_TEMPLATE (أو DATA) بأعمدة ${IMPORT_MAP.filter(m => m.required && m.type !== "number").map(m => m.headers[0]).join("، ")}.`);
+    } else {
+        const missing = IMPORT_MAP.filter(m => m.required && loc.cols[m.field] == null).map(m => m.headers[0]);
+        if(missing.length) fileErrors.push(`أعمدة مطلوبة غير موجودة في ورقة ${loc.name}: ${missing.join("، ")}. لا تغيّر أسماء الأعمدة في الصف الثاني من القالب.`);
+    }
+    const version = dmTemplateVersion(wb);
+    // STEP 4–8: rows
+    let staged = [];
+    if(loc && !fileErrors.length){
+        if(loc.rows.length > MAX_IMPORT_ROWS) fileErrors.push(`عدد الأسطر (${loc.rows.length.toLocaleString("en-US")}) يتجاوز الحد (${MAX_IMPORT_ROWS.toLocaleString("en-US")}). قسّم الملف.`);
+        else staged = loc.rows.map((r, i) => {
+            const o = { rowNumber: loc.headerRow + 2 + i };
+            IMPORT_MAP.forEach(m => { o[m.field] = r && loc.cols[m.field] != null ? r[loc.cols[m.field]] : null; });
+            return o;
+        });
+    }
+    setLoading(true, "STEP 4–8 — فحص السجلات...");
+    await new Promise(r => setTimeout(r, 30));
+    const masters = dmReadMasters(wb);
+    dmState = { fileName: file.name, fileSize: file.size, fileHash: hash, sheetName: loc?.name || "", templateVersion: version,
+                fileErrors, masters, ...dmValidate(staged) };
+    setLoading(false);
+    dmRenderPreview();
+}
+
+// ---- Validation (same rules and codes as the VALIDATION sheet and import_rows) ----
+function dmValidate(staged){
+    const today = formatDateInput(new Date());
+    const kmap = new Map(kpis.map(k => [String(k.code).toUpperCase(), k]));
+    const facs = new Map(masterList("facilities").map(f => [f.id, f]));
+    const deps = new Map(masterList("departments").map(d => [d.id, d]));
+    const byId = new Map(records.map(r => [r.id, r]));
+    const byKey = new Map(records.filter(r => r.recordKey).map(r => [r.recordKey, r]));
+    const primary = primaryFacilityId();
+    const approver = can("approve");
+    const rows = [], issues = [];
+    let empty = 0;
+    const add = (row, code, field, value) => {
+        const c = IMPORT_CODES[code];
+        issues.push({ row: row.rowNumber, key: row.key || "", indicator: row.ind || "", field: IMPORT_FIELD_LABEL[field] || field || "", value: value == null ? "" : String(value),
+                      code, level: c.level, message: c.ar, fix: c.fix });
+        if(c.level === "ERROR") row.errors++; else if(c.level === "WARNING") row.warnings++;
+    };
+    staged.forEach(s => {
+        const n = dmNum(s.numerator), d = dmNum(s.denominator), a = dmNum(s.actualValue);
+        const hasValue = [s.numerator, s.denominator, s.actualValue].some(v => v != null && String(v).trim() !== "");
+        if(!hasValue){ empty++; return; }
+        const row = { rowNumber: s.rowNumber, errors: 0, warnings: 0, src: s };
+        row.fac = dmText(s.facilityId).toUpperCase(); row.dep = dmText(s.departmentId).toUpperCase();
+        row.ind = dmText(s.indicatorId).toUpperCase(); row.per = dmText(s.periodType).toUpperCase();
+        const k = row.ind ? kmap.get(row.ind) : null;
+        row.date = dmParseDate(s.measurementDate);
+        if(row.date && row.per && Object.values(PERIOD_TYPES).includes(row.per)) row.start = dmPeriodStart(row.date, row.per);
+        if(row.start && row.fac && row.dep && row.ind) row.key = `${row.fac}-${row.ind}-${row.start.replace(/-/g, "")}-${row.dep}-${row.per}`;
+
+        if(!row.fac || !row.dep || !row.ind || !row.per || s.measurementDate == null || dmText(s.measurementDate) === "") add(row, "E11", "recordKey");
+        if(dmText(s.measurementDate) !== "" && !row.date) add(row, "E02", "measurementDate", dmText(s.measurementDate));
+        if(row.date && (row.date < DATA_START_DATE || row.date > today)) add(row, "E03", "measurementDate", row.date);
+        if(row.ind && !k) add(row, "E04", "indicatorId", row.ind);
+        else if(k && k.active === false) add(row, "E13", "indicatorId", row.ind);
+        if(k && DERIVED_KPIS[k.code]) add(row, "E14", "indicatorId", row.ind);
+        if(row.dep && !(deps.get(row.dep) && deps.get(row.dep).active !== false)) add(row, "E05", "departmentId", row.dep);
+        if(row.fac && !(facs.get(row.fac) && facs.get(row.fac).active !== false)) add(row, "E06", "facilityId", row.fac);
+        if(row.per && (!Object.values(PERIOD_TYPES).includes(row.per) || (k && row.per !== periodTypeOf(k)))) add(row, "E12", "periodType", row.per);
+        if(!n.ok) add(row, "E07", "numerator", s.numerator);
+        if(!d.ok) add(row, "E07", "denominator", s.denominator);
+        if(!a.ok) add(row, "E07", "actualValue", s.actualValue);
+        if(k && n.ok && d.ok && a.ok){
+            const mult = CALC_TYPES[calcTypeOf(k)].mult;
+            row.mult = mult;
+            if(mult > 0){
+                if(n.val == null || d.val == null) add(row, "E01", n.val == null ? "numerator" : "denominator");
+                else if(d.val === 0) add(row, "E08", "denominator", 0);
+                else if(n.val < 0 || d.val < 0) add(row, "E09", n.val < 0 ? "numerator" : "denominator", n.val < 0 ? n.val : d.val);
+                else row.value = n.val / d.val * mult;
+                if(isNum(n.val) && d.val > 0 && n.val > d.val) add(row, "W03", "numerator", `${n.val} / ${d.val}`);
+            } else if(a.val == null) add(row, "E01", "actualValue");
+            else row.value = a.val;
+            const [vmin, vmax] = validRange(k);
+            if(row.value != null && ((vmin != null && row.value < vmin) || (vmax != null && row.value > vmax)))
+                add(row, "E09", mult > 0 ? "numerator" : "actualValue", round(row.value));
+            if(row.start && effectiveTarget(k, Number(row.start.slice(0, 4))) == null && !hasRange(k) && !["info","none","conditional"].includes(k.direction)) add(row, "W01", "indicatorId", row.ind);
+        }
+        // The first week of the data starts before DATA_START and can only be dated from DATA_START: no warning.
+        if(row.date && row.start && row.date !== row.start && row.start >= DATA_START_DATE) add(row, "W02", "measurementDate", `${row.date} → ${row.start}`);
+        row.num = n.val; row.den = d.val; row.act = a.val; row.k = k;
+        rows.push(row);
+    });
+    // STEP 6–7: duplicates in the file (same key): the last row wins.
+    const lastByKey = new Map();
+    rows.forEach((r, i) => { if(!r.errors && r.key) lastByKey.set(r.key, i); });
+    rows.forEach((r, i) => { if(!r.errors && r.key && lastByKey.get(r.key) !== i){ r.duplicate = true; add(r, "W05", "recordKey", r.key); } });
+    // New, update or unchanged against the database (same id rule as import_rows).
+    let fresh = 0, update = 0, same = 0;
+    rows.forEach(r => {
+        if(r.errors || r.duplicate) return;
+        const home = kpiDepartmentId(r.k) || r.dep;
+        r.id = r.fac === primary && r.dep === home ? `${r.k.code}|${r.start}` : r.key;
+        const ex = byKey.get(r.key) || byId.get(r.id);
+        const num = r.mult > 0 ? r.num : null, den = r.mult > 0 ? r.den : null;
+        const note = dmText(r.src.notes), source = dmText(r.src.dataSource);
+        if(ex && !approver && (ex.approved || (ex.createdUser && ex.createdUser !== currentUser.username))){ add(r, "E16", "recordKey", r.key); return; }
+        const near = (x, y) => (x == null && y == null) || (isNum(x) && isNum(y) && Math.abs(Number(x) - Number(y)) < 1e-9);
+        if(ex && near(ex.actualValue, r.value) && near(ex.numerator, num) && near(ex.denominator, den) && (ex.notes || "") === note && (ex.dataSource || "") === source){ r.status = "same"; same++; }
+        else if(ex){ r.status = "update"; update++; }
+        else { r.status = "new"; fresh++; }
+    });
+    const valid = rows.filter(r => !r.errors && !r.duplicate);
+    return {
+        rows, issues, valid, empty,
+        counts: { found: rows.length, fresh, update, same, duplicates: rows.filter(r => r.duplicate).length,
+                  errors: rows.filter(r => r.errors).length, warnings: rows.filter(r => !r.errors && !r.duplicate && r.warnings).length, empty }
+    };
+}
+function dmPeriodStart(date, per){
+    const d = parseIsoDate(date);
+    if(per === "WEEKLY") return weekStart(date);
+    if(per === "MONTHLY") return formatDateInput(new Date(d.getFullYear(), d.getMonth(), 1));
+    if(per === "QUARTERLY") return formatDateInput(new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1));
+    if(per === "ANNUAL") return `${d.getFullYear()}-01-01`;
+    return date;
+}
+
+// Master sheets in the file: new indicators, departments and facilities the admin can add to the platform.
+function dmReadMasters(wb){
+    const read = (name, cols) => {
+        const loc = findSheetByHeaders(wb, cols, name);
+        return loc ? sheetRows(wb, loc).filter(r => r[cols[0]] && !/^[؀-ۿ]/.test(String(r[cols[0]]))) : [];
+    };
+    const yes = v => /^(y|yes|true|1|نعم)$/i.test(String(v ?? "").trim());
+    const have = { k: new Set(kpis.map(k => k.code)), d: new Set(masterList("departments").map(d => d.id)), f: new Set(masterList("facilities").map(f => f.id)) };
+    const dirFromCode = c => Object.entries(DIRECTION_CODES).find(([p, code]) => code === c && p !== "none")?.[0] || "info";
+    const freqFromPeriod = p => Object.entries(PERIOD_TYPES).find(([, code]) => code === String(p || "").toUpperCase())?.[0] || "monthly";
+    const num = v => isNum(v) ? Number(v) : null;
+    const newKpis = read("INDICATORS", ["Indicator_ID", "Indicator_Name", "Calculation_Type"])
+        .filter(r => /^[A-Z0-9_]{2,40}$/.test(String(r.Indicator_ID).trim()) && !have.k.has(String(r.Indicator_ID).trim()))
+        .map(r => {
+            const ct = CALC_TYPES[String(r.Calculation_Type || "").trim()] ? String(r.Calculation_Type).trim() : "AVERAGE";
+            const k = {
+                code: String(r.Indicator_ID).trim(), name: String(r.Arabic_Name || r.Indicator_Name).trim(), englishName: dmText(r.English_Name),
+                category: dmText(r.Category), categoryId: dmText(r.Category_ID), group: dmText(r.Sub_Category) || null,
+                department: dmText(r.Department), departmentId: dmText(r.Department_ID), frequency: freqFromPeriod(r.Frequency),
+                reportingFrequency: "quarterly", unit: dmText(r.Unit), calculationType: ct, aggregation: CALC_TYPES[ct].agg,
+                direction: dirFromCode(String(r.Direction || "").trim()), target: num(r.Target), validMin: num(r.Minimum_Acceptable), validMax: num(r.Maximum_Acceptable),
+                numeratorDefinition: dmText(r.Numerator_Definition), denominatorDefinition: dmText(r.Denominator_Definition), dataSource: dmText(r.Data_Source),
+                definition: dmText(r.Definition), greenMin: num(r.Green_Threshold), yellowMin: num(r.Yellow_Threshold), active: r.Active == null || yes(r.Active),
+                targetBasis: { WEEK:"weekly", YEAR:"annual" }[String(r.Target_Basis || "").toUpperCase()] || undefined,
+                layoutV: KPI_LAYOUT_V, targetLastUpdated: null, targetUpdatedBy: null
+            };
+            if(r.Minimum_Acceptable == null) k.validMin = 0;
+            return k;
+        });
+    const newDeps = read("DEPARTMENTS", ["Department_ID", "Department_Name_AR"])
+        .filter(r => /^[A-Z0-9_]{2,20}$/.test(String(r.Department_ID).trim()) && !have.d.has(String(r.Department_ID).trim()))
+        .map(r => ({ id: String(r.Department_ID).trim(), name: dmText(r.Department_Name), nameAr: dmText(r.Department_Name_AR), parentId: dmText(r.Parent_Department_ID), type: dmText(r.Department_Type), active: r.Active == null || yes(r.Active) }));
+    const newFacs = read("FACILITIES", ["Facility_ID", "Facility_Name_AR"])
+        .filter(r => /^[A-Z0-9_]{2,20}$/.test(String(r.Facility_ID).trim()) && !have.f.has(String(r.Facility_ID).trim()))
+        .map(r => ({ id: String(r.Facility_ID).trim(), name: dmText(r.Facility_Name), nameAr: dmText(r.Facility_Name_AR), cluster: dmText(r.Cluster), region: dmText(r.Region), primary: false, active: r.Active == null || yes(r.Active) }));
+    return { newKpis, newDeps, newFacs };
+}
+
+// ---- Preview (STEP 9) ----
+function dmTile(label, value, cls, sub){
+    return `<div class="dm-tile ${cls || ""}"><div class="lbl">${label}</div><div class="val">${typeof value === "number" ? value.toLocaleString("en-US") : escapeHtml(value)}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+}
+function dmRenderPreview(){
+    const st = dmState;
+    document.getElementById("dmUploadEmpty").classList.add("hidden");
+    document.getElementById("dmResult").classList.add("hidden");
+    document.getElementById("dmPreview").classList.remove("hidden");
+    document.getElementById("dmFileName").textContent = st.fileName;
+    document.getElementById("dmFileMeta").textContent = [
+        st.sheetName ? `الورقة: ${st.sheetName}` : "", st.templateVersion ? `إصدار القالب: ${st.templateVersion}` : "",
+        `الحجم: ${(st.fileSize / 1024).toFixed(0)} KB`
+    ].filter(Boolean).join(" · ");
+    const fe = document.getElementById("dmFileErrors");
+    const notes = [...(st.fileErrors || [])];
+    if(st.templateVersion && st.templateVersion !== TEMPLATE_VERSION) notes.push(`إصدار القالب ${st.templateVersion} يختلف عن الإصدار الحالي ${TEMPLATE_VERSION}؛ يُقرأ الملف بأسماء الأعمدة، ويُنصح بتحميل القالب الأحدث.`);
+    fe.classList.toggle("hidden", !notes.length);
+    fe.innerHTML = notes.map(t => `<div class="dm-file-error mb-2"><i class="fa-solid fa-triangle-exclamation ml-1"></i> ${escapeHtml(t)}</div>`).join("");
+    const m = st.masters || { newKpis: [], newDeps: [], newFacs: [] };
+    const newMaster = m.newKpis.length + m.newDeps.length + m.newFacs.length;
+    if(newMaster && !st.fileErrors?.length){
+        const list = [...m.newFacs.map(f => `منشأة ${f.id} — ${f.nameAr}`), ...m.newDeps.map(d => `إدارة ${d.id} — ${d.nameAr}`), ...m.newKpis.map(k => `مؤشر ${k.code} — ${k.name}`)];
+        fe.classList.remove("hidden");
+        fe.insertAdjacentHTML("beforeend", `<div class="entry-warn mb-2"><b>بيانات مرجعية جديدة في الملف غير موجودة في المنصة (${newMaster}):</b> ${escapeHtml(list.slice(0, 12).join("، "))}${list.length > 12 ? "…" : ""}.
+            ${can("editKpi") ? `<button onclick="dmAddMasters()" class="btn btn-primary text-[11px] py-1.5 px-3 mr-2">إضافتها للمنصة ثم إعادة الفحص</button>` : "يضيفها مدير النظام من هذه الشاشة."}
+            <div class="text-[10.5px] mt-1 font-semibold">التعديلات على مؤشرات أو إدارات موجودة لا تُطبق من الملف؛ المستهدفات تُدار من صفحة المستهدفات.</div></div>`);
+    }
+    const c = st.counts || { found:0, fresh:0, update:0, same:0, duplicates:0, errors:0, warnings:0, empty:0 };
+    document.getElementById("dmTiles").innerHTML = [
+        dmTile("Records Found", c.found, "", "سطر فيه قيمة"), dmTile("New Records", c.fresh, "good", "سجل جديد"),
+        dmTile("Records to Update", c.update, "info", "مفتاح موجود"), dmTile("Unchanged", c.same, "", "مطابق للمحفوظ"),
+        dmTile("Duplicates", c.duplicates, c.duplicates ? "warn" : "", "يُعتمد آخر سطر"), dmTile("Errors", c.errors, c.errors ? "bad" : "good", "سجل مرفوض"),
+        dmTile("Warnings", c.warnings, c.warnings ? "warn" : "", "يُستورد مع تنبيه"), dmTile("Empty Rows", c.empty, "", "بدون قيمة — تُتجاهل")
+    ].join("");
+    const importable = (st.valid || []).filter(r => r.status !== "same").length;
+    const btn = document.getElementById("dmImportBtn");
+    btn.disabled = !!(st.fileErrors && st.fileErrors.length) || !importable || (CLOUD.on && !dmMaster.fromDb);
+    btn.innerHTML = `<i class="fa-solid fa-database ml-1"></i> IMPORT &amp; SAVE (${importable.toLocaleString("en-US")})`;
+    document.getElementById("dmErrorReportBtn").disabled = !(st.issues || []).length;
+    document.getElementById("dmApproveBox").classList.toggle("hidden", !can("approve"));
+    dmRenderIssues();
+}
+function dmIssueRows(list, filter){
+    const shown = filter === "ALL" ? list : list.filter(i => i.level === filter);
+    const html = shown.slice(0, 1000).map(i => `<tr>
+        <td class="font-mono">${i.row ?? "—"}</td><td class="font-mono text-xs">${escapeHtml(i.field)}</td><td class="font-mono text-xs">${escapeHtml(shorten(i.value, 40))}</td>
+        <td class="dm-wrap"><span class="pill ${i.level === "ERROR" ? "status-red" : i.level === "DUPLICATE" ? "status-gray" : "status-yellow"} !py-0.5 !px-2 !text-[10px] ml-1">${i.code}</span>${escapeHtml(i.message)}</td>
+        <td class="dm-wrap text-xs text-slate-600">${escapeHtml(i.fix || "")}</td><td class="font-mono text-[10.5px] text-slate-400">${escapeHtml(i.key || "")}</td></tr>`).join("");
+    return [shown.length, html + (shown.length > 1000 ? `<tr><td colspan="6" class="text-center py-3 text-slate-400 text-xs">يُعرض أول 1,000 من ${shown.length.toLocaleString("en-US")} — نزّل تقرير الأخطاء للقائمة كاملة</td></tr>` : "")];
+}
+function dmRenderIssues(){
+    const issues = (dmState && dmState.issues) || [];
+    const [n, html] = dmIssueRows(issues, document.getElementById("dmIssueFilter").value);
+    document.getElementById("dmIssueCount").textContent = `(${n.toLocaleString("en-US")})`;
+    document.getElementById("dmIssueBody").innerHTML = html || `<tr><td colspan="6" class="text-center py-6 text-emerald-600 font-bold">✓ لا توجد أخطاء أو تحذيرات.</td></tr>`;
+}
+function dmReset(){
+    dmState = null;
+    document.getElementById("dmPreview").classList.add("hidden");
+    document.getElementById("dmResult").classList.add("hidden");
+    document.getElementById("dmUploadEmpty").classList.remove("hidden");
+}
+
+async function dmAddMasters(){
+    const m = dmState?.masters;
+    if(!m || !can("editKpi")) return;
+    if(!confirm(`إضافة ${m.newFacs.length} منشأة و${m.newDeps.length} إدارة و${m.newKpis.length} مؤشر إلى المنصة؟`)) return;
+    try{
+        setLoading(true, "إضافة البيانات المرجعية...");
+        if(CLOUD.on){
+            if(m.newFacs.length) await rpc("save_master_data", withToken({ p_kind: "facilities", p_rows: m.newFacs }));
+            if(m.newDeps.length) await rpc("save_master_data", withToken({ p_kind: "departments", p_rows: m.newDeps }));
+            await loadMasterData();
+        } else {
+            dmMaster.facilities = [...masterList("facilities"), ...m.newFacs];
+            dmMaster.departments = [...masterList("departments"), ...m.newDeps];
+        }
+        if(m.newKpis.length){
+            kpis.push(...m.newKpis.map(k => ({ ...k })));
+            if(!await persistKpis()) throw new Error("تعذر حفظ المؤشرات الجديدة.");
+            addAudit("ADD_KPI", m.newKpis.map(k => k.code).join("، "), "", "", "إضافة من قالب Excel (ورقة INDICATORS)");
+        }
+        setLoading(false);
+        populateFilters(); populateRecordKpis(); renderKpis();
+        // Validate the same rows again with the new master data.
+        const staged = dmState.rows.map(r => r.src).concat([]);
+        const empty = dmState.empty;
+        Object.assign(dmState, dmValidate(staged), { masters: { newKpis: [], newDeps: [], newFacs: [] } });
+        dmState.empty = empty; dmState.counts.empty = empty;
+        dmRenderPreview();
+        showToast("تمت إضافة البيانات المرجعية وأُعيد الفحص.");
+    }catch(e){ setLoading(false); showToast(e.message); }
+}
+
+// ---- Import (STEP 10) ----
+const dmRowPayload = r => ({
+    rowNumber: r.rowNumber, facilityId: r.fac, departmentId: r.dep, indicatorId: r.k.code, periodType: r.per, measurementDate: r.date,
+    numerator: r.num, denominator: r.den, actualValue: r.act, dataSource: dmText(r.src.dataSource) || null, dataEntryBy: dmText(r.src.dataEntryBy) || null,
+    dataEntryDate: dmParseDate(r.src.dataEntryDate), notes: dmText(r.src.notes) || null
+});
+
+async function dmImport(){
+    const st = dmState;
+    if(!st || !can("import")) return;
+    const send = st.valid.filter(r => r.status !== "same");
+    if(!send.length){ showToast("لا توجد سجلات جديدة أو محدَّثة للحفظ."); return; }
+    const c = st.counts;
+    if(c.errors && !confirm(`${c.errors.toLocaleString("en-US")} سجل فيه أخطاء ولن يُحفظ. هل تريد حفظ السجلات الصحيحة (${send.length.toLocaleString("en-US")}) الآن؟\n\nيمكنك تنزيل تقرير الأخطاء وإصلاحها ثم إعادة رفع الملف؛ لن تتكرر السجلات المحفوظة.`)) return;
+    const approve = can("approve") && document.getElementById("dmApprove").checked;
+    const clientIssues = st.issues.map(i => ({ row: i.row, key: i.key, indicator: i.indicator, field: i.field, value: i.value, code: i.code, message: i.message, fix: i.fix }));
+    let result;
+    try{
+        if(CLOUD.on) result = await dmImportCloud(st, send, approve, clientIssues);
+        else result = dmImportLocal(st, send, approve, clientIssues);
+    }catch(e){
+        setLoading(false);
+        showToast("توقف الاستيراد: " + e.message);
+        await reloadFromCloud();
+        return;
+    }
+    // Calculated KPIs (e.g. no-show rate from no-shows and visits) follow their imported sources.
+    try{
+        const touched = new Set(send.map(r => r.k.code + "|" + r.start));
+        const sources = records.filter(r => touched.has(r.kpiCode + "|" + r.date));
+        const [upserts, removed] = deriveRecords(sources);
+        if(upserts.length || removed.length) await persistRecords(upserts, removed);
+    }catch(e){}
+    setLoading(false);
+    rerenderAfterSync();
+    dmRenderResult(result);
+    addAudit("IMPORT_TEMPLATE", `${result.batchCode} — ${st.fileName}`, "", `${result.inserted} جديد، ${result.updated} محدّث، ${result.rejected} مرفوض`, "استيراد قالب Excel الرسمي");
+}
+
+async function dmImportCloud(st, send, approve, clientIssues){
+    setLoading(true, "إنشاء دفعة الاستيراد...");
+    const start = await rpc("import_start", withToken({ p_meta: { fileName: st.fileName, fileSize: st.fileSize, fileHash: st.fileHash, sheetName: st.sheetName,
+        templateVersion: st.templateVersion, received: st.counts.found, empty: st.counts.empty, approve } }));
+    const serverIssues = [];
+    let done = 0;
+    for(let i = 0; i < send.length; i += IMPORT_CHUNK){
+        const chunk = send.slice(i, i + IMPORT_CHUNK);
+        setLoading(true, `حفظ السجلات... ${Math.min(i + IMPORT_CHUNK, send.length).toLocaleString("en-US")} من ${send.length.toLocaleString("en-US")}`);
+        const res = await rpc("import_rows", withToken({ p_batch_id: start.batchId, p_rows: chunk.map(dmRowPayload) }));
+        (res.errors || []).forEach(e => {
+            const c = IMPORT_CODES[e.code] || IMPORT_CODES.E17;
+            serverIssues.push({ row: e.row, key: e.key, indicator: e.indicator, field: e.field, value: e.value, code: e.code, message: c.ar, fix: c.fix });
+        });
+        done += chunk.length;
+    }
+    const rejectedBefore = st.counts.errors;
+    const fin = await rpc("import_finish", withToken({ p_batch_id: start.batchId, p_errors: [...clientIssues, ...serverIssues],
+        p_summary: { duplicates: st.counts.duplicates, warnings: st.counts.warnings, rejectedBeforeUpload: rejectedBefore } }));
+    setLoading(true, "تحديث لوحة المؤشرات...");
+    await loadMasterData();
+    await cloudSync(false);
+    return { ...fin, serverIssues };
+}
+
+// Local mode (no database): readings are kept in this browser; batches are kept with them.
+function dmImportLocal(st, send, approve, clientIssues){
+    let inserted = 0, updated = 0;
+    const list = load(STORAGE.batches, []);
+    const id = (list[0]?.batchId || 0) + 1, now = new Date().toISOString();
+    const byKey = new Map(records.map(r => [r.kpiCode + "|" + r.date + "|" + (r.facilityId || "") + "|" + (r.departmentId || ""), r]));
+    const primary = primaryFacilityId();
+    send.forEach(r => {
+        const dep = r.dep === kpiDepartmentId(r.k) ? "" : r.dep, fac = r.fac === primary ? "" : r.fac;
+        const key = r.k.code + "|" + r.start + "|" + fac + "|" + dep;
+        const ex = byKey.get(key);
+        const rec = normalizeRecord({ id: ex?.id, date: r.start, kpiCode: r.k.code, kpiName: r.k.name, actualValue: r.value,
+            numerator: r.mult > 0 ? r.num : null, denominator: r.mult > 0 ? r.den : null, dataSource: dmText(r.src.dataSource), notes: dmText(r.src.notes),
+            approved: approve, createdBy: ex?.createdBy, createdAt: ex?.createdAt });
+        rec.recordKey = r.key; rec.batchId = id; rec.updatedAt = now; if(fac) rec.facilityId = fac; if(dep) rec.departmentId = dep;
+        if(ex){ records[records.indexOf(ex)] = rec; updated++; } else { records.push(rec); inserted++; }
+        byKey.set(key, rec);
+    });
+    saveRecords();
+    const batch = { batchId: id, batchCode: `${new Date().getFullYear()}-${String(id).padStart(5, "0")}`, fileName: st.fileName, fileSize: st.fileSize,
+        uploadedBy: currentUser.username, uploadedByName: currentUser.displayName, uploadDate: new Date().toISOString(), finishedAt: new Date().toISOString(),
+        received: st.counts.found, empty: st.counts.empty, duplicates: st.counts.duplicates, inserted, updated, unchanged: st.counts.same,
+        rejected: st.counts.errors, warnings: st.counts.warnings,
+        status: st.counts.errors ? "COMPLETED_WITH_ERRORS" : st.counts.warnings || st.counts.duplicates ? "COMPLETED_WITH_WARNINGS" : "COMPLETED",
+        errors: clientIssues.slice(0, 5000) };
+    save(STORAGE.batches, [batch, ...list].slice(0, 50));
+    return batch;
+}
+
+const BATCH_STATUS = {
+    COMPLETED: ["Completed", "status-green"], COMPLETED_WITH_WARNINGS: ["Completed with Warnings", "status-yellow"],
+    COMPLETED_WITH_ERRORS: ["Completed with Errors", "status-red"], IN_PROGRESS: ["In Progress", "status-gray"],
+    FAILED: ["Failed", "status-red"], CANCELLED: ["Cancelled", "status-gray"]
+};
+const batchPill = s => { const [l, c] = BATCH_STATUS[s] || [s, "status-gray"]; return `<span class="pill ${c} !py-0.5 !px-2 !text-[10.5px]">${l}</span>`; };
+
+function dmRenderResult(b){
+    document.getElementById("dmPreview").classList.add("hidden");
+    const box = document.getElementById("dmResult");
+    box.classList.remove("hidden");
+    const processed = (b.inserted || 0) + (b.updated || 0) + (b.unchanged || 0) + (b.rejected || 0);
+    box.innerHTML = `<div class="dm-success space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div><div class="text-lg font-black text-emerald-800"><i class="fa-solid fa-circle-check ml-1"></i> Import Successful</div>
+            <div class="text-xs text-emerald-900/70 mt-1">Batch #${escapeHtml(b.batchCode)} · ${escapeHtml(dmState?.fileName || b.fileName || "")} · ${formatDateTime(b.finishedAt || new Date())} · ${batchPill(b.status)}</div></div>
+            <div class="flex gap-2">
+                <button onclick="dmOpenBatch(${Number(b.batchId)})" class="btn btn-secondary text-xs">تفاصيل الدفعة</button>
+                <button onclick="dmReset()" class="btn btn-secondary text-xs">رفع ملف آخر</button>
+                <button onclick="showSection('dashboard')" class="btn btn-primary text-xs"><i class="fa-solid fa-chart-pie ml-1"></i> عرض اللوحة</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            ${dmTile("Records Processed", processed, "")}${dmTile("New", b.inserted || 0, "good")}${dmTile("Updated", b.updated || 0, "info")}
+            ${dmTile("Unchanged", b.unchanged || 0, "")}${dmTile("Duplicates Prevented", b.duplicates || 0, "warn")}${dmTile("Rejected", b.rejected || 0, b.rejected ? "bad" : "")}
+        </div>
+        <p class="text-[11px] text-emerald-900/70">تحدثت لوحة المؤشرات والرسوم والتقارير لكل المستخدمين. ${b.rejected ? "السجلات المرفوضة في «تفاصيل الدفعة» مع تقرير الأخطاء." : ""}</p>
+    </div>`;
+    dmBatches = [];
+}
+
+// ---- Error report (Excel) ----
+function dmWriteErrorReport(fileLabel, summary, issues){
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), "Summary");
+    const rows = issues.map(i => ({ Row: i.row ?? "", Unique_Key: i.key || "", Indicator_ID: i.indicator || "", Field: i.field || "", Value: i.value ?? "",
+        Code: i.code, Level: (IMPORT_CODES[i.code] || {}).level || i.type || "", Error: i.message || (IMPORT_CODES[i.code] || {}).ar || "",
+        Error_EN: (IMPORT_CODES[i.code] || {}).en || "", Suggested_Fix: i.fix || (IMPORT_CODES[i.code] || {}).fix || "" }));
+    const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ Row: "", Error: "لا توجد أخطاء" }]);
+    ws["!cols"] = [8, 46, 26, 18, 18, 7, 10, 60, 40, 60].map(wch => ({ wch }));
+    ws["!autofilter"] = { ref: ws["!ref"] };
+    XLSX.utils.book_append_sheet(wb, ws, "Errors");
+    XLSX.writeFile(wb, `APH_Import_Errors_${fileLabel}.xlsx`);
+}
+function dmDownloadErrorReport(){
+    const st = dmState;
+    if(!st) return;
+    const c = st.counts;
+    dmWriteErrorReport(formatDateInput(new Date()), [
+        { "البند": "الملف", "القيمة": st.fileName }, { "البند": "تاريخ الفحص", "القيمة": new Date().toLocaleString("ar-SA") },
+        { "البند": "Records Found", "القيمة": c.found }, { "البند": "New Records", "القيمة": c.fresh }, { "البند": "Records to Update", "القيمة": c.update },
+        { "البند": "Unchanged", "القيمة": c.same }, { "البند": "Duplicates", "القيمة": c.duplicates }, { "البند": "Errors", "القيمة": c.errors },
+        { "البند": "Warnings", "القيمة": c.warnings }, { "البند": "Empty Rows", "القيمة": c.empty },
+        ...(st.fileErrors || []).map(t => ({ "البند": "خطأ في الملف", "القيمة": t }))
+    ], st.issues);
+}
+
+// ---- Import history ----
+async function dmLoadHistory(){
+    const body = document.getElementById("dmHistoryBody");
+    try{
+        dmBatches = CLOUD.on ? (dmMaster.fromDb ? await rpc("list_import_batches", withToken({ p_limit: 300 })) : []) : load(STORAGE.batches, []);
+    }catch(e){ body.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-rose-600">${escapeHtml(e.message)}</td></tr>`; return; }
+    body.innerHTML = dmBatches.length ? dmBatches.map(b => `<tr>
+        <td class="font-mono font-bold">#${escapeHtml(b.batchCode)}</td><td class="text-xs">${escapeHtml(shorten(b.fileName, 40))}</td>
+        <td class="text-xs">${formatDateTime(b.uploadDate)}</td><td class="text-xs">${escapeHtml(b.uploadedByName || b.uploadedBy)}</td>
+        <td>${(b.received || 0).toLocaleString("en-US")}</td><td class="text-emerald-700 font-bold">${(b.inserted || 0).toLocaleString("en-US")}</td>
+        <td class="text-sky-700 font-bold">${(b.updated || 0).toLocaleString("en-US")}</td><td>${(b.unchanged || 0).toLocaleString("en-US")}</td>
+        <td class="${b.rejected ? "text-rose-700 font-bold" : ""}">${(b.rejected || 0).toLocaleString("en-US")}</td><td>${batchPill(b.status)}</td>
+        <td><button onclick="dmOpenBatch(${Number(b.batchId)})" class="btn btn-secondary text-[11px] py-1 px-2.5">تفاصيل</button></td></tr>`).join("")
+        : `<tr><td colspan="11" class="text-center py-6 text-slate-400">لا توجد عمليات استيراد بعد.</td></tr>`;
+}
+
+async function dmOpenBatch(id){
+    let b;
+    try{
+        b = CLOUD.on ? await rpc("get_import_batch", withToken({ p_batch_id: id })) : load(STORAGE.batches, []).find(x => x.batchId === id);
+    }catch(e){ showToast(e.message); return; }
+    if(!b) return;
+    dmBatchOpen = b;
+    document.getElementById("batchTitle").textContent = `Batch #${b.batchCode}`;
+    document.getElementById("batchSub").innerHTML = `${escapeHtml(b.fileName)} · ${formatDateTime(b.uploadDate)} · ${escapeHtml(b.uploadedByName || b.uploadedBy)} · ${batchPill(b.status)}${b.approve ? " · معتمدة عند الرفع" : ""}`;
+    document.getElementById("batchTiles").innerHTML = [
+        dmTile("Records", b.received || 0), dmTile("Inserted", b.inserted || 0, "good"), dmTile("Updated", b.updated || 0, "info"),
+        dmTile("Unchanged", b.unchanged || 0), dmTile("Duplicates", b.duplicates || 0, "warn"), dmTile("Rejected", b.rejected || 0, b.rejected ? "bad" : ""),
+        dmTile("Warnings", b.warnings || 0, b.warnings ? "warn" : ""), dmTile("Empty", b.empty || 0)
+    ].join("");
+    const issues = (b.errors || []).map(e => ({ ...e, level: (IMPORT_CODES[e.code] || {}).level || e.type, message: e.message || (IMPORT_CODES[e.code] || {}).ar, fix: e.fix || (IMPORT_CODES[e.code] || {}).fix }));
+    const [, html] = dmIssueRows(issues, "ALL");
+    document.getElementById("batchErrors").innerHTML = html || `<tr><td colspan="6" class="text-center py-6 text-emerald-600 font-bold">✓ لا توجد أخطاء في هذه الدفعة.</td></tr>`;
+    document.getElementById("batchChangesBtn").classList.toggle("hidden", !CLOUD.on || !can("approve"));
+    document.getElementById("batchModal").classList.remove("hidden");
+}
+function closeBatchModal(){ document.getElementById("batchModal").classList.add("hidden"); }
+function dmDownloadBatchReport(){
+    const b = dmBatchOpen;
+    if(!b) return;
+    dmWriteErrorReport(b.batchCode, [
+        { "البند": "Batch", "القيمة": b.batchCode }, { "البند": "File", "القيمة": b.fileName }, { "البند": "Uploaded", "القيمة": formatDateTime(b.uploadDate) },
+        { "البند": "User", "القيمة": b.uploadedByName || b.uploadedBy }, { "البند": "Records", "القيمة": b.received }, { "البند": "Inserted", "القيمة": b.inserted },
+        { "البند": "Updated", "القيمة": b.updated }, { "البند": "Unchanged", "القيمة": b.unchanged }, { "البند": "Rejected", "القيمة": b.rejected },
+        { "البند": "Duplicates", "القيمة": b.duplicates }, { "البند": "Warnings", "القيمة": b.warnings }, { "البند": "Status", "القيمة": (BATCH_STATUS[b.status] || [b.status])[0] }
+    ], b.errors || []);
+}
+function dmShowBatchChanges(){
+    const b = dmBatchOpen;
+    closeBatchModal();
+    dmTab("changes");
+    dmLoadChanges({ batchId: b.batchId });
+}
+
+// ---- Change history (record_history) ----
+function dmInitChanges(){
+    const sel = document.getElementById("dmChangesKpi");
+    if(!sel.options.length) sel.innerHTML = `<option value="">كل المؤشرات</option>` + kpis.map(k => `<option value="${escapeAttr(k.code)}">${escapeHtml(k.name)}</option>`).join("");
+    dmLoadChanges();
+}
+const HISTORY_ACTIONS = { INSERT:["إضافة","status-green"], UPDATE:["تعديل","status-yellow"], APPROVE:["اعتماد","status-green"], SOFT_DELETE:["حذف منطقي","status-red"], RESTORE:["استعادة","status-gray"] };
+const HISTORY_FIELDS = { actual:"القيمة", numerator:"البسط", denominator:"المقام", weight:"الوزن", data_source:"المصدر", notes:"الملاحظات", approved:"الاعتماد", deleted:"محذوف", date:"التاريخ", facility_id:"المنشأة", department_id:"الإدارة", period_type:"الفترة" };
+const historyValues = (vals, fields) => !vals ? "—" : (fields && fields.length ? fields : ["actual","numerator","denominator"]).filter(f => f in vals)
+    .map(f => `${HISTORY_FIELDS[f] || f}: ${vals[f] == null ? "—" : typeof vals[f] === "number" ? round(vals[f]) : vals[f] === true ? "نعم" : vals[f] === false ? "لا" : vals[f]}`).join(" · ");
+async function dmLoadChanges(extra){
+    const body = document.getElementById("dmChangesBody");
+    if(!CLOUD.on || !dmMaster.fromDb){ body.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">سجل التعديلات يُحفظ في قاعدة البيانات المشتركة فقط.</td></tr>`; return; }
+    const filter = { ...(extra || {}) };
+    const kpi = document.getElementById("dmChangesKpi").value, since = document.getElementById("dmChangesSince").value;
+    if(kpi) filter.kpiCode = kpi;
+    if(since) filter.since = since;
+    try{ dmChanges = await rpc("list_record_history", withToken({ p_filter: filter, p_limit: 2000 })); }
+    catch(e){ body.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-rose-600">${escapeHtml(e.message)}</td></tr>`; return; }
+    const kname = code => kpis.find(k => k.code === code)?.name || code;
+    body.innerHTML = dmChanges.length ? dmChanges.map(h => {
+        const [label, cls] = HISTORY_ACTIONS[h.action] || [h.action, "status-gray"];
+        return `<tr><td class="text-xs">${formatDateTime(h.at)}</td><td class="text-xs">${escapeHtml(h.byName || h.by || "—")}</td>
+            <td><span class="pill ${cls} !py-0.5 !px-2 !text-[10.5px]">${label}</span></td><td class="dm-wrap text-xs">${escapeHtml(kname(h.kpiCode))}</td>
+            <td class="text-xs">${escapeHtml(h.new?.date || h.old?.date || "")}</td><td class="text-xs">${escapeHtml((h.fields || []).map(f => HISTORY_FIELDS[f] || f).join("، ") || "—")}</td>
+            <td class="dm-wrap text-xs text-slate-500">${escapeHtml(historyValues(h.old, h.fields))}</td><td class="dm-wrap text-xs font-semibold">${escapeHtml(historyValues(h.new, h.fields))}</td>
+            <td class="font-mono text-xs">${h.batchId ? `<button class="text-sky-700 underline" onclick="dmOpenBatch(${Number(h.batchId)})">#${h.batchId}</button>` : "—"}</td>
+            <td class="dm-wrap text-xs">${escapeHtml(h.reason || "")}</td></tr>`;
+    }).join("") : `<tr><td colspan="10" class="text-center py-6 text-slate-400">لا توجد تعديلات مطابقة.</td></tr>`;
+}
+function dmExportChanges(){
+    if(!dmChanges.length){ showToast("لا توجد تعديلات للتصدير."); return; }
+    const rows = dmChanges.map(h => ({ "الوقت": formatDateTime(h.at), "المستخدم": h.byName || h.by, "الإجراء": (HISTORY_ACTIONS[h.action] || [h.action])[0],
+        "المؤشر": h.kpiCode, "المفتاح": h.recordKey, "الحقول": (h.fields || []).join(", "), "القيمة القديمة": historyValues(h.old, h.fields),
+        "القيمة الجديدة": historyValues(h.new, h.fields), "الدفعة": h.batchId || "", "السبب": h.reason || "" }));
+    const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Audit");
+    XLSX.writeFile(wb, `APH_Record_History_${formatDateInput(new Date())}.xlsx`);
+}
+
+// ---- Data quality ----
+// Expected periods of a KPI from the data start to today, by its frequency (period start dates).
+function expectedPeriods(k, today){
+    const per = periodTypeOf(k), out = new Set();
+    for(let d = parseIsoDate(DATA_START_DATE); formatDateInput(d) <= today; d.setDate(d.getDate() + 1)) out.add(dmPeriodStart(formatDateInput(d), per));
+    return out;
+}
+async function dmRenderQuality(){
+    const today = formatDateInput(new Date());
+    const kmap = new Map(kpis.map(k => [k.code, k]));
+    let invalid = 0, missing = 0, outliers = 0, lastUpdate = null;
+    const keys = new Map();
+    const byKpi = new Map();
+    records.forEach(r => {
+        const k = kmap.get(r.kpiCode);
+        const hasVal = isNum(r.actualValue) || isNum(r.numerator);
+        if(!hasVal) missing++;
+        let bad = !k || !hasVal || r.date > today;
+        if(k && !bad){
+            const [vmin, vmax] = validRange(k);
+            if(isNum(r.actualValue) && ((vmin != null && r.actualValue < vmin) || (vmax != null && r.actualValue > vmax))) bad = true;
+            if(k.aggregation === "RATIO" && isNum(r.denominator) && Number(r.denominator) === 0) bad = true;
+        }
+        if(bad) invalid++;
+        const key = r.recordKey || r.kpiCode + "|" + r.date + "|" + (r.facilityId || "") + "|" + (r.departmentId || "");
+        keys.set(key, (keys.get(key) || 0) + 1);
+        if(r.updatedAt && (!lastUpdate || r.updatedAt > lastUpdate)) lastUpdate = r.updatedAt;
+        if(r.date >= weekStart(DATA_START_DATE) && hasVal && isNum(r.actualValue)){
+            if(!byKpi.has(r.kpiCode)) byKpi.set(r.kpiCode, []);
+            byKpi.get(r.kpiCode).push(r);
+        }
+    });
+    const dups = [...keys.values()].filter(n => n > 1).reduce((a, n) => a + n - 1, 0);
+    const inputKpis = activeKpis().filter(k => !DERIVED_KPIS[k.code]);
+    let expTotal = 0, fillTotal = 0;
+    const rows = inputKpis.map(k => {
+        const exp = expectedPeriods(k, today);
+        const list = byKpi.get(k.code) || [];
+        const filled = new Set(list.map(r => r.date).filter(d => exp.has(d)));
+        const vals = list.map(r => Number(r.actualValue));
+        let out = 0;
+        if(vals.length >= 8){
+            const mean = vals.reduce((a, v) => a + v, 0) / vals.length;
+            const sd = Math.sqrt(vals.reduce((a, v) => a + (v - mean) ** 2, 0) / vals.length);
+            if(sd > 0) out = vals.filter(v => Math.abs(v - mean) > 3 * sd).length;
+        }
+        outliers += out;
+        expTotal += exp.size; fillTotal += filled.size;
+        return { k, exp: exp.size, filled: filled.size, pct: exp.size ? filled.size / exp.size * 100 : null, out, last: lastReadingDate(k.code) };
+    }).sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101));
+    const noTarget = activeKpis().filter(k => effectiveTarget(k, thisYear()) == null && !hasRange(k) && !["info","none","conditional"].includes(k.direction)).length;
+    const inactive = kpis.filter(k => k.active === false).length;
+    if(!dmBatches.length && (CLOUD.on ? dmMaster.fromDb : true)){
+        try{ dmBatches = CLOUD.on ? await rpc("list_import_batches", withToken({ p_limit: 300 })) : load(STORAGE.batches, []); }catch(e){}
+    }
+    const lastImport = dmBatches.find(b => b.status !== "FAILED" && b.status !== "IN_PROGRESS");
+    const prevented = dmBatches.reduce((a, b) => a + (b.duplicates || 0), 0);
+    const total = records.length;
+    const pct = v => v == null ? "N/A" : `${round(v)}%`;
+    document.getElementById("dmQualityTiles").innerHTML = [
+        dmTile("Total Records", total), dmTile("Valid Records", total - invalid, "good"), dmTile("Invalid Records", invalid, invalid ? "bad" : "good"),
+        dmTile("Missing Values", missing, missing ? "warn" : "", `${(expTotal - fillTotal).toLocaleString("en-US")} فترة بلا قراءة`),
+        dmTile("Duplicates", dups, dups ? "bad" : "good", `منعها المفتاح الفريد: ${prevented.toLocaleString("en-US")}`),
+        dmTile("Outliers", outliers, outliers ? "warn" : "", "أبعد من 3 انحرافات معيارية"),
+        dmTile("Missing Targets", noTarget, noTarget ? "warn" : "good", "مؤشرات نشطة"), dmTile("Inactive Indicators", inactive, ""),
+        dmTile("Last Import", lastImport ? formatDateTime(lastImport.uploadDate).split(" ")[0] || "—" : "—", "info", lastImport ? `#${lastImport.batchCode}` : "لا يوجد"),
+        dmTile("Last Update", lastUpdate ? new Date(lastUpdate).toLocaleDateString("ar-SA") : "—", "info"),
+        dmTile("Data Completeness", pct(expTotal ? fillTotal / expTotal * 100 : null), "info", `${fillTotal.toLocaleString("en-US")} من ${expTotal.toLocaleString("en-US")} فترة`),
+        dmTile("Data Accuracy", pct(total ? (total - invalid) / total * 100 : null), "good", "سجلات صحيحة ÷ الإجمالي")
+    ].join("");
+    document.getElementById("dmQualityBody").innerHTML = rows.map(r => `<tr>
+        <td class="dm-wrap text-xs font-bold">${escapeHtml(r.k.name)}<div class="font-mono text-[10px] text-slate-400">${escapeHtml(r.k.code)}</div></td>
+        <td class="text-xs">${frequencyName(r.k.frequency)}</td><td>${r.exp.toLocaleString("en-US")}</td><td>${r.filled.toLocaleString("en-US")}</td>
+        <td><span class="pill ${r.pct == null ? "status-gray" : r.pct >= 95 ? "status-green" : r.pct >= 70 ? "status-yellow" : "status-red"}">${pct(r.pct)}</span></td>
+        <td>${r.out || "—"}</td><td class="text-xs">${r.last || "—"}</td></tr>`).join("");
+}
+
+// ---- Master data (read-only view; added from the template's master sheets by the admin) ----
+function dmRenderMaster(){
+    const yesNo = a => `<span class="pill ${a !== false ? "status-green" : "status-gray"} !py-0.5 !px-2 !text-[10.5px]">${a !== false ? "نشط" : "غير نشط"}</span>`;
+    document.getElementById("dmFacilitiesBody").innerHTML = masterList("facilities").map(f => `<tr><td class="font-mono font-bold">${escapeHtml(f.id)}</td><td>${escapeHtml(f.nameAr)}${f.primary ? ` <span class="pill status-gray !py-0.5 !px-2 !text-[10px]">الرئيسية</span>` : ""}</td><td>${escapeHtml(f.cluster || "—")}</td><td>${escapeHtml(f.region || "—")}</td><td>${yesNo(f.active)}</td></tr>`).join("");
+    document.getElementById("dmDepartmentsBody").innerHTML = masterList("departments").map(d => `<tr><td class="font-mono font-bold">${escapeHtml(d.id)}</td><td>${escapeHtml(d.nameAr)}</td><td class="font-mono text-xs">${escapeHtml(d.parentId || "—")}</td><td>${escapeHtml(d.type || "—")}</td><td>${yesNo(d.active)}</td></tr>`).join("");
+    document.getElementById("dmCategoriesBody").innerHTML = masterList("categories").map(c => `<tr><td class="font-mono font-bold">${escapeHtml(c.id)}</td><td>${escapeHtml(c.nameAr)}</td><td class="font-mono text-xs">${escapeHtml(c.parentId || "—")}</td></tr>`).join("");
+    document.getElementById("dmMasterNote").textContent = "لإضافة منشأة أو إدارة أو مؤشر: أضفه في ورقته بالقالب (FACILITIES أو DEPARTMENTS أو INDICATORS) ثم ارفع الملف؛ تعرض شاشة الفحص البيانات الجديدة ويضيفها مدير النظام بضغطة. لا يتطلب ذلك أي تغيير في بنية قاعدة البيانات.";
+}
+
+// ---- Current readings in the template's DATA columns (to paste into the template) ----
+function dmExportCurrent(){
+    const primary = primaryFacilityId();
+    const rows = records.filter(r => r.date >= weekStart(DATA_START_DATE) && r.dataSource !== DERIVED_SOURCE && kpis.some(k => k.code === r.kpiCode && !DERIVED_KPIS[k.code]))
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.kpiCode).localeCompare(String(b.kpiCode)))
+        .map(r => {
+            const k = kpis.find(x => x.code === r.kpiCode);
+            const ratio = CALC_TYPES[calcTypeOf(k)].mult > 0;
+            return { Facility_ID: r.facilityId || primary, Department_ID: r.departmentId || kpiDepartmentId(k), Indicator_ID: r.kpiCode, Period_Type: periodTypeOf(k),
+                     Measurement_Date: r.date, Numerator: ratio ? r.numerator : null, Denominator: ratio ? r.denominator : null, Actual_Value: ratio ? null : r.actualValue,
+                     Data_Source: r.dataSource || null, Data_Entry_By: r.createdBy || null, Notes: r.notes || null };
+        });
+    const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ Facility_ID: "" }]), "IMPORT_TEMPLATE");
+    XLSX.writeFile(wb, `APH_KPI_Current_Data_${formatDateInput(new Date())}.xlsx`);
+    showToast(`تم تصدير ${rows.length.toLocaleString("en-US")} قراءة بأعمدة القالب. يمكن رفع الملف كما هو أو لصق الأعمدة في ورقة DATA.`);
+}
+
 function showToast(msg){
     if(CLOUD.queuedNoticeUntil && Date.now() < CLOUD.queuedNoticeUntil){
         CLOUD.queuedNoticeUntil = 0;
@@ -4897,7 +6070,8 @@ function showToast(msg){
 
 document.addEventListener("keydown", e => {
     if(e.key !== "Escape") return;
-    if(!document.getElementById("quarterModal").classList.contains("hidden")) closeQuarterModal();
+    if(!document.getElementById("batchModal").classList.contains("hidden")) closeBatchModal();
+    else if(!document.getElementById("quarterModal").classList.contains("hidden")) closeQuarterModal();
     else if(!document.getElementById("kpiDetailModal").classList.contains("hidden")) closeKpiDetail();
 });
 
