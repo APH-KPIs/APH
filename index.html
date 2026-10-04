@@ -1162,7 +1162,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.11 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.12 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1244,7 +1244,7 @@ function groupByCategory(items, catOf){
 const KPI_LAYOUT_V = 3;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["TELE_APPTS","TELE_NOSHOW","INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX","APPT_CONFIRMED","APPT_CONFIRM_PCT","APPT_POSTPONE_REQ","CALLS_UNANSWERED","INVALID_NUMBERS"],
-    "الصيدلية": ["MED_ERR_REPORTING_DOCTORS","MED_ERR_REPORTING_NURSES","MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY","DRUGMAIL_SHIPMENTS_WEEKLY","DRUGMAIL_SHIPMENTS_MONTHLY"],
+    "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
     "المختبر (عينتي)": ["LAB_COMPLETION_PCT"],
     "الطوارئ": ["ED_VISITS","ED_REVISIT_72H"],
     "العيادات": ["PSY_CLINIC_VISITS","PSY_NOSHOW_COUNT","PSY_NOSHOW_PCT","CLINIC_CONFIRM_PCT_OF_VISITS"],
@@ -1273,7 +1273,7 @@ const KPI_HIDDEN = ["CALLS937_REPORTS_WEEKLY", "CALLS937_CLOSURE_RATE"];
 // The same statistic was listed twice; the copy without readings is dropped.
 const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_COUNT: "PSY_NOSHOW_COUNT" };
 // Removed from the platform at the owner's request (layout 3).
-const KPI_REMOVED = ["ED_LOS_HOURS", "DISCHARGES_DAILY"];
+const KPI_REMOVED = ["ED_LOS_HOURS", "DISCHARGES_DAILY", "MED_ERR_REPORTING_DOCTORS", "MED_ERR_REPORTING_NURSES", "DRUGMAIL_SHIPMENTS_WEEKLY", "DRUGMAIL_SHIPMENTS_MONTHLY"];
 const LAYOUT_ORDER = Object.values(KPI_LAYOUT).flat();
 
 // Applies the layout to KPIs not yet on it; returns { changed, removed } for saving.
@@ -4042,7 +4042,8 @@ async function confirmWorkbookImport(){
         return { ...old, ...fk, ...keep };
     });
     if(mayEditKpis){
-        kpis = replaceKpis ? merged : [...kpis.filter(k => !fileCodes.has(k.code)), ...merged];
+        // KPIs removed from the platform stay out even though the workbook still lists them.
+        kpis = (replaceKpis ? merged : [...kpis.filter(k => !fileCodes.has(k.code)), ...merged]).filter(k => !KPI_REMOVED.includes(k.code));
         if(replaceKpis) ADDED_KPIS.forEach(a => { const old = before.kpis.find(k => k.code === a.code); if(old && !fileCodes.has(a.code)) kpis.push(old); });
         addMissingKpis(kpis);
         applyDirectionRules(kpis);
