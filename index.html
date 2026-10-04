@@ -860,7 +860,7 @@
                     <p class="text-[11px] text-slate-500 mt-0.5">Excel ← فحص ← ربط الحقول ← قاعدة البيانات ← محرك المؤشرات ← اللوحة. لا يُحفظ أي سجل قبل اجتياز الفحص، ولا تتكرر السجلات: المفتاح الموجود يُحدَّث.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <a id="dmTemplateLink" href="templates/APH_KPI_Data_Template_2026.xlsx" download class="btn btn-secondary text-xs whitespace-nowrap"><i class="fa-solid fa-download text-emerald-600 ml-1"></i> تحميل القالب</a>
+                    <a id="dmTemplateLink" href="templates/APH_KPI_Simple_2026.xlsx" download="قالب إدخال المؤشرات 2026.xlsx" class="btn btn-secondary text-xs whitespace-nowrap"><i class="fa-solid fa-download text-emerald-600 ml-1"></i> تحميل القالب</a>
                     <button onclick="dmExportCurrent()" class="btn btn-secondary text-xs whitespace-nowrap" title="القراءات الحالية بأعمدة ورقة DATA، للصقها في القالب"><i class="fa-solid fa-file-export text-sky-600 ml-1"></i> البيانات الحالية بصيغة القالب</button>
                     <label class="btn btn-primary text-xs whitespace-nowrap cursor-pointer">
                         <i class="fa-solid fa-file-arrow-up ml-1"></i> رفع ملف Excel
@@ -1391,7 +1391,10 @@ const permissions = {
 // and rewrites the seed block in setup.sql. Change them here, then run the builder.
 // =====================================================================
 const TEMPLATE_VERSION = "1.0";
-const TEMPLATE_FILE = "templates/APH_KPI_Data_Template_2026.xlsx";
+// The simple entry workbook (tools/build_simple_template.py) is the download; the detailed long-format template
+// (tools/build_excel_template.py) imports the same way.
+const TEMPLATE_FILE = "templates/APH_KPI_Simple_2026.xlsx", TEMPLATE_DOWNLOAD_NAME = "قالب إدخال المؤشرات 2026.xlsx";
+const TEMPLATE_FILE_DETAILED = "templates/APH_KPI_Data_Template_2026.xlsx";
 // First date accepted; there is no end date (any date up to today).
 const DATA_START_DATE = "2026-01-01";
 const MASTER_FACILITIES = [
@@ -4406,8 +4409,8 @@ async function handleExcelUpload(event){
     try {
         const workbook = XLSX.read(await file.arrayBuffer(), { type:"array", cellDates:true });
         importedRows = [];
-        // The official template (IMPORT_TEMPLATE / DATA with Indicator_ID) goes through the data management import.
-        if(dmLocateSheet(workbook)){
+        // The entry templates (simple daily sheet, or IMPORT_TEMPLATE / DATA with Indicator_ID) go through the data management import.
+        if(dmLocateSimpleSheet(workbook) || dmLocateSheet(workbook)){
             input.value = "";
             showSection("dataMgmt"); dmTab("upload");
             await dmProcessFile(file);
@@ -5334,6 +5337,7 @@ function dmShow(){
     notice.classList.toggle("hidden", !missing);
     if(missing) notice.innerHTML = "قاعدة البيانات لم تُحدَّث لهذا الإصدار بعد: شغّل ملف <b>supabase/setup.sql</b> في SQL Editor بمشروع Supabase ثم أعد تحميل الصفحة. إلى ذلك الحين يعمل الفحص بالبيانات المرجعية المدمجة ولا يمكن الحفظ.";
     document.getElementById("dmTemplateLink").setAttribute("href", TEMPLATE_FILE);
+    document.getElementById("dmTemplateLink").setAttribute("download", TEMPLATE_DOWNLOAD_NAME);
     document.querySelector('.dm-tabs [data-dm="changes"]').classList.toggle("hidden", !can("approve"));
     dmTab(dmTabNow || "upload");
 }
@@ -5418,6 +5422,58 @@ function dmLocateSheet(wb){
     return best;
 }
 
+// The simple entry workbook (tools/build_simple_template.py): one row per day, one column per indicator (البسط / المقام
+// columns for ratio indicators), Arabic headers. Columns are matched by the hidden code row when present, else by the
+// indicator's Arabic name. Each filled cell becomes one staged record for the indicator's department and the primary facility.
+const SIMPLE_DATE_HEADERS = ["التاريخ", "تاريخ القياس", "Date"];
+function dmLocateSimpleSheet(wb){
+    const norm = v => String(v ?? "").replace(/[\u064B-\u0652\u0640]/g, "").replace(/[إأآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[\s\-—–_:()|/]+/g, " ").trim().toLowerCase();
+    const byName = new Map(kpis.map(k => [norm(k.name), k]));
+    const byCode = new Map(kpis.map(k => [String(k.code).toUpperCase(), k]));
+    const partOf = text => { const t = norm(text); if(t.endsWith(" " + norm("البسط"))) return ["NUM", t.slice(0, -norm("البسط").length - 1)]; if(t.endsWith(" " + norm("المقام"))) return ["DEN", t.slice(0, -norm("المقام").length - 1)]; return ["", t]; };
+    for(const name of wb.SheetNames){
+        const ws = wb.Sheets[name];
+        if(!ws || !ws["!ref"]) continue;
+        const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true, blankrows:true });
+        const origin = XLSX.utils.decode_range(ws["!ref"]).s.r;
+        for(let h = 0; h < Math.min(aoa.length, 10); h++){
+            const head = aoa[h] || [];
+            const dateCol = head.findIndex(c => SIMPLE_DATE_HEADERS.some(x => norm(x) === norm(c)));
+            if(dateCol < 0) continue;
+            // A code row above the headers ("ED_VISITS", "READMIT30_PSY:NUM") wins over the header text.
+            const codeRow = aoa.slice(0, h).find(r => (r || []).some(c => byCode.has(String(c ?? "").split(":")[0].trim().toUpperCase())));
+            const cols = [];
+            head.forEach((cell, i) => {
+                if(i === dateCol || cell == null || cell === "") return;
+                let k = null, part = "";
+                const code = codeRow ? String(codeRow[i] ?? "").trim() : "";
+                if(code && byCode.has(code.split(":")[0].toUpperCase())){ k = byCode.get(code.split(":")[0].toUpperCase()); part = (code.split(":")[1] || "").toUpperCase(); }
+                else { const [p, base] = partOf(cell); k = byName.get(base) || byName.get(norm(cell)); part = byName.get(base) ? p : ""; }
+                if(k) cols.push({ i, k, part, header: String(cell).trim() });
+            });
+            if(!cols.length) continue;
+            const groups = new Map();
+            cols.forEach(c => { if(!groups.has(c.k.code)) groups.set(c.k.code, { k: c.k }); groups.get(c.k.code)[c.part || "VAL"] = c; });
+            const staged = [];
+            let empty = 0;
+            aoa.slice(h + 1).forEach((r, idx) => {
+                if(!r || r[dateCol] == null || r[dateCol] === "") return;
+                groups.forEach(g => {
+                    const v = c => c ? r[c.i] : null;
+                    const val = v(g.VAL), num = v(g.NUM), den = v(g.DEN);
+                    if([val, num, den].every(x => x == null || x === "")){ empty++; return; }
+                    const labels = { numerator: g.NUM?.header, denominator: g.DEN?.header, actualValue: g.VAL?.header, measurementDate: String(head[dateCol]), indicatorId: g.k.name };
+                    staged.push({ rowNumber: origin + h + 2 + idx, facilityId: primaryFacilityId(), departmentId: kpiDepartmentId(g.k), indicatorId: g.k.code,
+                        periodType: periodTypeOf(g.k), measurementDate: r[dateCol], numerator: num, denominator: den, actualValue: g.VAL ? val : null,
+                        recordKey: null, dataSource: null, dataEntryBy: null, dataEntryDate: null, notes: null, labels });
+                });
+            });
+            return { name, headerRow: origin + h, staged, empty, columns: cols.length, unknown: head.filter((c, i) => c != null && c !== "" && i !== dateCol && !cols.some(x => x.i === i)).map(String) };
+        }
+    }
+    return null;
+}
+
 function dmTemplateVersion(wb){
     const ws = wb.Sheets.README;
     if(!ws) return "";
@@ -5451,9 +5507,12 @@ async function dmProcessFile(file, buffer){
         dmState = { fileName: file.name, fileSize: file.size, fileErrors: [e.message || "تعذر قراءة الملف."], rows: [], issues: [] };
         dmRenderPreview(); return;
     }
-    // STEP 2–3: sheets and columns
-    const loc = dmLocateSheet(wb);
-    if(!loc){
+    // STEP 2–3: sheets and columns. The simple entry workbook (one row per day) comes first; else the detailed template.
+    const simple = dmLocateSimpleSheet(wb);
+    const loc = simple ? null : dmLocateSheet(wb);
+    if(simple){
+        if(!simple.staged.length) fileErrors.push(`لا توجد قيم في ورقة ${simple.name}: اكتب القراءات في خلايا المؤشرات ثم ارفع الملف.`);
+    } else if(!loc){
         fileErrors.push(`لم يُعثر على ورقة الاستيراد: يجب أن يحتوي الملف على ورقة IMPORT_TEMPLATE (أو DATA) بأعمدة ${IMPORT_MAP.filter(m => m.required && m.type !== "number").map(m => m.headers[0]).join("، ")}.`);
     } else {
         const missing = IMPORT_MAP.filter(m => m.required && loc.cols[m.field] == null).map(m => m.headers[0]);
@@ -5461,7 +5520,7 @@ async function dmProcessFile(file, buffer){
     }
     const version = dmTemplateVersion(wb);
     // STEP 4–8: rows
-    let staged = [];
+    let staged = simple ? simple.staged : [];
     if(loc && !fileErrors.length){
         if(loc.rows.length > MAX_IMPORT_ROWS) fileErrors.push(`عدد الأسطر (${loc.rows.length.toLocaleString("en-US")}) يتجاوز الحد (${MAX_IMPORT_ROWS.toLocaleString("en-US")}). قسّم الملف.`);
         else staged = loc.rows.map((r, i) => {
@@ -5473,7 +5532,7 @@ async function dmProcessFile(file, buffer){
     setLoading(true, "STEP 4–8 — فحص السجلات...");
     await new Promise(r => setTimeout(r, 30));
     const masters = dmReadMasters(wb);
-    dmState = { fileName: file.name, fileSize: file.size, fileHash: hash, sheetName: loc?.name || "", templateVersion: version,
+    dmState = { fileName: file.name, fileSize: file.size, fileHash: hash, sheetName: simple?.name || loc?.name || "", templateVersion: version,
                 fileErrors, masters, ...dmValidate(staged) };
     setLoading(false);
     dmRenderPreview();
@@ -5493,7 +5552,7 @@ function dmValidate(staged){
     let empty = 0;
     const add = (row, code, field, value) => {
         const c = IMPORT_CODES[code];
-        issues.push({ row: row.rowNumber, key: row.key || "", indicator: row.ind || "", field: IMPORT_FIELD_LABEL[field] || field || "", value: value == null ? "" : String(value),
+        issues.push({ row: row.rowNumber, key: row.key || "", indicator: row.ind || "", field: row.src?.labels?.[field] || IMPORT_FIELD_LABEL[field] || field || "", value: value == null ? "" : String(value),
                       code, level: c.level, message: c.ar, fix: c.fix });
         if(c.level === "ERROR") row.errors++; else if(c.level === "WARNING") row.warnings++;
     };
