@@ -1054,7 +1054,7 @@
 </div>
 
 <!-- ================= MODAL: QUARTER VALUES (admin) ================= -->
-<div id="quarterModal" class="modal hidden" onclick="if(event.target === this) closeQuarterModal()">
+<div id="quarterModal" class="modal hidden" style="z-index:120" onclick="if(event.target === this) closeQuarterModal()">
     <div class="modal-box space-y-4" style="width:min(560px,100%)" role="dialog" aria-modal="true" aria-labelledby="qmTitle">
         <div class="flex justify-between items-start gap-3 border-b border-slate-200 pb-3">
             <div>
@@ -1093,6 +1093,7 @@
                 <div id="detailCode" class="text-[11px] text-slate-400 font-mono mt-0.5"></div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
+                <span id="detailEdit"></span>
                 <span id="detailStatus"></span>
                 <button onclick="closeKpiDetail()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none" aria-label="إغلاق">&times;</button>
             </div>
@@ -1187,7 +1188,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.19 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.20 — 2026-10-04";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1273,7 +1274,8 @@ function groupByCategory(items, catOf){
 // Version 8: telemedicine no-shows, unanswered calls and invalid numbers removed; medication safety named.
 // Version 9: quality, engineering and call targets; completed-maintenance count entry-only; one patient-experience KPI.
 // Version 10: related KPIs grouped (beds, re-admission, clinics with telemedicine and appointments).
-const KPI_LAYOUT_V = 10;
+// Version 11: official Q3 2026 maintenance figures (474 reported, 472 completed).
+const KPI_LAYOUT_V = 11;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1347,6 +1349,11 @@ const KPI_TARGETS = {
     MAINT_COMPLETED:          { v: 9, entryOnly: true }
 };
 // Removed from the platform at the owner's request (layout 3).
+// Official quarter figures supplied by the departments; shown with the ✎ mark like any admin-set quarter value.
+const OFFICIAL_QUARTERS = {
+    MAINT_REQUESTS:  { v: 11, values: { "2026-Q3": 474 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" },
+    MAINT_COMPLETED: { v: 11, values: { "2026-Q3": 472 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" }
+};
 // code → layout version that removed it (a KPI stored at an older version is dropped once).
 const KPI_REMOVED_AT = {
     ED_LOS_HOURS: 3, DISCHARGES_DAILY: 3, MED_ERR_REPORTING_DOCTORS: 3, MED_ERR_REPORTING_NURSES: 3,
@@ -1376,6 +1383,10 @@ function applyKpiLayout(list, recs){
         k.group = GROUP_OF[k.code] || null;
         Object.assign(k, KPI_RENAMES[k.code] || {});
         if(KPI_HIDDEN.includes(k.code) && (k.layoutV || 0) < 3) k.active = false;
+        const official = OFFICIAL_QUARTERS[k.code];
+        if(official && (k.layoutV || 0) < official.v)
+            k.quarterValues = { ...(k.quarterValues || {}), ...Object.fromEntries(Object.entries(official.values).map(([key, value]) =>
+                [key, { value, by: "وحدة مؤشرات الأداء", at: new Date().toISOString(), reason: official.reason }])) };
         const t = KPI_TARGETS[k.code];
         if(t && (k.layoutV || 0) < t.v){
             const { v, ...fields } = t;
@@ -2587,7 +2598,28 @@ function getPeriodValue(code, year, q){
         const parts = QUARTERS.map(qq => getPeriodValue(code, year, qq)).filter(isNum);
         return parts.length ? parts.reduce((a, v) => a + Number(v), 0) : null;
     }
+    const parts = derivedManualParts(kpi, year, q);
+    if(parts) return parts[1] > 0 ? parts[0] / parts[1] * 100 : null;
     return aggregateRows(periodRecords(code, year, q), kpi);
+}
+
+// A calculated rate whose sources have official quarter values (e.g. completed ÷ reported maintenance) uses them.
+function derivedManualParts(kpi, year, q){
+    const d = DERIVED_KPIS[kpi.code];
+    if(!d || !Array.isArray(d.num) || !Array.isArray(d.den) || kpi.aggregation !== "RATIO" || ![...d.num, ...d.den].every(([, part]) => part === "value")) return null;
+    // Each source uses its official quarter value when set, otherwise its value from the readings.
+    const srcValue = (c, qq) => { const sk = kpis.find(x => x.code === c); if(!sk) return { v: 0, manual: false }; const m = manualQuarter(sk, year, qq); return m != null ? { v: m, manual: true } : { v: Number(computedPeriodValue(sk, year, qq)) || 0, manual: false }; };
+    const quarterParts = qq => {
+        const nums = d.num.map(([c]) => srcValue(c, qq)), dens = d.den.map(([c]) => srcValue(c, qq));
+        if([...nums, ...dens].some(x => x.manual)) return [nums.reduce((a, x) => a + x.v, 0), dens.reduce((a, x) => a + x.v, 0), true];
+        const rows = periodRecords(kpi.code, year, qq);
+        return [rows.reduce((a, r) => a + (isNum(r.numerator) ? Number(r.numerator) : 0), 0), rows.reduce((a, r) => a + (isNum(r.denominator) ? Number(r.denominator) : 0), 0), false];
+    };
+    if(/^Q[1-4]$/.test(q)){ const p = quarterParts(q); return p[2] ? p : null; }
+    if(q !== "ALL") return null;
+    const parts = QUARTERS.map(quarterParts);
+    if(!parts.some(p => p[2])) return null;
+    return [parts.reduce((a, p) => a + p[0], 0), parts.reduce((a, p) => a + p[1], 0), true];
 }
 function computedPeriodValue(kpi, year, q){ return aggregateRows(periodRecords(kpi.code, year, q), kpi); }
 
@@ -2986,6 +3018,7 @@ async function saveQuarterValues(){
     closeQuarterModal();
     showToast("تم حفظ القيم الربعية.");
     renderDashboard();
+    if(!document.getElementById("kpiDetailModal").classList.contains("hidden") && detailCode) openKpiDetail(detailCode);
 }
 
 // ---- Column chart for any KPI over the periods of the current view ----
@@ -3106,11 +3139,12 @@ function kpiCard(r, year){
 function ratioCountsTile(k, year, q, tile){
     if(k.aggregation !== "RATIO") return "";
     const rows = periodRecords(k.code, year, q);
-    const num = rows.filter(r => isNum(r.numerator)).reduce((a, r) => a + Number(r.numerator), 0);
-    const den = rows.filter(r => isNum(r.denominator)).reduce((a, r) => a + Number(r.denominator), 0);
-    if(!rows.some(r => isNum(r.denominator))) return "";
+    const manual = derivedManualParts(k, year, q);
+    const num = manual ? manual[0] : rows.filter(r => isNum(r.numerator)).reduce((a, r) => a + Number(r.numerator), 0);
+    const den = manual ? manual[1] : rows.filter(r => isNum(r.denominator)).reduce((a, r) => a + Number(r.denominator), 0);
+    if(!manual && !rows.some(r => isNum(r.denominator))) return "";
     const d = DERIVED_KPIS[k.code];
-    const nameOf = parts => parts.map(([c]) => kpis.find(x => x.code === c)?.name || c).join(" + ");
+    const nameOf = parts => (Array.isArray(parts) ? parts : []).map(([c]) => kpis.find(x => x.code === c)?.name || c).join(" + ");
     const hint = (ENTRY_HINTS[k.code] || "").match(/البسط = (.+?) \| المقام = (.+)/);
     const [nl, dl] = d ? [nameOf(d.num), nameOf(d.den)] : hint ? [hint[1], hint[2]] : ["البسط", "المقام"];
     const n = v => Number(v).toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -3132,6 +3166,13 @@ function openKpiDetail(code){
     document.getElementById("detailName").textContent = k.name;
     document.getElementById("detailCode").innerHTML = escapeHtml(k.code) + staleNote(k);
     document.getElementById("detailStatus").innerHTML = r ? `<span class="pill status-${r.status.key}">${r.status.label}</span>` : "";
+    // The admin sets a closed quarter's official value from here for any KPI; calculated KPIs follow their sources.
+    const der = DERIVED_KPIS[k.code];
+    const srcCodes = der ? [...new Set([...(Array.isArray(der.num) ? der.num : []), ...(Array.isArray(der.den) ? der.den : [])].map(([c]) => c))] : [];
+    const src = der && srcCodes.length;
+    document.getElementById("detailEdit").innerHTML = !can("editKpi") ? ""
+        : src ? `<span class="text-[10.5px] text-slate-500">يُحسب من: ${srcCodes.map(c => `<button class="text-sky-700 font-bold underline" onclick="openKpiDetail('${escapeAttr(c)}')">${escapeHtml(kpis.find(x => x.code === c)?.name || c)}</button>`).join(" و ")}</span>`
+        : `<button onclick="openQuarterModal('${escapeAttr(k.code)}', ${year})" class="btn btn-secondary text-xs"><i class="fa-solid fa-pen ml-1"></i> تعديل القيم الربعية</button>`;
 
     const delta = r && r.act != null && r.prev != null ? Number(r.act) - Number(r.prev) : null;
     const tile = (label, value, sub="") => `<div class="detail-tile"><div class="t-label">${label}</div><div class="t-value">${value}</div>${sub ? `<div class="t-sub">${sub}</div>` : ""}</div>`;
