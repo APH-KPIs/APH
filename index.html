@@ -1188,7 +1188,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 3.21 — 2026-10-04";
+const APP_VERSION = "الإصدار 3.22 — 2026-10-07";
 const SECTIONS = ["dashboard", "data", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1276,7 +1276,8 @@ function groupByCategory(items, catOf){
 // Version 10: related KPIs grouped (beds, re-admission, clinics with telemedicine and appointments).
 // Version 11: official Q3 2026 maintenance figures (474 reported, 472 completed).
 // Version 12: maintenance completion target from Q3 (99.58%); Ainati lab 98% for Q1–Q3 2026.
-const KPI_LAYOUT_V = 12;
+// Version 13: self-revenue (revenue growth) target 2026: 150,000 SAR, split by quarter.
+const KPI_LAYOUT_V = 13;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1347,6 +1348,10 @@ const KPI_TARGETS = {
     MAINT_COMPLETION_PCT:     { v: 12, target: 99.578, direction: "higher" },
     SWITCH_INCOMING_CALLS:    { v: 9, target: 16000, targetBasis: "annual", direction: "lower" },
     APPT_OUTGOING_CALLS:      { v: 9, target: 32000, targetBasis: "annual", direction: "higher" },
+    // Revenue growth plan 2026 (2025 revenue 58,241): 9,000 a month in Q1, 11,000 in Q2, 13,000 in Q3, 17,000 in Q4.
+    SELF_REVENUE:             { v: 13, target: 150000, targetBasis: "annual", direction: "higher",
+                                quarterTargets: { "2026-Q1": 27000, "2026-Q2": 33000, "2026-Q3": 39000, "2026-Q4": 51000 },
+                                definition: "إجمالي إيرادات الموارد الذاتية المحصلة خلال الفترة. مستهدف تنمية الإيرادات 2026: 150,000 ريال (إيراد 2025: 58,241 ريال)." },
     // Entered (it feeds the completion rate) but not shown on the dashboard.
     MAINT_COMPLETED:          { v: 9, entryOnly: true }
 };
@@ -2713,14 +2718,17 @@ function periodTarget(kpi, year, q, base){
     });
     // A target set per week (kpi.targetBasis "weekly") is turned into each quarter's total by its days.
     const daysInYear = yy => (new Date(yy, 1, 29).getMonth() === 1 ? 366 : 365);
-    const qBase = (qy, qq) => kpi.targetBasis === "weekly" ? base * unitsInQuarter(Number(qy), qq, "daily") / 7
-        : kpi.targetBasis === "annual" ? base * unitsInQuarter(Number(qy), qq, "daily") / daysInYear(Number(qy)) : base;
+    // An annual target with a quarterly plan (kpi.quarterTargets) is split by that plan instead of by days.
+    const qBase = (qy, qq) => { const share = quarterShare(kpi, qy, qq); return share != null ? base * share
+        : kpi.targetBasis === "weekly" ? base * unitsInQuarter(Number(qy), qq, "daily") / 7
+        : kpi.targetBasis === "annual" ? base * unitsInQuarter(Number(qy), qq, "daily") / daysInYear(Number(qy)) : base; };
     if(!byQuarter.size){
         // No readings yet: use the calendar share of the period.
         if(q === "ALL") return QUARTERS.reduce((sum, qq) => sum + qBase(y, qq), 0);
         if(q[0] === "Q") return qBase(y, q);
         const qOf = m => "Q" + Math.ceil(m / 3);
-        if(q[0] === "M"){ const m = Number(q.slice(1)); const qq = qOf(m); return qBase(y, qq) * new Date(y, m, 0).getDate() / unitsInQuarter(y, qq, "daily"); }
+        if(q[0] === "M"){ const m = Number(q.slice(1)); const qq = qOf(m);
+            return kpi.frequency === "monthly" ? qBase(y, qq) / 3 : qBase(y, qq) * new Date(y, m, 0).getDate() / unitsInQuarter(y, qq, "daily"); }
         const m = Number(q.slice(6, 8)), qq = qOf(m); return qBase(y, qq) * 7 / unitsInQuarter(y, qq, "daily");
     }
     let total = 0;
@@ -2729,6 +2737,19 @@ function periodTarget(kpi, year, q, base){
         total += qBase(qy, qq) * units.size / unitsInQuarter(Number(qy), qq, kpi.frequency);
     });
     return total;
+}
+
+// A quarter's share of the year in the KPI's quarterly plan, or null without a plan for that year.
+// Shares (not amounts) are used so a different annual target set on the targets page keeps the same split.
+function quarterPlan(kpi, year){
+    const plan = kpi.quarterTargets || {};
+    const values = QUARTERS.map(qq => plan[`${year}-${qq}`]);
+    return values.every(isNum) ? values.map(Number) : null;
+}
+function quarterShare(kpi, year, q){
+    const plan = quarterPlan(kpi, year);
+    const total = plan ? plan.reduce((a, b) => a + b, 0) : 0;
+    return total ? plan[QUARTERS.indexOf(q)] / total : null;
 }
 
 // Standing targets come from the KPI file or from the performance unit's approved list (KPI_TARGETS).
@@ -4562,6 +4583,9 @@ function targetScaleText(k, v){
     if(k.aggregation !== "SUM" || k.direction === "range" || k.direction === "conditional" || !isNum(v)) return "";
     v = Number(v);
     const r = x => x >= 10 ? Math.round(x) : Math.round(x * 10) / 10;
+    const plan = k.targetBasis === "annual" && quarterPlan(k, thisYear());
+    if(plan){ const sum = plan.reduce((a, b) => a + b, 0);
+        return QUARTERS.map((qq, i) => `${qq} ${fmt(r(v * plan[i] / sum), k)} (شهري ${fmt(r(v * plan[i] / sum / 3), k)})`).join(" · "); }
     if(k.targetBasis === "annual") return `ربع سنوي ≈ ${fmt(r(v / 4), k)} · شهري ≈ ${fmt(r(v / 12), k)} · أسبوعي ≈ ${fmt(r(v * 7 / 365), k)} · يومي ≈ ${fmt(r(v / 365), k)}`;
     if(k.targetBasis === "weekly") return `ربع سنوي ≈ ${fmt(r(v * 13), k)} · شهري ≈ ${fmt(r(v * 30.44 / 7), k)} · سنوي ≈ ${fmt(r(v * 365 / 7), k)} · يومي ≈ ${fmt(r(v / 7), k)}`;
     return `سنوي ${fmt(v * 4, k)} · شهري ≈ ${fmt(r(v / 3), k)} · أسبوعي ≈ ${fmt(r(v / 13), k)}${k.frequency === "daily" ? ` · يومي ≈ ${fmt(r(v / 91), k)}` : ""}`;
