@@ -1368,7 +1368,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.0 — 2026-10-07";
+const APP_VERSION = "الإصدار 4.1 — 2026-10-09";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1493,6 +1493,7 @@ const IMPORT_CODES = {
     W01: { level:"WARNING", ar:"لا يوجد مستهدف للمؤشر", en:"Target not set", fix:"يُستورد السجل؛ حدد المستهدف من صفحة المستهدفات في المنصة" },
     W02: { level:"WARNING", ar:"التاريخ ليس بداية الفترة وسيُسجل على بداية الأسبوع/الشهر/الربع", en:"Date normalized to period start", fix:"لا يلزم إجراء؛ للدقة اكتب تاريخ بداية الفترة" },
     W03: { level:"WARNING", ar:"البسط أكبر من المقام", en:"Numerator greater than denominator", fix:"تحقق من الأرقام" },
+    W06: { level:"WARNING", ar:"نسبة مدخلة برقمها النهائي وتتجاوز 100%", en:"Final ratio value above 100%", fix:"يُستورد السجل كما هو؛ راجع الرقم إن لم يكن مقصوداً" },
     W05: { level:"DUPLICATE", ar:"سجل مكرر في الملف لنفس المفتاح — يُعتمد آخر سطر ويُتجاهل هذا", en:"Duplicate record in file; last one wins", fix:"احذف السطر المكرر أو وحّد القيمة" }
 };
 // Per-KPI template settings applied by layout 13 (English name, calculation type, allowed range,
@@ -5458,7 +5459,8 @@ function dmLocateSheet(wb){
 
 // The simple entry workbook (tools/build_simple_template.py): one row per day, one column per indicator (البسط / المقام
 // columns for ratio indicators), Arabic headers. Columns are matched by the hidden code row when present, else by the
-// indicator's Arabic name. Each filled cell becomes one staged record for the indicator's department and the primary facility.
+// indicator's Arabic name. A ratio indicator with a single row (or column) in a sheet holds its final rate, whatever its
+// code's :NUM / :DEN suffix (the approved 2026 entry file has no البسط / المقام split). Each filled cell becomes one staged record for the indicator's department and the primary facility.
 const SIMPLE_DATE_HEADERS = ["التاريخ", "تاريخ القياس", "Date"];
 function dmLocateSimpleSheet(wb){
     const norm = v => String(v ?? "").replace(/[ً-ْـ]/g, "").replace(/[إأآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[\s\-—–_:()|/]+/g, " ").trim().toLowerCase();
@@ -5472,6 +5474,7 @@ function dmLocateSimpleSheet(wb){
         for(const [suf, part] of [[NUM, "NUM"], [DEN, "DEN"]]) if(t.endsWith(" " + suf)){ const k = byName.get(t.slice(0, -suf.length - 1)); if(k) return { k, part }; }
         const k = byName.get(t); return k ? { k, part: "" } : null;
     };
+    const countBy = list => list.reduce((m, x) => (m[x] = (m[x] || 0) + 1, m), {});
     const groups = new Map();   // indicator|date → { k, date, rowNumber, VAL/NUM/DEN: { v, header } }
     const put = (k, part, date, v, rowNumber, header) => {
         const key = k.code + "|" + String(date);
@@ -5494,17 +5497,20 @@ function dmLocateSimpleSheet(wb){
             const dateRow = aoa[dateRowIdx];
             const dateCols = dateColsOf(dateRow);
             const first = dateCols[0];
-            let n = 0;
-            aoa.slice(dateRowIdx + 1).forEach((r, idx) => {
-                if(!r) return;
+            const hits = aoa.slice(dateRowIdx + 1).map(r => {
+                if(!r) return null;
                 const lead = r.slice(0, first);
-                const hit = lead.map(fromCode).find(Boolean) || lead.map(fromName).find(Boolean);
-                if(!hit) return;
-                n++;
-                const label = String(lead.find(c => fromName(c)) ?? hit.k.name).trim();
-                dateCols.forEach(ci => { const v = r[ci]; if(v != null && v !== "") put(hit.k, hit.part, dateRow[ci], v, origin + dateRowIdx + 2 + idx, `${label} (${name})`); });
+                return lead.map(fromCode).find(Boolean) || lead.map(fromName).find(Boolean) || null;
             });
-            if(n) found.push(name);
+            const rowsOf = countBy(hits.filter(Boolean).map(h => h.k.code));
+            hits.forEach((hit, idx) => {
+                if(!hit) return;
+                const r = aoa[dateRowIdx + 1 + idx];
+                const part = rowsOf[hit.k.code] > 1 ? hit.part : "";
+                const label = String(r.slice(0, first).find(c => fromName(c)) ?? hit.k.name).trim();
+                dateCols.forEach(ci => { const v = r[ci]; if(v != null && v !== "") put(hit.k, part, dateRow[ci], v, origin + dateRowIdx + 2 + idx, `${label} (${name})`); });
+            });
+            if(hits.some(Boolean)) found.push(name);
             continue;
         }
         // Vertical: a "التاريخ" column, one indicator per column.
@@ -5520,6 +5526,8 @@ function dmLocateSimpleSheet(wb){
                 if(hit) cols.push({ i, ...hit, header: String(cell).trim() });
             });
             if(!cols.length) continue;
+            const colsOf = countBy(cols.map(c => c.k.code));
+            cols.forEach(c => { if(colsOf[c.k.code] === 1) c.part = ""; });
             found.push(name);
             aoa.slice(h + 1).forEach((r, idx) => {
                 if(!r || r[dateCol] == null || r[dateCol] === "") return;
@@ -5532,7 +5540,7 @@ function dmLocateSimpleSheet(wb){
     const staged = [...groups.values()].map(g => ({
         rowNumber: g.rowNumber, facilityId: primaryFacilityId(), departmentId: kpiDepartmentId(g.k), indicatorId: g.k.code,
         periodType: periodTypeOf(g.k), measurementDate: g.date, numerator: g.NUM?.v ?? null, denominator: g.DEN?.v ?? null, actualValue: g.VAL?.v ?? null,
-        recordKey: null, dataSource: null, dataEntryBy: null, dataEntryDate: null, notes: null,
+        recordKey: null, dataSource: null, dataEntryBy: null, dataEntryDate: null, notes: null, grid: true,
         labels: { numerator: g.NUM?.header || g.VAL?.header || g.DEN?.header, denominator: g.DEN?.header || g.NUM?.header, actualValue: g.VAL?.header || g.NUM?.header,
                   measurementDate: (g.VAL || g.NUM || g.DEN)?.header, indicatorId: g.k.name }
     }));
@@ -5651,7 +5659,9 @@ function dmValidate(staged){
             const mult = CALC_TYPES[calcTypeOf(k)].mult;
             row.mult = mult;
             if(mult > 0){
-                if(n.val == null || d.val == null) add(row, "E01", n.val == null ? "numerator" : "denominator");
+                // The rate entered as its final number (no البسط / المقام): taken as is.
+                if(n.val == null && d.val == null && a.val != null){ row.value = a.val; row.direct = true; }
+                else if(n.val == null || d.val == null) add(row, "E01", n.val == null ? "numerator" : "denominator");
                 else if(d.val === 0) add(row, "E08", "denominator", 0);
                 else if(n.val < 0 || d.val < 0) add(row, "E09", n.val < 0 ? "numerator" : "denominator", n.val < 0 ? n.val : d.val);
                 else row.value = n.val / d.val * mult;
@@ -5659,12 +5669,14 @@ function dmValidate(staged){
             } else if(a.val == null) add(row, "E01", "actualValue");
             else row.value = a.val;
             const [vmin, vmax] = validRange(k);
-            if(row.value != null && ((vmin != null && row.value < vmin) || (vmax != null && row.value > vmax)))
-                add(row, "E09", mult > 0 ? "numerator" : "actualValue", round(row.value));
+            if(row.direct && vmax != null && row.value > vmax && !(vmin != null && row.value < vmin)) add(row, "W06", "actualValue", round(row.value));
+            else if(row.value != null && ((vmin != null && row.value < vmin) || (vmax != null && row.value > vmax)))
+                add(row, "E09", mult > 0 && !row.direct ? "numerator" : "actualValue", round(row.value));
             if(row.start && effectiveTarget(k, Number(row.start.slice(0, 4))) == null && !hasRange(k) && !["info","none","conditional"].includes(k.direction)) add(row, "W01", "indicatorId", row.ind);
         }
         // The first week of the data starts before DATA_START and can only be dated from DATA_START: no warning.
-        if(row.date && row.start && row.date !== row.start && row.start >= DATA_START_DATE) add(row, "W02", "measurementDate", `${row.date} → ${row.start}`);
+        // The entry file puts a reading on the day the department reports it (month end, Wednesday...): no warning there.
+        if(row.date && row.start && row.date !== row.start && row.start >= DATA_START_DATE && !s.grid) add(row, "W02", "measurementDate", `${row.date} → ${row.start}`);
         row.num = n.val; row.den = d.val; row.act = a.val; row.k = k;
         rows.push(row);
     });
@@ -5683,7 +5695,7 @@ function dmValidate(staged){
         const note = dmText(r.src.notes), source = dmText(r.src.dataSource);
         if(ex && !approver && (ex.approved || (ex.createdUser && ex.createdUser !== currentUser.username))){ add(r, "E16", "recordKey", r.key); return; }
         const near = (x, y) => (x == null && y == null) || (isNum(x) && isNum(y) && Math.abs(Number(x) - Number(y)) < 1e-9);
-        if(ex && near(ex.actualValue, r.value) && near(ex.numerator, num) && near(ex.denominator, den) && (ex.notes || "") === note && (ex.dataSource || "") === source){ r.status = "same"; same++; }
+        if(ex && ex.quarter === "Q" + Math.ceil(Number(r.date.slice(5, 7)) / 3) && near(ex.actualValue, r.value) && near(ex.numerator, num) && near(ex.denominator, den) && (ex.notes || "") === note && (ex.dataSource || "") === source){ r.status = "same"; same++; }
         else if(ex){ r.status = "update"; update++; }
         else { r.status = "new"; fresh++; }
     });
@@ -5911,7 +5923,9 @@ function dmImportLocal(st, send, approve, clientIssues){
         const dep = r.dep === kpiDepartmentId(r.k) ? "" : r.dep, fac = r.fac === primary ? "" : r.fac;
         const key = r.k.code + "|" + r.start + "|" + fac + "|" + dep;
         const ex = byKey.get(key);
-        const rec = normalizeRecord({ id: ex?.id, date: r.start, kpiCode: r.k.code, kpiName: r.k.name, actualValue: r.value,
+        // The quarter follows the date the reading was entered on (a week can straddle two quarters).
+        const rec = normalizeRecord({ id: ex?.id, date: r.start, year: Number(r.date.slice(0, 4)), quarter: "Q" + Math.ceil(Number(r.date.slice(5, 7)) / 3),
+            kpiCode: r.k.code, kpiName: r.k.name, actualValue: r.value,
             numerator: r.mult > 0 ? r.num : null, denominator: r.mult > 0 ? r.den : null, dataSource: dmText(r.src.dataSource), notes: dmText(r.src.notes),
             approved: approve, createdBy: ex?.createdBy, createdAt: ex?.createdAt });
         rec.recordKey = r.key; rec.batchId = id; rec.updatedAt = now; if(fac) rec.facilityId = fac; if(dep) rec.departmentId = dep;

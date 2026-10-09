@@ -736,7 +736,7 @@ declare
     approver boolean; approve boolean; prim text; today date; errs jsonb := '[]'::jsonb; row_errs jsonb;
     rn int; fac text; dep text; ind text; per text; d date; ps date; key text; rid text; home text; calc text; mult double precision;
     num double precision; den double precision; act double precision; val double precision; vmin double precision; vmax double precision;
-    okn boolean; okd boolean; oka boolean; src text; note text; tv double precision; entry_date date;
+    okn boolean; okd boolean; oka boolean; src text; note text; tv double precision; entry_date date; direct boolean;
     ins int := 0; upd int := 0; same int := 0; rej int := 0;
 begin
     me := public.app_require(p_token, array['admin','manager','data']);
@@ -789,12 +789,14 @@ begin
         if not okn then row_errs := row_errs || jsonb_build_object('code', 'E07', 'field', 'Numerator', 'value', left(r->>'numerator', 40)); end if;
         if not okd then row_errs := row_errs || jsonb_build_object('code', 'E07', 'field', 'Denominator', 'value', left(r->>'denominator', 40)); end if;
         if not oka then row_errs := row_errs || jsonb_build_object('code', 'E07', 'field', 'Actual_Value', 'value', left(r->>'actualValue', 40)); end if;
-        val := null;
+        val := null; direct := false;
         if k is not null and okn and okd and oka then
             calc := public.app_calc_type(k);
             mult := public.app_calc_multiplier(calc);
             if mult > 0 then
-                if num is null or den is null then row_errs := row_errs || jsonb_build_object('code', 'E01', 'field', case when num is null then 'Numerator' else 'Denominator' end);
+                -- A rate entered as its final number (no numerator / denominator) is taken as is.
+                if num is null and den is null and act is not null then val := act; direct := true;
+                elsif num is null or den is null then row_errs := row_errs || jsonb_build_object('code', 'E01', 'field', case when num is null then 'Numerator' else 'Denominator' end);
                 elsif den = 0 then row_errs := row_errs || jsonb_build_object('code', 'E08', 'field', 'Denominator', 'value', '0');
                 elsif num < 0 or den < 0 then row_errs := row_errs || jsonb_build_object('code', 'E09', 'field', case when num < 0 then 'Numerator' else 'Denominator' end);
                 else val := num / den * mult;
@@ -805,8 +807,9 @@ begin
             -- Allowed range: validMin / validMax on the KPI; by default no negatives and percentages up to 100.
             vmin := case when k ? 'validMin' then (public.app_num(k->'validMin')).val else 0 end;
             vmax := case when k ? 'validMax' then (public.app_num(k->'validMax')).val when k->>'unit' = '%' and calc not in ('PERCENTAGE') then 100 end;
-            if val is not null and ((vmin is not null and val < vmin) or (vmax is not null and val > vmax)) then
-                row_errs := row_errs || jsonb_build_object('code', 'E09', 'field', case when mult > 0 then 'Numerator' else 'Actual_Value' end, 'value', round(val::numeric, 4)::text);
+            -- A final rate above the maximum is imported as entered (the platform warns about it); below the minimum is rejected.
+            if val is not null and ((vmin is not null and val < vmin) or (not direct and vmax is not null and val > vmax)) then
+                row_errs := row_errs || jsonb_build_object('code', 'E09', 'field', case when mult > 0 and not direct then 'Numerator' else 'Actual_Value' end, 'value', round(val::numeric, 4)::text);
             end if;
         end if;
 
@@ -831,7 +834,7 @@ begin
             errs := errs || jsonb_build_object('row', rn, 'key', key, 'indicator', ind, 'code', 'E16', 'field', 'Unique_Key');
             continue;
         end if;
-        if found_ex and not ex.deleted and ex.actual is not distinct from val and ex.numerator is not distinct from (case when mult > 0 then num end)
+        if found_ex and not ex.deleted and ex.actual is not distinct from val and ex.quarter is not distinct from ('Q' || extract(quarter from d)::int) and ex.numerator is not distinct from (case when mult > 0 then num end)
            and ex.denominator is not distinct from (case when mult > 0 then den end)
            and coalesce(ex.notes, '') = coalesce(note, '') and coalesce(ex.data_source, '') = coalesce(src, '') and (ex.approved or not approve) then
             same := same + 1;
@@ -843,14 +846,15 @@ begin
                                          approved, created_by, created_user, created_at, updated_by, updated_at, approved_by, approved_at, deleted,
                                          record_key, facility_id, department_id, period_type, target_value, unit, data_entry_by, data_entry_date,
                                          batch_id, source_row)
-        values (rid, ind, ps, extract(year from ps)::int, 'Q' || extract(quarter from ps)::int, val,
+        -- The quarter follows the date the reading was entered on (a week can straddle two quarters).
+        values (rid, ind, ps, extract(year from d)::int, 'Q' || extract(quarter from d)::int, val,
                 case when mult > 0 then num end, case when mult > 0 then den end, src, note,
                 approve, me.display_name, me.username, now(), me.display_name, clock_timestamp(),
                 case when approve then me.display_name end, case when approve then now() end, false,
                 key, fac, dep, per, tv, k->>'unit', left(nullif(btrim(r->>'dataEntryBy'), ''), 120), entry_date, p_batch_id, rn)
         on conflict (id) do update set
             actual = excluded.actual, numerator = excluded.numerator, denominator = excluded.denominator,
-            data_source = excluded.data_source, notes = excluded.notes,
+            year = excluded.year, quarter = excluded.quarter, data_source = excluded.data_source, notes = excluded.notes,
             approved = case when excluded.approved then true when t.deleted then false else t.approved and t.actual is not distinct from excluded.actual end,
             created_by = case when t.deleted then excluded.created_by else t.created_by end,
             created_user = case when t.deleted then excluded.created_user else t.created_user end,
