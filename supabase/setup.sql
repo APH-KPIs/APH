@@ -241,8 +241,8 @@ begin
 end $$;
 
 -- ---------- readings ----------
--- Rules: data entry saves pending readings and may only change its own pending ones;
--- managers/admins may save, approve and overwrite any reading.
+-- Rules: data entry is part of the performance team, so its readings are approved on save and it may change
+-- its own readings (approved or not); managers/admins may save, approve and overwrite any reading.
 create or replace function public.upsert_records(p_token uuid, p_rows jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare me public.app_users; r jsonb; ex public.records; approver boolean; saved int := 0; skipped int := 0; want_approved boolean; rid text;
@@ -252,10 +252,10 @@ begin
     for r in select * from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) loop
         rid := (r->>'kpiCode') || '|' || (r->>'date');
         select * into ex from public.records where id = rid;
-        if found and not ex.deleted and not approver and (ex.approved or ex.created_user is distinct from me.username) then
+        if found and not ex.deleted and not approver and ex.created_user is distinct from me.username then
             skipped := skipped + 1; continue;
         end if;
-        want_approved := approver and coalesce((r->>'approved')::boolean, false);
+        want_approved := (approver and coalesce((r->>'approved')::boolean, false)) or me.role = 'data';
         insert into public.records as t (id, kpi_code, date, year, quarter, actual, numerator, denominator, weight, data_source, notes, dq,
                                          approved, created_by, created_user, created_at, updated_by, updated_at, approved_by, approved_at, deleted)
         values (rid, r->>'kpiCode', (r->>'date')::date, (r->>'year')::int, r->>'quarter',
@@ -718,7 +718,7 @@ begin
             (public.app_num(p_meta->'fileSize')).val::bigint, left(p_meta->>'fileHash', 128), left(p_meta->>'sheetName', 64),
             left(p_meta->>'templateVersion', 20), me.username, me.display_name,
             coalesce((public.app_num(p_meta->'received')).val::int, 0), coalesce((public.app_num(p_meta->'empty')).val::int, 0),
-            me.role in ('admin','manager') and coalesce((p_meta->>'approve')::boolean, true))
+            (me.role in ('admin','manager') and coalesce((p_meta->>'approve')::boolean, true)) or me.role = 'data')
     returning batch_id into b;
     code := to_char(public.app_today(), 'YYYY') || '-' || lpad(b::text, 5, '0');
     update public.import_batches set batch_code = code where batch_id = b;
@@ -744,7 +744,7 @@ begin
     if not found or b.uploaded_by <> me.username or b.status <> 'IN_PROGRESS' then raise exception 'BAD_BATCH' using errcode = '22023'; end if;
     if jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) > 1000 then raise exception 'TOO_MANY_ROWS' using errcode = '22023'; end if;
     approver := me.role in ('admin','manager');
-    approve := approver and b.approve;
+    approve := b.approve;
     perform set_config('app.batch_id', p_batch_id::text, true);
     perform set_config('app.reason', left('استيراد Excel ' || coalesce(b.batch_code, '') || ': ' || b.file_name, 300), true);
     select coalesce(jsonb_object_agg(code, data), '{}'::jsonb) into kmap from public.kpis;
@@ -828,8 +828,8 @@ begin
         if not found_ex then select * into ex from public.records where id = rid; found_ex := found; end if;
         src := left(nullif(btrim(r->>'dataSource'), ''), 200);
         note := left(nullif(btrim(r->>'notes'), ''), 1000);
-        -- Data entry may only change its own readings that are not approved yet.
-        if found_ex and not ex.deleted and not approver and (ex.approved or ex.created_user is distinct from me.username) then
+        -- Data entry may only change its own readings.
+        if found_ex and not ex.deleted and not approver and ex.created_user is distinct from me.username then
             rej := rej + 1;
             errs := errs || jsonb_build_object('row', rn, 'key', key, 'indicator', ind, 'code', 'E16', 'field', 'Unique_Key');
             continue;

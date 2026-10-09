@@ -1368,7 +1368,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.1 — 2026-10-09";
+const APP_VERSION = "الإصدار 4.2 — 2026-10-09";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1380,7 +1380,8 @@ const defaultUsers = [
 const permissions = {
     admin: { exportRecords:true, dashboard:true, data:true, dataMgmt:true, kpis:true, targets:true, quality:true, users:true, audit:true, import:true, approve:true, editTarget:true, editKpi:true, deleteKpi:true, export:true },
     manager: { exportRecords:true, dashboard:true, data:true, dataMgmt:true, kpis:false, targets:true, quality:true, users:false, audit:false, import:true, approve:true, editTarget:true, editKpi:false, deleteKpi:false, export:true },
-    data: { exportRecords:true, dashboard:true, data:true, dataMgmt:true, kpis:false, targets:false, quality:true, users:false, audit:false, import:true, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false },
+    // autoApprove: data entry is part of the performance team, so its readings count as approved when saved (owner's request, v4.2).
+    data: { exportRecords:true, dashboard:true, data:true, dataMgmt:true, kpis:false, targets:false, quality:true, users:false, audit:false, import:true, approve:false, autoApprove:true, editTarget:false, editKpi:false, deleteKpi:false, export:false },
     visitor: { dashboard:true, data:false, dataMgmt:false, kpis:false, targets:false, quality:false, users:false, audit:false, import:false, approve:false, editTarget:false, editKpi:false, deleteKpi:false, export:false }
 };
 
@@ -2730,7 +2731,7 @@ async function addRecord(){
     if(existing && !canEditRecord(existing)){ showToast("توجد قراءة معتمدة لهذا التاريخ — تعديلها لمدير الأداء."); return; }
     const record = normalizeRecord({
         id: existing?.id, date, kpiCode, kpiName:kpi.name, actualValue:value, numerator:num, denominator:den, weight,
-        dataSource:source, notes, approved:can("approve"),
+        dataSource:source, notes, approved:savesApproved(),
         createdBy: existing?.createdBy || currentUser.displayName, createdAt: existing?.createdAt || new Date().toISOString()
     });
     if(existing){
@@ -2836,10 +2837,12 @@ async function deleteRecord(id){
     showToast("تم حذف السجل.");
 }
 
-// Approvers can edit any record; data entry can edit its own records until they are approved.
+// Readings saved by approvers, or by data entry with autoApprove, are approved on save.
+function savesApproved(){ return can("approve") || can("autoApprove"); }
+// Approvers can edit any record; data entry can edit its own records (until approved, unless its readings are auto-approved).
 function canEditRecord(r){
     if(can("approve")) return true;
-    return can("data") && !r.approved && (r.createdUser ? r.createdUser === currentUser.username : r.createdBy === currentUser.displayName);
+    return can("data") && (!r.approved || can("autoApprove")) && (r.createdUser ? r.createdUser === currentUser.username : r.createdBy === currentUser.displayName);
 }
 
 function openRecordModal(id){
@@ -4408,7 +4411,7 @@ async function importReadmitFile(event){
             if(existing && !canEditRecord(existing)){ skipped.push(`${month} — ${x.label}`); return; }
             const value = Number(d) > 0 ? round(Number(n) / Number(d) * 100 * 1e4) / 1e4 : null;
             const rec = normalizeRecord({ id: existing?.id, date, kpiCode: x.code, kpiName: kpi.name, actualValue: value, numerator: Number(n), denominator: Number(d),
-                dataSource: "ملف Re-admission: " + file.name, notes: "", approved: can("approve"),
+                dataSource: "ملف Re-admission: " + file.name, notes: "", approved: savesApproved(),
                 createdBy: existing?.createdBy || currentUser.displayName, createdAt: existing?.createdAt || new Date().toISOString() });
             if(existing){ rec.updatedBy = currentUser.displayName; rec.updatedAt = new Date().toISOString(); }
             changed.push({ rec, existing });
@@ -4728,7 +4731,7 @@ async function confirmWorkbookImport(){
     const addedRecords = [];
     wbData.rows.forEach(row => {
         if(!known.has(row.kpiCode)){ skipped++; return; }
-        const rec = normalizeRecord({ ...row, id: "X" + stamp + (seq++).toString(36), approved: can("approve"), createdBy: currentUser.displayName, createdAt: now });
+        const rec = normalizeRecord({ ...row, id: "X" + stamp + (seq++).toString(36), approved: savesApproved(), createdBy: currentUser.displayName, createdAt: now });
         const key = rec.kpiCode + "|" + rec.date;
         if(existing.has(key)){ skipped++; return; }
         existing.add(key);
@@ -4801,7 +4804,7 @@ async function confirmImport(){
             weight: m.weight ? toNumberOrNull(row[m.weight]) : null,
             dataSource: (m.dataSource && normalizeText(row[m.dataSource])) || `Excel: ${importWorkbookInfo.fileName}`,
             notes: m.notes ? normalizeText(row[m.notes]) : "",
-            approved: can("approve"), createdBy: currentUser.displayName, createdAt: new Date().toISOString()
+            approved: savesApproved(), createdBy: currentUser.displayName, createdAt: new Date().toISOString()
         });
         const key = record.kpiCode + "|" + record.date;
         if(existing.has(key)){ duplicates++; return; }
@@ -5693,7 +5696,7 @@ function dmValidate(staged){
         const ex = byKey.get(r.key) || byId.get(r.id);
         const num = r.mult > 0 ? r.num : null, den = r.mult > 0 ? r.den : null;
         const note = dmText(r.src.notes), source = dmText(r.src.dataSource);
-        if(ex && !approver && (ex.approved || (ex.createdUser && ex.createdUser !== currentUser.username))){ add(r, "E16", "recordKey", r.key); return; }
+        if(ex && !approver && ((ex.approved && !can("autoApprove")) || (ex.createdUser && ex.createdUser !== currentUser.username))){ add(r, "E16", "recordKey", r.key); return; }
         const near = (x, y) => (x == null && y == null) || (isNum(x) && isNum(y) && Math.abs(Number(x) - Number(y)) < 1e-9);
         if(ex && ex.quarter === "Q" + Math.ceil(Number(r.date.slice(5, 7)) / 3) && near(ex.actualValue, r.value) && near(ex.numerator, num) && near(ex.denominator, den) && (ex.notes || "") === note && (ex.dataSource || "") === source){ r.status = "same"; same++; }
         else if(ex){ r.status = "update"; update++; }
@@ -5862,7 +5865,7 @@ async function dmImport(){
     if(!send.length){ showToast("لا توجد سجلات جديدة أو محدَّثة للحفظ."); return; }
     const c = st.counts;
     if(c.errors && !confirm(`${c.errors.toLocaleString("en-US")} سجل فيه أخطاء ولن يُحفظ. هل تريد حفظ السجلات الصحيحة (${send.length.toLocaleString("en-US")}) الآن؟\n\nيمكنك تنزيل تقرير الأخطاء وإصلاحها ثم إعادة رفع الملف؛ لن تتكرر السجلات المحفوظة.`)) return;
-    const approve = can("approve") && document.getElementById("dmApprove").checked;
+    const approve = (can("approve") && document.getElementById("dmApprove").checked) || can("autoApprove");
     const clientIssues = st.issues.map(i => ({ row: i.row, key: i.key, indicator: i.indicator, field: i.field, value: i.value, code: i.code, message: i.message, fix: i.fix }));
     let result;
     try{
