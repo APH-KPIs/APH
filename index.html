@@ -2661,12 +2661,12 @@ function onEntryKpiChange(){
     const k = kpis.find(x => x.code === document.getElementById("recordKpi").value);
     const hint = document.getElementById("entryHint");
     const mode = k ? entryMode(k) : "value";
-    document.getElementById("entryValueRow").classList.toggle("hidden", mode === "ratio");
+    // Rate KPIs take the final rate (as in the approved 2026 entry file) or, optionally, the numerator and denominator.
     document.getElementById("entryRatioRow").classList.toggle("hidden", mode !== "ratio");
     document.getElementById("entryWeightRow").classList.toggle("hidden", mode !== "weighted");
     document.getElementById("recordValueUnit").textContent = k?.unit ? `(${k.unit === "%" ? "نسبة مئوية — اكتب 85 لـ 85%" : k.unit})` : "";
     if(!k){ hint.classList.add("hidden"); document.getElementById("entryExisting").classList.add("hidden"); return; }
-    const what = mode === "ratio" ? (k.inputHint || ENTRY_HINTS[k.code] || "البسط والمقام — تُحسب النسبة تلقائياً")
+    const what = mode === "ratio" ? "النسبة النهائية كرقم (مثال 92.5)، أو البسط والمقام بدلاً منها — " + (k.inputHint || ENTRY_HINTS[k.code] || "تُحسب النسبة تلقائياً")
         : mode === "weighted" ? "النسبة الأسبوعية + عدد البلاغات (يُستخدم كوزن عند حساب الربع)"
         : k.unit === "%" ? "النسبة كرقم (مثال 92.5)" : "القيمة فقط";
     hint.innerHTML = `<b>ماذا أُدخل؟</b> ${escapeHtml(what)}<br><b>التاريخ:</b> ${DATE_HINTS[entryFreq]}${k.definition ? `<br><span class="text-sky-900/70">${escapeHtml(k.definition)}</span>` : ""}`;
@@ -2749,9 +2749,14 @@ async function addRecord(){
     let value = parseNum("recordValue"), num = null, den = null, weight = null;
     if(mode === "ratio"){
         num = parseNum("recordNumerator"); den = parseNum("recordDenominator");
-        if(num == null || den == null){ showToast("أدخل البسط والمقام."); return; }
-        if(num < 0 || den < 0){ showToast("البسط والمقام لا يكونان بالسالب."); return; }
-        value = den > 0 ? round(num / den * (kpi.unit === "%" ? 100 : 1) * 1e4) / 1e4 : null;
+        if(num == null && den == null){
+            if(value == null){ showToast("أدخل النسبة النهائية، أو البسط والمقام."); return; }
+            if(value < 0){ showToast("النسبة لا تكون بالسالب."); return; }
+        } else {
+            if(num == null || den == null){ showToast("أدخل البسط والمقام معاً، أو النسبة النهائية فقط."); return; }
+            if(num < 0 || den < 0){ showToast("البسط والمقام لا يكونان بالسالب."); return; }
+            value = den > 0 ? round(num / den * (kpi.unit === "%" ? 100 : 1) * 1e4) / 1e4 : null;
+        }
     } else {
         if(value == null){ showToast("أدخل القيمة الفعلية."); return; }
         if(mode === "weighted"){ weight = parseNum("recordWeight"); if(weight == null){ showToast("أدخل عدد البلاغات (الوزن)."); return; } }
