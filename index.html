@@ -1562,10 +1562,11 @@ const ADDED_KPIS = [
     {code:"MYSTERY_SHOPPER",name:"الزائر السري",category:"الجودة",department:"إدارة الجودة",unit:"%",definition:"نتيجة تقييم الزائر السري للفترة (نسبة الالتزام بالمعايير). تُدخل شهرياً يدوياً في المنصة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدخال يدوي في المنصة"},
     {code:"OCC_HEALTH",name:"مؤشر الصحة المهنية",category:"الجودة",department:"الصحة المهنية",unit:"%",definition:"نتيجة مؤشر الصحة المهنية الشهري. تُدخل شهرياً يدوياً في المنصة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدخال يدوي في المنصة"},
     // Nursing administration's monthly KPIs (final rates as reported; target 0 for the three safety events).
-    {code:"NURS_PRESSURE_ULCER",name:"قرح الفراش المكتسبة في المستشفى",category:"التمريض",department:"إدارة التمريض",unit:"%",definition:"عدد المرضى الذين أصيبوا بقرحة فراش أثناء التنويم ÷ إجمالي المرضى المنومين × 100.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"lower",target:0,dataSource:"إدارة التمريض"},
-    {code:"NURS_PATIENT_FALL",name:"سقوط المرضى",category:"التمريض",department:"إدارة التمريض",unit:"لكل 1000",definition:"عدد حالات سقوط المرضى أثناء التنويم (مع إصابة أو بدونها) ÷ إجمالي المرضى المنومين (الأسرّة المشغولة) × 1000.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"lower",target:0,dataSource:"إدارة التمريض"},
-    {code:"NURS_ATTEMPTED_SUICIDE",name:"محاولات الانتحار",category:"التمريض",department:"إدارة التمريض",unit:"%",definition:"عدد محاولات الانتحار الفعلية أثناء التنويم ÷ إجمالي المرضى المنومين × 100.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"lower",target:0,dataSource:"إدارة التمريض"},
-    {code:"NURS_MR_STRONG",name:"نداءات Mr. Strong",category:"التمريض",department:"إدارة التمريض",unit:"عدد",definition:"إجمالي نداءات Mr. Strong في جميع الأقسام خلال الشهر.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"SUM",direction:"none",dataSource:"إدارة التمريض"},
+    // reportedNextMonth: the template takes a month's reading on the 1st of the following month.
+    {code:"NURS_PRESSURE_ULCER",name:"قرح الفراش المكتسبة في المستشفى",category:"التمريض",department:"إدارة التمريض",unit:"%",definition:"عدد المرضى الذين أصيبوا بقرحة فراش أثناء التنويم ÷ إجمالي المرضى المنومين × 100.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"lower",target:0,dataSource:"إدارة التمريض",reportedNextMonth:true},
+    {code:"NURS_PATIENT_FALL",name:"سقوط المرضى",category:"التمريض",department:"إدارة التمريض",unit:"لكل 1000",definition:"عدد حالات سقوط المرضى أثناء التنويم (مع إصابة أو بدونها) ÷ إجمالي المرضى المنومين (الأسرّة المشغولة) × 1000.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"lower",target:0,dataSource:"إدارة التمريض",reportedNextMonth:true},
+    {code:"NURS_ATTEMPTED_SUICIDE",name:"محاولات الانتحار",category:"التمريض",department:"إدارة التمريض",unit:"%",definition:"عدد محاولات الانتحار الفعلية أثناء التنويم ÷ إجمالي المرضى المنومين × 100.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"lower",target:0,dataSource:"إدارة التمريض",reportedNextMonth:true},
+    {code:"NURS_MR_STRONG",name:"نداءات Mr. Strong",category:"التمريض",department:"إدارة التمريض",unit:"عدد",definition:"إجمالي نداءات Mr. Strong في جميع الأقسام خلال الشهر.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"SUM",direction:"none",dataSource:"إدارة التمريض",reportedNextMonth:true},
     {code:"SELF_REVENUE",name:"الموارد الذاتية",category:"الموارد الذاتية",department:"الإدارة المالية",unit:"ريال",definition:"إجمالي إيرادات الموارد الذاتية المحصلة خلال الفترة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"SUM",direction:"higher",dataSource:"الإدارة المالية"}
 ];
 // Highlighted at the top of the dashboard in the quarterly view, in this order.
@@ -2616,6 +2617,10 @@ const ENTRY_HINTS = {
     MED_ERR_REPORTING_NURSES: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
     MED_ERR_REPORTING_PHARMACISTS: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
     ED_REVISIT_72H: "عدد حالات العودة غير المخطط لها خلال 72 ساعة في الشهر",
+    NURS_PRESSURE_ULCER: "اختر تاريخاً في الشهر الذي تخصه القراءة (قراءة يناير تُسجل على يناير وإن أُدخلت في فبراير).",
+    NURS_PATIENT_FALL: "اختر تاريخاً في الشهر الذي تخصه القراءة (قراءة يناير تُسجل على يناير وإن أُدخلت في فبراير).",
+    NURS_ATTEMPTED_SUICIDE: "اختر تاريخاً في الشهر الذي تخصه القراءة (قراءة يناير تُسجل على يناير وإن أُدخلت في فبراير).",
+    NURS_MR_STRONG: "اختر تاريخاً في الشهر الذي تخصه القراءة (قراءة يناير تُسجل على يناير وإن أُدخلت في فبراير).",
     LAB_COMPLETION_PCT: "البسط = الفحوصات المنجزة | المقام = الفحوصات المستلمة"
 };
 
@@ -5539,6 +5544,9 @@ function dmLocateSimpleSheet(wb){
         const k = byName.get(t); return k ? { k, part: "" } : null;
     };
     const countBy = list => list.reduce((m, x) => (m[x] = (m[x] || 0) + 1, m), {});
+    // A KPI reported on the 1st of the next month (k.reportedNextMonth): the reading belongs to the previous month's last day.
+    const dayOf = serial => new Date(Date.UTC(1899, 11, 30) + serial * 864e5).getUTCDate();
+    const readingDate = (k, d) => k.reportedNextMonth && typeof d === "number" && dayOf(d) === 1 ? d - 1 : d;
     const groups = new Map();   // indicator|date → { k, date, rowNumber, VAL/NUM/DEN: { v, header } }
     const put = (k, part, date, v, rowNumber, header) => {
         const key = k.code + "|" + String(date);
@@ -5572,7 +5580,7 @@ function dmLocateSimpleSheet(wb){
                 const r = aoa[dateRowIdx + 1 + idx];
                 const part = rowsOf[hit.k.code] > 1 ? hit.part : "";
                 const label = String(r.slice(0, first).find(c => fromName(c)) ?? hit.k.name).trim();
-                dateCols.forEach(ci => { const v = r[ci]; if(v != null && v !== "") put(hit.k, part, dateRow[ci], v, origin + dateRowIdx + 2 + idx, `${label} (${name})`); });
+                dateCols.forEach(ci => { const v = r[ci]; if(v != null && v !== "") put(hit.k, part, readingDate(hit.k, dateRow[ci]), v, origin + dateRowIdx + 2 + idx, `${label} (${name})`); });
             });
             if(hits.some(Boolean)) found.push(name);
             continue;
