@@ -1368,7 +1368,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.2 — 2026-10-09";
+const APP_VERSION = "الإصدار 4.3 — 2026-10-09";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1624,7 +1624,8 @@ function groupByCategory(items, catOf){
 // Version 12: maintenance completion target from Q3 (99.58%); Ainati lab 98% for Q1–Q3 2026.
 // Version 13: self-revenue (revenue growth) target 2026: 150,000 SAR, split by quarter.
 // Version 14: department, category and calculation codes of the official Excel template (applyTemplateMeta).
-const KPI_LAYOUT_V = 14;
+// Version 15: bed capacity 183 from 1/10/2026 (was 153); inpatient, clinic and 937 satisfaction targets.
+const KPI_LAYOUT_V = 15;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1682,8 +1683,10 @@ const KPI_TARGETS = {
     PSY_CLINIC_VISITS:        { v: 4, target: 9000, direction: "higher" },
     PSY_NOSHOW_PCT:           { v: 4, target: 15,   direction: "lower" },
     CALLS937_OVERALL_INDEX:   { v: 4, target: 95 },
-    OCC_WITH_HOME_PCT:        { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null },
-    OCC_NO_HOME_PCT:          { v: 5, target: 75,   direction: "higher", rangeMin: null, rangeMax: null },
+    OCC_WITH_HOME_PCT:        { v: 15, target: 75,   direction: "higher", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 153 حتى 30/9/2026، ثم 183",
+                                definition: "عدد المرضى المنومين مع المنزل ÷ الأسرّة المعتمدة (153 حتى 30/9/2026، ثم 183) × 100" },
+    OCC_NO_HOME_PCT:          { v: 15, target: 75,   direction: "higher", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، ثم 153",
+                                definition: "عدد المرضى المنومين بدون المنزل ÷ الأسرّة المعتمدة (123 حتى 30/9/2026، ثم 153) × 100" },
     PATIENT_EXP_OPD:          { v: 6, target: 88.69, direction: "higher" },
     TELE_APPTS:               { v: 7, target: 339, targetBasis: "weekly", direction: "higher" },
     SENTINEL_EVENTS:          { v: 9, target: 0, direction: "lower" },
@@ -1699,6 +1702,19 @@ const KPI_TARGETS = {
     SELF_REVENUE:             { v: 13, target: 150000, targetBasis: "annual", direction: "higher",
                                 quarterTargets: { "2026-Q1": 27000, "2026-Q2": 33000, "2026-Q3": 39000, "2026-Q4": 51000 },
                                 definition: "إجمالي إيرادات الموارد الذاتية المحصلة خلال الفترة. مستهدف تنمية الإيرادات 2026: 150,000 ريال (إيراد 2025: 58,241 ريال)." },
+    // Inpatients: 75% occupancy of the beds (BED_CAPACITY) in each quarter; the year is the days-weighted mean.
+    INPATIENTS_WITH_HOME:     { v: 15, target: 121, direction: "higher",
+                                quarterTargets: { "2026-Q1": 115, "2026-Q2": 115, "2026-Q3": 115, "2026-Q4": 137 } },
+    INPATIENTS_NO_HOME:       { v: 15, target: 98, direction: "higher",
+                                quarterTargets: { "2026-Q1": 92, "2026-Q2": 92, "2026-Q3": 92, "2026-Q4": 115 } },
+    // Clinics: no-shows within the 15% no-show target of 9,000 visits a quarter; confirmations 80% of the
+    // 32,000 outgoing calls a year, half of clinic visits confirmed by call; postponements about 1% of confirmations.
+    PSY_NOSHOW_COUNT:         { v: 15, target: 1350, direction: "lower" },
+    APPT_CONFIRMED:           { v: 15, target: 25600, targetBasis: "annual", direction: "higher" },
+    APPT_CONFIRM_PCT:         { v: 15, target: 80, direction: "higher" },
+    CLINIC_CONFIRM_PCT_OF_VISITS: { v: 15, target: 50, direction: "higher" },
+    APPT_POSTPONE_REQ:        { v: 15, target: 90, direction: "lower" },
+    CALLS937_SATISFACTION:    { v: 15, target: 90, direction: "higher" },
     // Entered (it feeds the completion rate) but not shown on the dashboard.
     MAINT_COMPLETED:          { v: 9, entryOnly: true }
 };
@@ -2109,6 +2125,11 @@ async function cloudLoadAll(){
             .then(() => Promise.all(layout.removed.map(code => rpc("delete_kpi", withToken({ p_code: code })))))
             .then(() => addAudit("EDIT_KPI", "ترتيب المؤشرات", "", `${layout.changed.length} مؤشر${layout.removed.length ? `، حذف المكرر: ${layout.removed.join("، ")}` : ""}`, "تصنيفات وترتيب ورقة البيانات اليومية"))
             .catch(() => {});
+    }
+    // Occupancy readings saved with an older bed count are recalculated by the first user who can enter data.
+    if(currentUser && can("data")){
+        const stale = staleOccupancySources();
+        if(stale.length){ const [up, rem] = deriveRecords(stale); if(up.length || rem.length) persistRecords(up, rem).catch(() => {}); }
     }
     recordIndex = null;
 }
@@ -2553,11 +2574,21 @@ const DERIVED_KPIS = {
     MAINT_COMPLETION_PCT:         { num:[["MAINT_COMPLETED","value"]], den:[["MAINT_REQUESTS","value"]] },
     APPT_CONFIRM_PCT:             { num:[["APPT_CONFIRMED","value"]], den:[["APPT_OUTGOING_CALLS","value"]] },
     CLINIC_CONFIRM_PCT_OF_VISITS: { num:[["APPT_CONFIRMED","value"]], den:[["PSY_CLINIC_VISITS","value"]] },
-    OCC_WITH_HOME_PCT:            { num:[["INPATIENTS_WITH_HOME","value"]], denConst:153 },
-    OCC_NO_HOME_PCT:              { num:[["INPATIENTS_NO_HOME","value"]], denConst:123 },
+    OCC_WITH_HOME_PCT:            { num:[["INPATIENTS_WITH_HOME","value"]], denConst: date => bedCapacity("WITH_HOME", date) },
+    OCC_NO_HOME_PCT:              { num:[["INPATIENTS_NO_HOME","value"]], denConst: date => bedCapacity("NO_HOME", date) },
     READMIT30_ALL:                { num:[["READMIT30_PSY","num"],["READMIT30_DETOX","num"]], den:[["READMIT30_PSY","den"],["READMIT30_DETOX","den"]], anySource:true }
 };
 const DERIVED_SOURCE = "حساب تلقائي";
+// Approved beds, from the date each count took effect (the owner: 153 until September 2026, then 183;
+// the beds without the halfway house rose by the same 30).
+const BED_CAPACITY = { WITH_HOME: [["2026-10-01", 183], ["", 153]], NO_HOME: [["2026-10-01", 153], ["", 123]] };
+function bedCapacity(kind, date){ return BED_CAPACITY[kind].find(([from]) => String(date) >= from)[1]; }
+// Occupancy readings saved with an older bed count are recalculated (e.g. October 2026 readings made before 183 beds).
+function staleOccupancySources(){
+    const occ = { OCC_WITH_HOME_PCT: "INPATIENTS_WITH_HOME", OCC_NO_HOME_PCT: "INPATIENTS_NO_HOME" };
+    return records.filter(r => occ[r.kpiCode] && r.dataSource === DERIVED_SOURCE && isNum(r.denominator) && Number(r.denominator) !== DERIVED_KPIS[r.kpiCode].denConst(r.date))
+        .map(r => records.find(x => x.kpiCode === occ[r.kpiCode] && x.date === r.date)).filter(Boolean);
+}
 
 // What staff enter for rate KPIs (from the workbook's LISTS sheet).
 const ENTRY_HINTS = {
@@ -2685,7 +2716,7 @@ function deriveRecords(changed){
         const existing = byKey.get(key);
         const complete = f.anySource ? recs.some(Boolean) : recs.every(Boolean);
         const sum = list => list.reduce((acc, [c, field]) => { const v = part(byKey.get(c + "|" + src.date), field); return acc == null && v == null ? null : (acc || 0) + (Number(v) || 0); }, null);
-        const num = sum(f.num), den = f.denConst ?? sum(f.den);
+        const num = sum(f.num), den = f.denConst ? f.denConst(src.date) : sum(f.den);
         if(!complete || num == null || den == null){
             if(existing && existing.dataSource === DERIVED_SOURCE){ records = records.filter(r => r !== existing); removed.push(existing.id); }
             return;
@@ -3080,7 +3111,14 @@ function unitKey(r, frequency){
     return r.date;
 }
 function periodTarget(kpi, year, q, base){
-    if(base == null || kpi.aggregation !== "SUM") return base;
+    if(base == null) return base;
+    // An average with a quarterly plan (e.g. inpatients by the beds of each quarter): the period's quarter value.
+    if(kpi.aggregation !== "SUM"){
+        const plan = q && q !== "ALL" ? quarterPlan(kpi, periodYear(year, q)) : null;
+        if(!plan) return base;
+        const month = q[0] === "Q" ? (Number(q[1]) - 1) * 3 + 1 : q[0] === "M" ? Number(q.slice(1)) : Number(q.slice(6, 8));
+        return plan[Math.ceil(month / 3) - 1];
+    }
     const y = periodYear(year, q);
     const rows = periodRecords(kpi.code, y, q).filter(r => isNum(r.actualValue));
     const byQuarter = new Map();
