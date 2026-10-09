@@ -448,7 +448,8 @@ insert into public.departments(department_id, department_name, department_name_a
     ('DEP010', 'Engineering Affairs', 'الشؤون الهندسية', null, 'إدارة', true),
     ('DEP011', '937 Call Center', 'مركز 937', null, 'وحدة', true),
     ('DEP012', 'Patient Experience', 'تجربة المريض', null, 'إدارة', true),
-    ('DEP013', 'Finance', 'الإدارة المالية', null, 'إدارة', true)
+    ('DEP013', 'Finance', 'الإدارة المالية', null, 'إدارة', true),
+    ('DEP014', 'Nursing Administration', 'إدارة التمريض', null, 'إدارة', true)
 on conflict (department_id) do nothing;
 insert into public.categories(category_id, category_name, category_name_ar, parent_category_id, sort_order) values
     ('CAT01', 'Medical Services', 'الخدمات العلاجية', null, 0),
@@ -461,7 +462,8 @@ insert into public.categories(category_id, category_name, category_name_ar, pare
     ('CAT08', 'Medical Coordination', 'التنسيق الطبي', null, 7),
     ('CAT09', '937 Reports', 'بلاغات 937', null, 8),
     ('CAT10', 'Patient Experience', 'تجربة المريض', null, 9),
-    ('CAT11', 'Self Revenue', 'الموارد الذاتية', null, 10)
+    ('CAT11', 'Self Revenue', 'الموارد الذاتية', null, 10),
+    ('CAT12', 'Nursing', 'التمريض', null, 11)
 on conflict (category_id) do nothing;
 -- END MASTER DATA
 
