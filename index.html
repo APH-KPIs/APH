@@ -1685,8 +1685,8 @@ const KPI_TARGETS = {
     CALLS937_OVERALL_INDEX:   { v: 4, target: 95 },
     OCC_WITH_HOME_PCT:        { v: 15, target: 75,   direction: "higher", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 153 حتى 30/9/2026، ثم 183",
                                 definition: "عدد المرضى المنومين مع المنزل ÷ الأسرّة المعتمدة (153 حتى 30/9/2026، ثم 183) × 100" },
-    OCC_NO_HOME_PCT:          { v: 15, target: 75,   direction: "higher", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، ثم 153",
-                                definition: "عدد المرضى المنومين بدون المنزل ÷ الأسرّة المعتمدة (123 حتى 30/9/2026، ثم 153) × 100" },
+    OCC_NO_HOME_PCT:          { v: 15, target: 75,   direction: "higher", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، ثم 150",
+                                definition: "عدد المرضى المنومين بدون المنزل ÷ الأسرّة المعتمدة (123 حتى 30/9/2026، ثم 150) × 100" },
     PATIENT_EXP_OPD:          { v: 6, target: 88.69, direction: "higher" },
     TELE_APPTS:               { v: 7, target: 339, targetBasis: "weekly", direction: "higher" },
     SENTINEL_EVENTS:          { v: 9, target: 0, direction: "lower" },
@@ -1705,8 +1705,8 @@ const KPI_TARGETS = {
     // Inpatients: 75% occupancy of the beds (BED_CAPACITY) in each quarter; the year is the days-weighted mean.
     INPATIENTS_WITH_HOME:     { v: 15, target: 121, direction: "higher",
                                 quarterTargets: { "2026-Q1": 115, "2026-Q2": 115, "2026-Q3": 115, "2026-Q4": 137 } },
-    INPATIENTS_NO_HOME:       { v: 15, target: 98, direction: "higher",
-                                quarterTargets: { "2026-Q1": 92, "2026-Q2": 92, "2026-Q3": 92, "2026-Q4": 115 } },
+    INPATIENTS_NO_HOME:       { v: 15, target: 97, direction: "higher",
+                                quarterTargets: { "2026-Q1": 92, "2026-Q2": 92, "2026-Q3": 92, "2026-Q4": 113 } },
     // Clinics: no-shows within the 15% no-show target of 9,000 visits a quarter; confirmations 80% of the
     // 32,000 outgoing calls a year, half of clinic visits confirmed by call; postponements about 1% of confirmations.
     PSY_NOSHOW_COUNT:         { v: 15, target: 1350, direction: "lower" },
@@ -2580,8 +2580,8 @@ const DERIVED_KPIS = {
 };
 const DERIVED_SOURCE = "حساب تلقائي";
 // Approved beds, from the date each count took effect (the owner: 153 until September 2026, then 183;
-// the beds without the halfway house rose by the same 30).
-const BED_CAPACITY = { WITH_HOME: [["2026-10-01", 183], ["", 153]], NO_HOME: [["2026-10-01", 153], ["", 123]] };
+// the halfway house went from 30 to 33 beds, so the beds without it went from 123 to 150).
+const BED_CAPACITY = { WITH_HOME: [["2026-10-01", 183], ["", 153]], NO_HOME: [["2026-10-01", 150], ["", 123]] };
 function bedCapacity(kind, date){ return BED_CAPACITY[kind].find(([from]) => String(date) >= from)[1]; }
 // Occupancy readings saved with an older bed count are recalculated (e.g. October 2026 readings made before 183 beds).
 function staleOccupancySources(){
