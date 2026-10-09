@@ -1368,7 +1368,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.5 — 2026-10-09";
+const APP_VERSION = "الإصدار 4.6 — 2026-10-10";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -4514,7 +4514,8 @@ async function handleExcelUpload(event){
         if(dmLocateSimpleSheet(workbook) || dmLocateSheet(workbook)){
             input.value = "";
             showSection("dataMgmt"); dmTab("upload");
-            await dmProcessFile(file);
+            try{ await dmProcessFile(file); }
+            catch(e){ dmShowFileFailure(file, e); }
             return;
         }
         importWorkbookInfo = { fileName: file.name, sheets: workbook.SheetNames, mode:"rows" };
@@ -4541,7 +4542,8 @@ async function handleExcelUpload(event){
         if(!importedRows.length){ showToast("الملف لا يحتوي على بيانات. عبّئ ورقة «البيانات» ثم أعد الرفع."); return; }
         showImportModal();
     } catch(e){
-        showToast("حدث خطأ أثناء قراءة ملف Excel.");
+        console.error(e);
+        showToast("حدث خطأ أثناء قراءة ملف Excel: " + (e && e.message || e));
     } finally {
         input.value = "";  // allow re-selecting the same file
     }
@@ -5634,7 +5636,15 @@ async function dmHandleFile(event){
     if(!file) return;
     if(!can("import")){ showToast("ليس لديك صلاحية الاستيراد."); return; }
     showSection("dataMgmt"); dmTab("upload");
-    await dmProcessFile(file);
+    try{ await dmProcessFile(file); }
+    catch(e){ dmShowFileFailure(file, e); }
+}
+// A failure while checking a file is shown on the check screen with its message, never swallowed.
+function dmShowFileFailure(file, e){
+    console.error(e);
+    setLoading(false);
+    dmState = { fileName: file.name, fileSize: file.size, fileErrors: ["تعذّر فحص الملف: " + (e && e.message || e) + " — أرسل هذه الرسالة لمدير النظام."], rows: [], issues: [] };
+    try{ dmRenderPreview(); }catch(err){ showToast("تعذّر فحص الملف: " + (e && e.message || e)); }
 }
 
 async function dmProcessFile(file, buffer){
