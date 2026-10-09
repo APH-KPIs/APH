@@ -789,8 +789,8 @@
                     </div>
                     <div id="readmitCard" class="hidden border border-sky-200 bg-sky-50/50 rounded-2xl p-4 space-y-3">
                         <div>
-                            <h3 class="font-bold text-sm text-slate-900"><i class="fa-solid fa-file-import text-sky-600 ml-1"></i> استقبال ملفات Re-admission (التنويم والطوارئ)</h3>
-                            <p class="text-[11px] text-slate-500 mt-0.5">إعادة التنويم خلال 30 يوماً (الطب النفسي والإدمان) والعودة للطوارئ خلال 72 ساعة تُستقبل شهرياً بملف Excel من الأقسام، ويرفعه مدخل البيانات هنا.</p>
+                            <h3 class="font-bold text-sm text-slate-900"><i class="fa-solid fa-file-import text-sky-600 ml-1"></i> استقبال ملفات Re-admission (إعادة التنويم)</h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">إعادة التنويم خلال 30 يوماً (الطب النفسي والإدمان) تُستقبل شهرياً بملف Excel من الأقسام، ويرفعه مدخل البيانات هنا.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div class="step"><span class="step-num">1</span><div class="flex-1">
@@ -1368,7 +1368,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.3 — 2026-10-09";
+const APP_VERSION = "الإصدار 4.4 — 2026-10-09";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1404,7 +1404,7 @@ const KPI_ARABIC_LABELS = {
     PATIENT_EXP_OPD: { label:"تجربة المريض - العيادات الخارجية" },
     READMIT30_PSY: { definition:"نسبة المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص من إجمالي المخرَّجين أحياء (%)" },
     READMIT30_DETOX: { definition:"نسبة المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص من إجمالي المخرَّجين أحياء (%)" },
-    ED_REVISIT_72H: { definition:"نسبة العودة غير المخطط لها للطوارئ خلال 72 ساعة بنفس التشخيص من إجمالي مراجعي الطوارئ (%)" }
+    ED_REVISIT_72H: { definition:"عدد حالات العودة غير المخطط لها للطوارئ خلال 72 ساعة بنفس التشخيص" }
 };
 // First date accepted; there is no end date (any date up to today).
 const DATA_START_DATE = "2026-01-01";
@@ -1511,7 +1511,7 @@ const KPI_TEMPLATE_META = {
     DRUGMAIL_SHIPMENTS_DAILY: { englishName:"Drug mail shipments" },
     LAB_COMPLETION_PCT: { englishName:"Enayati lab completion %", validMax:100, numeratorDefinition:"الفحوصات المنجزة", denominatorDefinition:"الفحوصات المستلمة" },
     ED_VISITS: { englishName:"Emergency visits" },
-    ED_REVISIT_72H: { englishName:"Unplanned return to ED within 72 hours", validMax:100, numeratorDefinition:"حالات العودة غير المخططة خلال 72 ساعة", denominatorDefinition:"إجمالي مراجعي الطوارئ المعالجين" },
+    ED_REVISIT_72H: { englishName:"Unplanned returns to ED within 72 hours" },
     PSY_CLINIC_VISITS: { englishName:"Outpatient clinic visits (APEX)" },
     PSY_NOSHOW_COUNT: { englishName:"Clinic no-shows (APEX)" },
     PSY_NOSHOW_PCT: { englishName:"Clinic no-show rate", validMax:100, numeratorDefinition:"PSY_NOSHOW_COUNT", denominatorDefinition:"PSY_CLINIC_VISITS" },
@@ -1625,7 +1625,8 @@ function groupByCategory(items, catOf){
 // Version 13: self-revenue (revenue growth) target 2026: 150,000 SAR, split by quarter.
 // Version 14: department, category and calculation codes of the official Excel template (applyTemplateMeta).
 // Version 15: bed capacity 183 from 1/10/2026 (was 153); inpatient, clinic and 937 satisfaction targets.
-const KPI_LAYOUT_V = 15;
+// Version 16: unplanned ED return within 72 hours is a count of cases, not a rate.
+const KPI_LAYOUT_V = 16;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1716,6 +1717,10 @@ const KPI_TARGETS = {
     APPT_POSTPONE_REQ:        { v: 15, target: 90, direction: "lower" },
     CALLS937_SATISFACTION:    { v: 15, target: 90, direction: "higher" },
     MED_ERR_REPORTING_PHARMACISTS: { v: 15, target: 90, direction: "higher" },
+    // A count of cases (the owner's correction); the old 3% target and rate settings no longer apply.
+    ED_REVISIT_72H: { v: 16, unit: "عدد", aggregation: "SUM", calculationType: "COUNT", direction: "lower", target: null, targets: {}, quarterTargets: null,
+        validMax: null, numeratorDefinition: null, denominatorDefinition: null,
+        definition: "عدد حالات العودة غير المخطط لها للطوارئ خلال 72 ساعة بنفس التشخيص" },
     // Entered (it feeds the completion rate) but not shown on the dashboard.
     MAINT_COMPLETED:          { v: 9, entryOnly: true }
 };
@@ -1834,7 +1839,7 @@ const defaultKpis = [
     {code:"READMIT30_ALL",name:"Hospital Readmission Rate same diagnosis within 30 days — PSYCHIATRY, DETOX & POST-DETOX",category:"استمرارية الرعاية",department:"الخدمات العلاجية",unit:"%",definition:"Hospital Readmission Rate same diagnosis within 30 days (%)",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"RATIO",target:20,direction:"lower",dataSource:"مؤشر إعادة التنويم"},
     {code:"READMIT30_PSY",name:"Hospital Readmission Rate same diagnosis within 30 days — PSYCHIATRY",category:"استمرارية الرعاية",department:"الخدمات العلاجية",unit:"%",definition:"Hospital Readmission Rate same diagnosis within 30 days (%)",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"RATIO",target:20,direction:"lower",dataSource:"مؤشر إعادة التنويم"},
     {code:"READMIT30_DETOX",name:"Hospital Readmission Rate same diagnosis within 30 days — DETOX & POST-DETOX",category:"استمرارية الرعاية",department:"الخدمات العلاجية",unit:"%",definition:"Hospital Readmission Rate same diagnosis within 30 days (%)",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"RATIO",target:20,direction:"lower",dataSource:"مؤشر إعادة التنويم"},
-    {code:"ED_REVISIT_72H",name:"Hospital Rate of unplanned Return to ED within 72 hours",category:"استمرارية الرعاية",department:"الطوارئ",unit:"%",definition:"Hospital Revisit Rate same diagnosis within 72 days (%) [label says days; title says hours]",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"RATIO",target:3,direction:"lower",dataSource:"مؤشر إعادة زيارة الطوارئ"},
+    {code:"ED_REVISIT_72H",name:"العودة غير المخطط لها للطوارئ خلال 72 ساعة",category:"استمرارية الرعاية",department:"الطوارئ",unit:"عدد",definition:"عدد حالات العودة غير المخطط لها للطوارئ خلال 72 ساعة بنفس التشخيص",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"SUM",direction:"lower",dataSource:"مؤشر إعادة زيارة الطوارئ"},
     {code:"APEX_CLINIC_VISITS",name:"مراجعي العيادات (ايبكس)",category:"حجم النشاط",department:"العيادات الخارجية",unit:"عدد",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"none",dataSource:"العيادات الخارجية (department sheet, label only)"},
     {code:"APEX_NOSHOW_COUNT",name:"المرضى الذين لم يحضروا للمواعيد (ايبكس)",category:"الوصول والمواعيد",department:"العيادات الخارجية",unit:"عدد",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"lower",dataSource:"العيادات الخارجية (department sheet, label only)"},
     ...ADDED_KPIS
@@ -2598,7 +2603,7 @@ const ENTRY_HINTS = {
     MED_ERR_REPORTING_DOCTORS: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
     MED_ERR_REPORTING_NURSES: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
     MED_ERR_REPORTING_PHARMACISTS: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
-    ED_REVISIT_72H: "البسط = حالات العودة غير المخططة خلال 72 ساعة | المقام = إجمالي مراجعي الطوارئ المعالجين",
+    ED_REVISIT_72H: "عدد حالات العودة غير المخطط لها خلال 72 ساعة في الشهر",
     LAB_COMPLETION_PCT: "البسط = الفحوصات المنجزة | المقام = الفحوصات المستلمة"
 };
 
@@ -4382,8 +4387,7 @@ async function deleteKpi(code){
 // ---- Re-admission files: monthly counts sent by the departments as Excel ----
 const READMIT_IMPORT = [
     { code: "READMIT30_PSY",   label: "إعادة التنويم 30 يوماً — الطب النفسي", num: "عدد العائدين بنفس التشخيص", den: "عدد المرضى المخرَّجين" },
-    { code: "READMIT30_DETOX", label: "إعادة التنويم 30 يوماً — الإدمان",     num: "عدد العائدين بنفس التشخيص", den: "عدد المرضى المخرَّجين" },
-    { code: "ED_REVISIT_72H",  label: "العودة للطوارئ خلال 72 ساعة",           num: "عدد العائدين خلال 72 ساعة", den: "إجمالي زيارات الطوارئ" }
+    { code: "READMIT30_DETOX", label: "إعادة التنويم 30 يوماً — الإدمان",     num: "عدد العائدين بنفس التشخيص", den: "عدد المرضى المخرَّجين" }
 ];
 const READMIT_MONTH_COL = "الشهر (YYYY-MM)";
 const readmitCol = (x, part) => `${x.label} | ${part === "num" ? x.num : x.den}`;
