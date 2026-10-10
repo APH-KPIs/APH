@@ -1368,7 +1368,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.7 — 2026-10-11";
+const APP_VERSION = "الإصدار 4.8 — 2026-10-11";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1638,7 +1638,7 @@ function groupByCategory(items, catOf){
 // Version 14: department, category and calculation codes of the official Excel template (applyTemplateMeta).
 // Version 15: bed capacity 183 from 1/10/2026 (was 153); inpatient, clinic and 937 satisfaction targets.
 // Version 16: unplanned ED return within 72 hours is a count of cases, not a rate.
-const KPI_LAYOUT_V = 16;
+const KPI_LAYOUT_V = 17;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1742,7 +1742,8 @@ const KPI_TARGETS = {
 const OFFICIAL_QUARTERS = {
     MAINT_REQUESTS:  { v: 11, values: { "2026-Q3": 474 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" },
     MAINT_COMPLETED: { v: 11, values: { "2026-Q3": 472 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" },
-    LAB_COMPLETION_PCT: { v: 12, values: { "2026-Q1": 98, "2026-Q2": 98, "2026-Q3": 98 }, reason: "اعتماد وحدة مؤشرات الأداء: نسب إنجاز عينتي 98% فأعلى" }
+    LAB_COMPLETION_PCT: { v: 12, values: { "2026-Q1": 98, "2026-Q2": 98, "2026-Q3": 98 }, reason: "اعتماد وحدة مؤشرات الأداء: نسب إنجاز عينتي 98% فأعلى" },
+    MED_ERR_REPORTING_PHARMACISTS: { v: 17, values: { "2026-Q1": 100, "2026-Q2": 100, "2026-Q3": 100 }, reason: "ملف الإدخال المعتمد 2026: السلامة الدوائية 100% كل شهر" }
 };
 // code → layout version that removed it (a KPI stored at an older version is dropped once).
 const KPI_REMOVED_AT = {
