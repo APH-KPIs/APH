@@ -823,6 +823,7 @@
                             </select>
                             <button id="approveAllBtn" onclick="approveShown()" class="btn btn-primary text-xs whitespace-nowrap hidden"><i class="fa-solid fa-check-double ml-1"></i> اعتماد الكل</button>
                             <button id="exportRecordsBtn" onclick="exportRecords()" class="btn btn-secondary text-xs whitespace-nowrap"><i class="fa-solid fa-file-excel text-emerald-600 ml-1"></i> تصدير Excel</button>
+                            <button id="exportTemplateBtn" onclick="exportEntryTemplate()" class="btn btn-secondary text-xs whitespace-nowrap" title="قراءات 2026 بنفس شكل ملف الاستيراد: ورقة لكل شهر، المؤشرات صفوف والأيام أعمدة"><i class="fa-solid fa-table text-emerald-600 ml-1"></i> تصدير بصيغة قالب الإدخال</button>
                             <span id="backupBtns" class="hidden flex items-center gap-2">
                                 <button onclick="exportFullBackup()" class="btn btn-primary text-xs whitespace-nowrap" title="القراءات والمؤشرات والمستهدفات والقيم الربعية في ملف واحد"><i class="fa-solid fa-shield-halved ml-1"></i> نسخة احتياطية كاملة</button>
                                 <label class="btn btn-secondary text-xs whitespace-nowrap cursor-pointer" title="استبدال كل البيانات بمحتوى نسخة احتياطية">
@@ -1368,7 +1369,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.8 — 2026-10-11";
+const APP_VERSION = "الإصدار 4.9 — 2026-10-11";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -2153,6 +2154,17 @@ async function cloudLoadAll(){
         const seeded = seedRecords();
         if(seeded.length){ records.push(...seeded); persistRecords(seeded).catch(() => {}); }
     }
+    // The superseded 2026 readings are removed by the first approver who signs in.
+    if(currentUser && currentUser.token && can("approve")){
+        const stale = supersededRecords();
+        if(stale.length){
+            records = records.filter(r => !stale.includes(r));
+            const [up, rem] = deriveRecords(stale);
+            persistRecords(up, [...stale.map(r => r.id), ...rem])
+                .then(ok => { if(ok) addAudit("DELETE_RECORD", "قراءات قديمة 2026", `${stale.length} قراءة`, "", "استبدلها ملف الإدخال المعتمد 2026"); })
+                .catch(() => {});
+        }
+    }
     // Occupancy readings saved with an older bed count are recalculated by the first user who can enter data.
     if(currentUser && can("data")){
         const stale = staleOccupancySources();
@@ -2624,6 +2636,33 @@ function seedRecords(){
     return Object.entries(SEED_RECORDS).filter(([code]) => !have.has(code) && kpis.some(k => k.code === code)).flatMap(([code, months]) =>
         Object.entries(months).map(([month, value]) => normalizeRecord({ kpiCode: code, kpiName: kpis.find(k => k.code === code).name, date: month + "-01",
             actualValue: value, dataSource: "إدارة التمريض — مؤشرات 2026 المعتمدة", approved: true, createdBy: "وحدة مؤشرات الأداء" })));
+}
+
+// The 562 older 2026 readings (from the original source files) that sit in the same periods as the approved 2026 entry
+// file and change its results; Lama approved removing exactly these on 2026-10-10 (the approved file's value is the right one).
+// Matched by KPI, date (2026-MM-DD) and source.
+const SUPERSEDED_2026 = {
+    CALLS937_CLOSED: { source: "البيانات الأصلية", dates: "05-01 05-02 05-03 05-04 05-05 05-06 05-07 05-08 05-09 05-10 05-11 05-12 05-13 05-14 05-15 05-16 05-17 05-18 05-19 05-21 05-22 05-23 05-24 05-25 05-26 05-28 05-29 05-30 05-31 06-01 06-02 06-04 06-05 06-06 06-07 06-08 06-09 06-11 06-12 06-13 06-14 06-15 06-16 06-18 06-19 06-20 06-21 06-22 06-23 06-25 06-26 06-27 06-28 06-29 06-30 07-02 07-03 07-04 07-05 07-06 07-07 07-09 07-10 07-11 07-12 07-13 07-14 07-16 07-17 07-18 07-19 07-20 07-21 07-23 07-24 07-25 07-26 07-27 07-28 07-30 07-31 08-01 08-02 08-03 08-04 08-06 08-07 08-08 08-09 08-10 08-11 08-13 08-14 08-15 08-16 08-17 08-18 08-20 08-21 08-22 08-23 08-24 08-25 08-27 08-28 08-29 08-30 08-31 09-01 09-03 09-04 09-05 09-06 09-07 09-08 09-10 09-11 09-12 09-13 09-14 09-15 09-17 09-18 09-19 09-20 09-21 09-22 09-24 09-25" },
+    CALLS937_OVERALL_INDEX: { source: "مركز الإتصال التفاعلي (937)", dates: "01-03 01-10 01-17 01-24 01-31 02-07 02-14 02-21 02-28 03-07 03-14 03-21 03-28 04-04 04-11 04-18 04-25 05-02 05-09 05-16 05-23 05-30 06-06 06-13 06-20 06-27 07-04 07-11 07-18 07-25 08-01 08-08 08-15 08-29" },
+    CALLS937_REPORTS: { source: "البيانات الأصلية", dates: "05-01 05-02 05-03 05-04 05-05 05-06 05-07 05-08 05-09 05-10 05-11 05-12 05-13 05-14 05-15 05-16 05-17 05-18 05-19 05-21 05-22 05-23 05-24 05-25 05-26 05-28 05-29 05-30 05-31 06-01 06-02 06-04 06-05 06-06 06-07 06-08 06-09 06-11 06-12 06-13 06-14 06-15 06-16 06-18 06-19 06-20 06-21 06-22 06-23 06-25 06-26 06-27 06-28 06-29 06-30 07-02 07-03 07-04 07-05 07-06 07-07 07-09 07-10 07-11 07-12 07-13 07-14 07-16 07-17 07-18 07-19 07-20 07-21 07-23 07-24 07-25 07-26 07-27 07-28 07-30 07-31 08-01 08-02 08-03 08-04 08-06 08-07 08-08 08-09 08-10 08-11 08-13 08-14 08-15 08-16 08-17 08-18 08-20 08-21 08-22 08-23 08-24 08-25 08-27 08-28 08-29 08-30 08-31 09-01 09-03 09-04 09-05 09-06 09-07 09-08 09-10 09-11 09-12 09-13 09-14 09-15 09-17 09-18 09-19 09-20 09-21 09-22 09-24 09-25" },
+    CALLS937_SATISFACTION: { source: "مركز الإتصال التفاعلي (937)", dates: "01-03 01-10 01-17 01-24 01-31 02-07 02-14 02-21 02-28 03-07 03-14 03-21 03-28 04-04 04-11 04-18 04-25 05-02 05-09 05-16 05-23 05-30 06-06 06-13 06-20 06-27 07-04 07-11 07-18 07-25 08-01 08-08 08-15 08-29" },
+    ED_REVISIT_72H: { source: "مؤشر إعادة زيارة الطوارئ", dates: "01-31 02-28" },
+    LAB_COMPLETION_PCT: { source: "عينتي - المختبر", dates: "01-14 01-21 01-28 01-31 02-07 02-14 02-21 02-28 03-07 03-14 03-21 03-31 04-07 04-14 04-21 04-28 04-30 05-07 05-14 05-21 06-30 07-07 07-14 07-21 07-31 08-07 08-14 08-21 08-31" },
+    MAINT_REQUESTS: { source: "البيانات الأصلية", dates: "04-15 06-23" },
+    MED_ERR_REPORTING_PHARMACISTS: { source: "مؤشر الأخطاء الدوائية", dates: "03-31 04-07 04-14 04-21 04-30 05-07 05-14 05-21 06-07 06-14 06-21" },
+    PATIENT_EXP_OPD: { source: "تجربة المريض", dates: "03-31 06-30" },
+    PSY_CLINIC_VISITS: { source: "البيانات الأصلية", dates: "06-01 06-02 06-03 06-04 06-05 06-06 06-07 06-08 06-09 06-10 06-11 06-12 06-13 06-14 06-15 06-16 06-17 06-18 06-19 06-20 06-21 06-22 06-23 06-24 06-25 06-26 06-27 06-28 06-29 07-01 07-02 07-03 07-04 07-05 07-06 07-07 07-08 07-09 07-10 07-11 07-12 07-13 07-14 07-15 07-16 07-17 07-18 07-19 07-20 07-21 07-22 07-23 07-24 07-25 07-26 07-27 07-28 07-29 07-30" },
+    PSY_NOSHOW_COUNT: { source: "البيانات الأصلية", dates: "06-01 06-02 06-03 06-04 06-05 06-06 06-07 06-08 06-09 06-10 06-11 06-12 06-13 06-14 06-15 06-16 06-17 06-18 06-19 06-20 06-21 06-22 06-23 06-24 06-25 06-26 06-27 06-28 06-29 07-01 07-02 07-03 07-04 07-05 07-06 07-07 07-08 07-09 07-10 07-11 07-12 07-13 07-14 07-15 07-16 07-17 07-18 07-19 07-20 07-21 07-22 07-23 07-24 07-25 07-26 07-27 07-28 07-29 07-30" },
+    PSY_NOSHOW_PCT: { source: "البيانات الأصلية", dates: "06-01 06-02 06-03 06-04 06-05 06-06 06-07 06-08 06-09 06-10 06-11 06-12 06-13 06-14 06-15 06-16 06-17 06-18 06-19 06-20 06-21 06-22 06-23 06-24 06-25 06-26 06-27 06-28 06-29 07-01 07-02 07-03 07-04 07-05 07-06 07-07 07-08 07-09 07-10 07-11 07-12 07-13 07-14 07-15 07-16 07-17 07-18 07-19 07-20 07-21 07-22 07-23 07-24 07-25 07-26 07-27 07-28 07-29 07-30" },
+    READMIT30_ALL: { source: "مؤشر إعادة التنويم", dates: "01-31 02-28 03-31 04-30 05-31 06-30 07-31 08-31 09-30" },
+    READMIT30_DETOX: { source: "مؤشر إعادة التنويم", dates: "01-31 02-28" },
+    READMIT30_PSY: { source: "مؤشر إعادة التنويم", dates: "01-31 02-28" },
+};
+function supersededRecords(){
+    return records.filter(r => {
+        const s = SUPERSEDED_2026[r.kpiCode], d = String(r.date || "");
+        return s && d.startsWith("2026-") && String(r.dataSource || "").startsWith(s.source) && s.dates.split(" ").includes(d.slice(5, 10));
+    });
 }
 
 function staleOccupancySources(){
@@ -4251,6 +4290,81 @@ async function restoreFullBackup(event){
     addAudit("RESTORE_BACKUP", `نسخة ${when}`, `${before.records.length} قراءة`, `${bk.kpis.length} مؤشر، ${bk.records.length} قراءة`, reason);
     rerenderAfterSync(); renderTargets(); renderDashboard();
     showToast(`تمت الاستعادة: ${bk.kpis.length} مؤشر و${bk.records.length.toLocaleString("en-US")} قراءة.`);
+}
+
+// The 2026 readings written into the entry template (TEMPLATE_FILE), so the export has the import file's layout:
+// one sheet per month, one indicator per row (hidden code in column A), one day per column. A reading goes in the
+// first entry (white) cell of its row on or after its date: a monthly reading saved on the 1st lands on the month's
+// last day, a weekly one on the week's entry day. A KPI reported next month goes on the 1st of the following month.
+function loadJsZip(){
+    if(window.JSZip) return Promise.resolve(window.JSZip);
+    return new Promise((resolve, reject) => {
+        const el = document.createElement("script");
+        el.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        el.onload = () => resolve(window.JSZip); el.onerror = () => reject(new Error("تعذّر تحميل مكتبة الملفات"));
+        document.head.appendChild(el);
+    });
+}
+async function exportEntryTemplate(){
+    if(!can("exportRecords")){ showToast("ليس لديك صلاحية التصدير."); return; }
+    try{
+        const [JSZip, buf] = await Promise.all([loadJsZip(), fetch(TEMPLATE_FILE, { cache: "no-store" }).then(r => { if(!r.ok) throw new Error("تعذّر تحميل القالب"); return r.arrayBuffer(); })]);
+        const zip = await JSZip.loadAsync(buf);
+        const read = path => zip.file(path).async("string");
+        const unxml = t => t.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+        const shared = [...(await read("xl/sharedStrings.xml")).matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m => unxml([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(t => t[1]).join("")));
+        const rels = Object.fromEntries([...(await read("xl/_rels/workbook.xml.rels")).matchAll(/<Relationship [^>]*?Id="([^"]+)"[^>]*?Target="([^"]+)"/g)].map(m => [m[1], m[2]]));
+        const relsAlt = Object.fromEntries([...(await read("xl/_rels/workbook.xml.rels")).matchAll(/<Relationship [^>]*?Target="([^"]+)"[^>]*?Id="([^"]+)"/g)].map(m => [m[2], m[1]]));
+        const sheets = [...(await read("xl/workbook.xml")).matchAll(/<sheet [^>]*?r:id="([^"]+)"/g)].map(m => "xl/" + (rels[m[1]] || relsAlt[m[1]]).replace(/^\/?xl\//, ""));
+        const toSerial = iso => (Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - Date.UTC(1899, 11, 30)) / 864e5;
+        const colNum = c => [...c].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
+        // Every entry cell of the year, per indicator: serial → { path, ref }.
+        const WHITE = new Set(["8", "11"]);
+        const cells = {}, texts = {};
+        for(const path of sheets){
+            if(!zip.file(path)) continue;
+            const xml = await read(path); texts[path] = xml;
+            const rows = [...xml.matchAll(/<row [^>]*?r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)];
+            const head = rows.find(r => r[1] === "1");
+            if(!head) continue;
+            const dates = Object.fromEntries([...head[2].matchAll(/<c r="([A-Z]+)1"[^>]*?>\s*<v>(\d+)<\/v>/g)].map(m => [m[1], +m[2]]));
+            if(Object.keys(dates).length < 28) continue;
+            rows.forEach(([, rn, body]) => {
+                // Column A holds the code as a shared string or an inline string.
+                const a = body.match(new RegExp(`<c r="A${rn}"[^>]*?t="s"[^>]*>\\s*<v>(\\d+)</v>`));
+                const inline = body.match(new RegExp(`<c r="A${rn}"[^>]*?t="inlineStr"[^>]*>\\s*<is>\\s*<t[^>]*>([^<]*)</t>`));
+                if(!a && !inline) return;
+                const code = String(a ? shared[+a[1]] || "" : unxml(inline[1])).split(":")[0].trim();
+                if(!kpis.some(k => k.code === code)) return;
+                [...body.matchAll(/<c r="([A-Z]+)(\d+)" s="(\d+)"\/>/g)].forEach(([, col, , st]) => {
+                    if(dates[col] == null || !WHITE.has(st)) return;
+                    (cells[code] ||= {})[dates[col]] = { path, ref: col + rn, st };
+                });
+            });
+        }
+        // The cell for each reading. Readings landing in the same cell are added up for a count KPI, else averaged.
+        const put = {};
+        records.filter(r => String(r.date || "").startsWith("2026-") && r.dataSource !== DERIVED_SOURCE && cells[r.kpiCode])
+            .sort((a, b) => String(a.date).localeCompare(String(b.date))).forEach(r => {
+                const k = kpis.find(x => x.code === r.kpiCode);
+                let d = toSerial(String(r.date).slice(0, 10));
+                if(k?.reportedNextMonth){ const y = +r.date.slice(0, 4), m = +r.date.slice(5, 7); d = toSerial(m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`); }
+                const slots = cells[r.kpiCode];
+                const at = Object.keys(slots).map(Number).filter(x => x >= d && x - d <= 92).sort((a, b) => a - b)[0];
+                const v = isNum(r.actualValue) ? Number(r.actualValue) : null;
+                if(at == null || v == null) return;
+                const key = slots[at].path + "|" + slots[at].ref;
+                (put[key] ||= { ...slots[at], vals: [], sum: k?.aggregation === "SUM" }).vals.push(v);
+            });
+        Object.values(put).forEach(p => { const t = p.vals.reduce((a, x) => a + x, 0); p.v = p.sum ? t : Math.round(t / p.vals.length * 1e4) / 1e4; });
+        Object.values(put).forEach(({ path, ref, st, v }) => { texts[path] = texts[path].replace(`<c r="${ref}" s="${st}"/>`, `<c r="${ref}" s="${st}"><v>${v}</v></c>`); });
+        Object.entries(texts).forEach(([path, xml]) => zip.file(path, xml));
+        const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob); a.download = `قراءات المؤشرات 2026 بصيغة قالب الإدخال ${formatDateInput(new Date())}.xlsx`;
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        showToast(`تم تصدير ${Object.keys(put).length.toLocaleString("en-US")} قراءة بصيغة قالب الإدخال.`);
+    }catch(e){ showToast("تعذّر التصدير: " + (e.message || e)); }
 }
 
 function exportRecords(){
