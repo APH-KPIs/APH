@@ -252,7 +252,9 @@ begin
     for r in select * from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) loop
         rid := (r->>'kpiCode') || '|' || (r->>'date');
         select * into ex from public.records where id = rid;
-        if found and not ex.deleted and not approver and ex.created_user is distinct from me.username then
+        -- Data entry updates any existing reading (it is approved on save); every change is stamped
+        -- with who made it (updated_by). Other non-approving roles may only change their own readings.
+        if found and not ex.deleted and not approver and me.role <> 'data' and ex.created_user is distinct from me.username then
             skipped := skipped + 1; continue;
         end if;
         want_approved := (approver and coalesce((r->>'approved')::boolean, false)) or me.role = 'data';
@@ -830,8 +832,8 @@ begin
         if not found_ex then select * into ex from public.records where id = rid; found_ex := found; end if;
         src := left(nullif(btrim(r->>'dataSource'), ''), 200);
         note := left(nullif(btrim(r->>'notes'), ''), 1000);
-        -- Data entry may only change its own readings.
-        if found_ex and not ex.deleted and not approver and ex.created_user is distinct from me.username then
+        -- Data entry updates any existing reading (approved on save, stamped with updated_by).
+        if found_ex and not ex.deleted and not approver and me.role <> 'data' and ex.created_user is distinct from me.username then
             rej := rej + 1;
             errs := errs || jsonb_build_object('row', rn, 'key', key, 'indicator', ind, 'code', 'E16', 'field', 'Unique_Key');
             continue;
