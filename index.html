@@ -1375,7 +1375,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.10 — 2026-10-11";
+const APP_VERSION = "الإصدار 4.11 — 2026-10-11";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1596,7 +1596,7 @@ const DIRECTION_RULES = {
     range: [],
     conditional: ["APPT_POSTPONE_REQ","INPATIENTS_NO_HOME"]
 };
-// Bed occupancy is good inside 75%–85%; below is waste, above is congestion.
+// Default band for a KPI judged by range (none at present).
 const DEFAULT_RANGE = { rangeMin: 75, rangeMax: 85 };
 function applyDirectionRules(list){
     Object.entries(DIRECTION_RULES).forEach(([dir, codes]) => codes.forEach(code => {
@@ -1645,7 +1645,9 @@ function groupByCategory(items, catOf){
 // Version 14: department, category and calculation codes of the official Excel template (applyTemplateMeta).
 // Version 15: bed capacity 183 from 1/10/2026 (was 153); inpatient, clinic and 937 satisfaction targets.
 // Version 16: unplanned ED return within 72 hours is a count of cases, not a rate.
-const KPI_LAYOUT_V = 17;
+// Version 17: medication safety 100% for Q1–Q3 2026 (OFFICIAL_QUARTERS).
+// Version 18: bed occupancy target 75% with lower as better (owner's decision); inpatient counts follow it.
+const KPI_LAYOUT_V = 18;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1704,9 +1706,9 @@ const KPI_TARGETS = {
     PSY_CLINIC_VISITS:        { v: 4, target: 9000, direction: "higher" },
     PSY_NOSHOW_PCT:           { v: 4, target: 15,   direction: "lower" },
     CALLS937_OVERALL_INDEX:   { v: 4, target: 95 },
-    OCC_WITH_HOME_PCT:        { v: 15, target: 75,   direction: "higher", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 153 حتى 30/9/2026، ثم 183",
+    OCC_WITH_HOME_PCT:        { v: 18, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 153 حتى 30/9/2026، ثم 183",
                                 definition: "عدد المرضى المنومين مع المنزل ÷ الأسرّة المعتمدة (153 حتى 30/9/2026، ثم 183) × 100" },
-    OCC_NO_HOME_PCT:          { v: 15, target: 75,   direction: "higher", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، ثم 150",
+    OCC_NO_HOME_PCT:          { v: 18, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، ثم 150",
                                 definition: "عدد المرضى المنومين بدون المنزل ÷ الأسرّة المعتمدة (123 حتى 30/9/2026، ثم 150) × 100" },
     PATIENT_EXP_OPD:          { v: 6, target: 88.69, direction: "higher" },
     TELE_APPTS:               { v: 7, target: 339, targetBasis: "weekly", direction: "higher" },
@@ -1724,9 +1726,10 @@ const KPI_TARGETS = {
                                 quarterTargets: { "2026-Q1": 27000, "2026-Q2": 33000, "2026-Q3": 39000, "2026-Q4": 51000 },
                                 definition: "إجمالي إيرادات الموارد الذاتية المحصلة خلال الفترة. مستهدف تنمية الإيرادات 2026: 150,000 ريال (إيراد 2025: 58,241 ريال)." },
     // Inpatients: 75% occupancy of the beds (BED_CAPACITY) in each quarter; the year is the days-weighted mean.
-    INPATIENTS_WITH_HOME:     { v: 15, target: 121, direction: "higher",
+    // At or below the target is good, like the occupancy rate.
+    INPATIENTS_WITH_HOME:     { v: 18, target: 121, direction: "lower",
                                 quarterTargets: { "2026-Q1": 115, "2026-Q2": 115, "2026-Q3": 115, "2026-Q4": 137 } },
-    INPATIENTS_NO_HOME:       { v: 15, target: 97, direction: "higher",
+    INPATIENTS_NO_HOME:       { v: 18, target: 97, direction: "lower",
                                 quarterTargets: { "2026-Q1": 92, "2026-Q2": 92, "2026-Q3": 92, "2026-Q4": 113 } },
     // Clinics: no-shows within the 15% no-show target of 9,000 visits a quarter; confirmations 80% of the
     // 32,000 outgoing calls a year, half of clinic visits confirmed by call; postponements about 1% of confirmations.
