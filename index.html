@@ -1375,7 +1375,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.11 — 2026-10-11";
+const APP_VERSION = "الإصدار 4.12 — 2026-10-11";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -4718,13 +4718,18 @@ async function handleExcelUpload(event){
     const file = input.files[0];
     if(!file) return;
     try {
-        const workbook = XLSX.read(await file.arrayBuffer(), { type:"array", cellDates:true });
+        const buf = await file.arrayBuffer();
+        const workbook = XLSX.read(buf, { type:"array", cellDates:true });
         importedRows = [];
         // The entry templates (simple daily sheet, or IMPORT_TEMPLATE / DATA with Indicator_ID) go through the data management import.
-        if(dmLocateSimpleSheet(workbook) || dmLocateSheet(workbook)){
+        // They are recognised from the raw workbook: the monthly sheets' date row is found as Excel date numbers.
+        // The consolidated KPI workbook (KPI_Dashboard_FINAL) keeps its own import below.
+        const raw = XLSX.read(buf, { type:"array", cellDates:false, cellFormula:false });
+        if(!locateDashboardSheets(workbook) && (dmLocateSimpleSheet(raw) || dmLocateSheet(raw))){
             input.value = "";
             showSection("dataMgmt"); dmTab("upload");
-            try{ await dmProcessFile(file); }
+            showToast("هذا قالب إدخال المؤشرات — يُفحص ويُرفع من «إدارة البيانات».");
+            try{ await dmProcessFile(file, buf); }
             catch(e){ dmShowFileFailure(file, e); }
             return;
         }
