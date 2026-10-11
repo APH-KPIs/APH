@@ -320,6 +320,7 @@
         .kq-labels b { display: block; font-size: 10.5px; color: #0f172a; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .kq-labels .sel { color: #0b1f33; font-weight: 900; }
         .kq-dot { display: inline-block; width: 8px; height: 8px; border-radius: 3px; }
+        #filterPeriodBox.range-wide { grid-column: span 2; }
         .kpi-subhead { grid-column: 1 / -1; font-size: 11px; font-weight: 800; color: #0369a1; display: flex; align-items: center; gap: 8px; margin-top: 2px; }
         .kpi-subhead::after { content: ""; flex: 1; border-top: 1px dashed #bae6fd; }
         #printArea .kpi-subhead { font-size: 9.5px; margin-top: 0; }
@@ -545,13 +546,18 @@
                             <option value="quarter">ربع سنوي</option>
                             <option value="month">شهري</option>
                             <option value="week">أسبوعي</option>
+                            <option value="custom">فترة محددة (من – إلى)</option>
                         </select>
                     </div>
-                    <div>
+                    <div id="filterPeriodBox">
                         <label class="block text-xs font-bold text-slate-600 mb-1">الفترة الزمنية</label>
                         <select id="filterQuarter" onchange="renderDashboard()">
                             <option value="ALL">السنة كاملة</option>
                         </select>
+                        <div id="filterRangeBox" class="hidden grid grid-cols-2 gap-2">
+                            <label class="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">من<input id="filterFrom" type="date" class="!px-2" onchange="onRangeChange('from')" aria-label="من تاريخ"></label>
+                            <label class="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">إلى<input id="filterTo" type="date" class="!px-2" onchange="onRangeChange('to')" aria-label="إلى تاريخ" title="اختر نفس التاريخ ليوم واحد"></label>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">فئة المؤشرات</label>
@@ -1369,7 +1375,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.9 — 2026-10-11";
+const APP_VERSION = "الإصدار 4.10 — 2026-10-11";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -3048,17 +3054,26 @@ function weekStart(dateStr){
     return formatDateInput(d);
 }
 function recordWeek(r){ return r._week || (r._week = weekStart(r.date)); }
-function periodYear(year, q){ return q && q[0] === "W" ? Number(q.slice(1, 5)) : Number(year); }
+function periodYear(year, q){ return q && (q[0] === "W" || q[0] === "R") ? Number(q.slice(1, 5)) : Number(year); }
+// A chosen date range is keyed "R<from>_<to>" (one day when both dates are equal).
+const rangeOfKey = q => q.slice(1).split("_");
 
 function inPeriod(r, q){
     if(q === "ALL") return true;
     if(q[0] === "Q") return r.quarter === q;
     if(q[0] === "M") return Number(String(r.date).slice(5, 7)) === Number(q.slice(1));
     if(q[0] === "W") return recordWeek(r) === q.slice(1);
+    if(q[0] === "R"){ const [from, to] = rangeOfKey(q); return r.date >= from && r.date <= to; }
     return false;
 }
 
 function periodRecords(code, year, q){
+    if(q && q[0] === "R"){
+        // A range can span years: gather each year's readings, then keep the dates inside it.
+        const [from, to] = rangeOfKey(q), out = [];
+        for(let y = Number(from.slice(0, 4)); y <= Number(to.slice(0, 4)); y++) out.push(...indexedRecords(code, y).filter(r => inPeriod(r, q)));
+        return out;
+    }
     const rows = indexedRecords(code, periodYear(year, q));
     return q === "ALL" ? rows : rows.filter(r => inPeriod(r, q));
 }
@@ -3150,10 +3165,17 @@ function prevPeriod(year, q){
     const n = Number(q.slice(1));
     if(q[0] === "Q") return n === 1 ? [year - 1, "Q4"] : [year, "Q" + (n - 1)];
     if(q[0] === "M") return n === 1 ? [year - 1, "M12"] : [year, "M" + (n - 1)];
+    if(q[0] === "R"){
+        // The same number of days immediately before the range.
+        const [from, to] = rangeOfKey(q), days = Math.round((parseIsoDate(to) - parseIsoDate(from)) / 86400000) + 1;
+        const pTo = shiftDays(from, -1), pFrom = shiftDays(from, -days);
+        return [Number(pFrom.slice(0, 4)), `R${pFrom}_${pTo}`];
+    }
     const prev = shiftDays(q.slice(1), -7);
     return [Number(prev.slice(0, 4)), "W" + prev];
 }
 function samePeriodLastYear(year, q){
+    if(q[0] === "R"){ const back = d => `${Number(d.slice(0, 4)) - 1}${d.slice(4)}`.replace(/-02-29$/, "-02-28"); const [from, to] = rangeOfKey(q); return [Number(from.slice(0, 4)) - 1, `R${back(from)}_${back(to)}`]; }
     if(q[0] === "W"){ const w = shiftDays(q.slice(1), -364); return [Number(w.slice(0, 4)), "W" + w]; }
     return [Number(year) - 1, q];
 }
@@ -3206,7 +3228,7 @@ function periodTarget(kpi, year, q, base){
     if(kpi.aggregation !== "SUM"){
         const plan = q && q !== "ALL" ? quarterPlan(kpi, periodYear(year, q)) : null;
         if(!plan) return base;
-        const month = q[0] === "Q" ? (Number(q[1]) - 1) * 3 + 1 : q[0] === "M" ? Number(q.slice(1)) : Number(q.slice(6, 8));
+        const month = q[0] === "Q" ? (Number(q[1]) - 1) * 3 + 1 : q[0] === "M" ? Number(q.slice(1)) : Number(q.slice(6, 8));  // W and R: month of the start date
         return plan[Math.ceil(month / 3) - 1];
     }
     const y = periodYear(year, q);
@@ -3227,6 +3249,15 @@ function periodTarget(kpi, year, q, base){
         // No readings yet: use the calendar share of the period.
         if(q === "ALL") return QUARTERS.reduce((sum, qq) => sum + qBase(y, qq), 0);
         if(q[0] === "Q") return qBase(y, q);
+        if(q[0] === "R"){
+            // Calendar share of each quarter the range covers.
+            const [from, to] = rangeOfKey(q); let total = 0;
+            for(let d = from; d <= to; d = shiftDays(d, 1)){
+                const dy = Number(d.slice(0, 4)), dq = "Q" + Math.ceil(Number(d.slice(5, 7)) / 3);
+                total += qBase(dy, dq) / unitsInQuarter(dy, dq, "daily");
+            }
+            return total;
+        }
         const qOf = m => "Q" + Math.ceil(m / 3);
         if(q[0] === "M"){ const m = Number(q.slice(1)); const qq = qOf(m);
             return kpi.frequency === "monthly" ? qBase(y, qq) / 3 : qBase(y, qq) * new Date(y, m, 0).getDate() / unitsInQuarter(y, qq, "daily"); }
@@ -3351,10 +3382,26 @@ function fmt(val, kpi){
     return Number(val).toLocaleString("en-US",{maximumFractionDigits:2}) + (kpi.unit === "%" ? "%" : "");
 }
 
+function rangeKey(){
+    const today = formatDateInput(new Date());
+    let from = document.getElementById("filterFrom").value || today, to = document.getElementById("filterTo").value || from;
+    if(to < from) [from, to] = [to, from];
+    return `R${from}_${to}`;
+}
+function onRangeChange(which){
+    const f = document.getElementById("filterFrom"), t = document.getElementById("filterTo");
+    // Picking only the start date shows that single day; a start after the end moves the end with it.
+    if(which === "from" && (!t.value || t.value < f.value)) t.value = f.value;
+    if(which === "to" && (!f.value || f.value > t.value)) f.value = t.value;
+    if(f.value) document.getElementById("filterYear").value = String(Number(f.value.slice(0, 4)));
+    renderDashboard();
+}
+
 function getFilters(){
     return {
-        year: Number(document.getElementById("filterYear").value) || new Date().getFullYear(),
-        q: document.getElementById("filterQuarter").value,
+        year: document.getElementById("filterPeriodType").value === "custom" ? Number(rangeKey().slice(1, 5))
+            : Number(document.getElementById("filterYear").value) || new Date().getFullYear(),
+        q: document.getElementById("filterPeriodType").value === "custom" ? rangeKey() : document.getElementById("filterQuarter").value,
         cat: document.getElementById("filterCategory").value
     };
 }
@@ -3556,8 +3603,10 @@ async function saveQuarterValues(){
 
 // ---- Column chart for any KPI over the periods of the current view ----
 // Year view: the last three years; quarter: Q1–Q4; month: the twelve months; week: the last eight weeks.
-const PERIOD_BASIS = { ALL: "سنوي", Q: "ربع سنوي", M: "شهري", W: "أسبوعي" };
+const PERIOD_BASIS = { ALL: "سنوي", Q: "ربع سنوي", M: "شهري", W: "أسبوعي", R: "للفترة المحددة" };
 function viewPeriods(year, q){
+    // A chosen range: the same dates last year, the period just before, and the range itself.
+    if(q[0] === "R"){ const [ly, lq] = samePeriodLastYear(year, q), [py, pq] = prevPeriod(year, q); return [[ly, lq, "العام الماضي"], [py, pq, "السابقة"], [Number(q.slice(1, 5)), q, "المحددة"]]; }
     if(q === "ALL") return [[year - 2, "ALL", String(year - 2)], [year - 1, "ALL", String(year - 1)], [year, "ALL", String(year)]];
     if(q[0] === "Q") return QUARTERS.map(x => [year, x, x]);
     if(q[0] === "M") return MONTHS_AR.map((m, i) => [year, "M" + (i + 1), m.slice(0, 3)]);
@@ -3884,6 +3933,10 @@ function periodName(q){
     if(q[0] === "Q") return { Q1:"الربع الأول", Q2:"الربع الثاني", Q3:"الربع الثالث", Q4:"الربع الرابع" }[q] || q;
     if(q[0] === "M") return "شهر " + MONTH_NAMES[Number(q.slice(1)) - 1];
     if(q[0] === "W") return `أسبوع ${shortDate(q.slice(1))} – ${shortDate(shiftDays(q.slice(1), 6))}`;
+    if(q[0] === "R"){
+        const [from, to] = rangeOfKey(q), withYear = from.slice(0, 4) !== to.slice(0, 4), sd = d => shortDate(d) + (withYear ? " " + d.slice(0, 4) : "");
+        return from === to ? `يوم ${sd(from)}` : `من ${sd(from)} إلى ${sd(to)}`;
+    }
     return q;
 }
 
@@ -3893,6 +3946,20 @@ function populatePeriodOptions(typeChanged){
     const sel = document.getElementById("filterQuarter");
     const year = Number(document.getElementById("filterYear").value) || new Date().getFullYear();
     const prev = sel.value;
+    const custom = type === "custom";
+    sel.classList.toggle("hidden", custom);
+    document.getElementById("filterPeriodBox").classList.toggle("range-wide", custom);
+    document.getElementById("filterRangeBox").classList.toggle("hidden", !custom);
+    if(custom){
+        // Default: the last 30 days with readings, ending at the newest reading.
+        const f = document.getElementById("filterFrom"), t = document.getElementById("filterTo");
+        if(!f.value || !t.value){
+            let latest = ""; records.forEach(r => { if(r.date > latest) latest = r.date; });
+            const end = latest && latest < formatDateInput(new Date()) ? latest : formatDateInput(new Date());
+            t.value = end; f.value = shiftDays(end, -29);
+        }
+        return;
+    }
     let opts = [];
     if(type === "year") opts = [["ALL", "السنة كاملة"]];
     else if(type === "quarter") opts = QUARTERS.map(q => [q, periodName(q)]);
@@ -3923,6 +3990,7 @@ function populatePeriodOptions(typeChanged){
 
 function periodEnd(year, q){
     if(q[0] === "W") return shiftDays(q.slice(1), 6);
+    if(q[0] === "R") return rangeOfKey(q)[1];
     if(q[0] === "M") return formatDateInput(new Date(year, Number(q.slice(1)), 0));
     if(q[0] === "Q") return formatDateInput(quarterBounds(year, q)[1]);
     return `${year}-12-31`;
@@ -4031,7 +4099,7 @@ function printReport(){
     const avg = ach.length ? (ach.reduce((a, b) => a + b, 0) / ach.length).toFixed(1) + "%" : "—";
     const dot = key => `<span class="pr-dot" style="background:${key === "gray" ? "#94a3b8" : statusColor(key)}"></span>`;
     const period = `${periodName(q)} ${q === "ALL" || /^[QM]/.test(q) ? year : ""}`.trim();
-    const type = q === "ALL" ? "سنوي" : q[0] === "Q" ? "ربع سنوي" : q[0] === "M" ? "شهري" : "أسبوعي";
+    const type = q === "ALL" ? "سنوي" : q[0] === "Q" ? "ربع سنوي" : q[0] === "M" ? "شهري" : q[0] === "R" ? "لفترة محددة" : "أسبوعي";
     const keyRows = KEY_KPIS.map(({ code, label }) => {
         const k = kpis.find(x => x.code === code && x.active !== false);
         if(!k) return "";
@@ -4141,7 +4209,7 @@ function printAllKpiCards(){
     const { year, q, cat } = getFilters();
     const results = computeResults(year, q, cat);
     const count = key => results.filter(r => r.status.key === key).length;
-    const type = q === "ALL" ? "سنوي" : q[0] === "Q" ? "ربع سنوي" : q[0] === "M" ? "شهري" : "أسبوعي";
+    const type = q === "ALL" ? "سنوي" : q[0] === "Q" ? "ربع سنوي" : q[0] === "M" ? "شهري" : q[0] === "R" ? "لفترة محددة" : "أسبوعي";
     const period = `${periodName(q)} ${q === "ALL" || /^[QM]/.test(q) ? year : ""}`.trim();
     const groups = groupByCategory(results, r => r.kpi.category).map(([c, rows]) =>
         `<div class="pa-cat">${escapeHtml(catLabel(c))} (${rows.length})</div><div class="pa-grid">${withGroupHeads(rows, r => r.kpi, r => kpiCard(r, year))}</div>`).join("");
