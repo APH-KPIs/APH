@@ -296,6 +296,11 @@
         /* Small categories share a row: each takes as many of the 5 columns as it has cards. */
         #printArea .pa-flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px 6px; align-items: start; }
         #printArea .pa-sec { min-width: 0; break-inside: avoid; }
+        #printArea .pa-part { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 900; color: #0b1f33; border-bottom: 2px solid #0b1f33; padding-bottom: 4px; break-after: avoid; }
+        #printArea .pa-part b { font-size: 10px; color: #fff; background: #0369a1 !important; border-radius: 999px; padding: 2px 10px; }
+        #printArea .pa-part span { margin-right: auto; font-size: 10px; color: #64748b; font-weight: 700; }
+        #printArea .pa-keys .kpi-card { break-inside: avoid; }
+        #printArea .pa-break { break-before: page; }
         #printArea .pa-cat { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 900; color: #fff; background: #0b1f33 !important; border-radius: 8px; padding: 4px 10px; margin-bottom: 6px; break-after: avoid; }
         #printArea .pa-cat span { font-size: 9.5px; font-weight: 800; background: rgba(255,255,255,.18) !important; border-radius: 999px; padding: 0 7px; }
         #printArea .kpi-card .font-mono, #printArea .kq-manual { display: none; }
@@ -1384,7 +1389,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.18 — 2026-10-13";
+const APP_VERSION = "الإصدار 4.19 — 2026-10-13";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -4254,6 +4259,9 @@ function printAllKpiCards(){
     const groups = groupByCategory(results, r => r.kpi.category).map(([c, rows]) =>
         { const n = Math.min(rows.length, 5);
             return `<section class="pa-sec" style="grid-column:span ${n}"><div class="pa-cat">${escapeHtml(catLabel(c))} <span>${rows.length}</span></div><div class="pa-grid" style="grid-template-columns:repeat(${n},1fr)">${rows.map(r => kpiCard(r, year)).join("")}</div></section>`; }).join("");
+    // Part one: the key KPIs, in their order; part two: every KPI by category.
+    const keys = KEY_KPIS.map(({ code }) => results.find(r => r.kpi.code === code)).filter(Boolean);
+    const part = (no, title, n) => `<div class="pa-part"><b>${no}</b>${title}<span>${n} مؤشراً</span></div>`;
     document.getElementById("printArea").innerHTML = `<div class="kp-page pa-page">
         <div class="kp-band">
             <div style="display:flex;align-items:center;gap:10px"><img src="logo.png" alt=""><div>
@@ -4269,6 +4277,9 @@ function printAllKpiCards(){
             <div style="color:#b91c1c">غير محقق <b>${count("red")}</b></div>
             <div>بدون حالة <b>${count("gray")}</b></div>
         </div>
+        ${keys.length ? `${part("الجزء الأول", "المؤشرات الرئيسية", keys.length)}
+        <div class="pa-grid pa-keys">${keys.map(r => kpiCard(r, year)).join("")}</div>
+        <div class="pa-break">${part("الجزء الثاني", "جميع المؤشرات", results.length)}</div>` : ""}
         <div class="pa-flow">${groups}</div>
         <div class="kp-foot">
             <div class="lg"><span><i style="background:#10b981"></i>محقق</span><span><i style="background:#f59e0b"></i>تحذير</span><span><i style="background:#ef4444"></i>غير محقق</span><span><i style="background:#94a3b8"></i>بدون حالة</span><span>- - - المستهدف للفترة (مكتوب بجانب الخط)</span><span>▢ الفترة المختارة</span></div>
