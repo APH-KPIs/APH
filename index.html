@@ -306,7 +306,10 @@
         #printArea .kpi-card .font-mono, #printArea .kq-manual { display: none; }
         #printArea .pa-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
         #printArea .kpi-card { min-height: 0; padding: 8px 10px 6px; gap: 4px; border-radius: 10px; break-inside: avoid; box-shadow: none; transform: none; }
-        #printArea .kpi-card .kpi-title { font-size: 10px; min-height: 0; }
+        /* Full names and values in exports: no clamping or ellipsis. */
+        #printArea .kpi-card .kpi-title { font-size: 10px; min-height: 0; display: block; -webkit-line-clamp: unset; overflow: visible; }
+        #printArea .pc-labels b, #printArea .kq-labels b { white-space: normal; overflow: visible; text-overflow: clip; font-size: 8px; }
+        #printArea .pc-line span { font-size: 8px; white-space: normal; }
         #printArea .kpi-card .kpi-value { font-size: 17px; }
         #printArea .kpi-card .kpi-meta { font-size: 8.5px; }
         #printArea .kpi-card .pill { font-size: 8px !important; }
@@ -1389,7 +1392,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.20 — 2026-10-13";
+const APP_VERSION = "الإصدار 4.21 — 2026-10-13";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
