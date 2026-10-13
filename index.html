@@ -1375,7 +1375,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.11 — 2026-10-11";
+const APP_VERSION = "الإصدار 4.13 — 2026-10-12";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1566,6 +1566,7 @@ function applyTemplateMeta(k){
 // Official KPI list from KPI_Dashboard_Ready.xlsx (03_KPI_MASTER); percentages are stored on a 0-100 scale.
 // KPIs added after the official workbook list. They are kept when a workbook import replaces the KPI list.
 const ADDED_KPIS = [
+    {code:"PATIENT_EXP_OPD_MOH",name:"المستهدف الوزاري — تجربة المريض (العيادات الخارجية)",category:"تجربة المريض",department:"تجربة المريض",unit:"%",definition:"المستهدف الذي تحدده الوزارة لتجربة المريض في العيادات الخارجية، يُدخل شهرياً. يُستخدم مستهدفاً لمؤشر تجربة المريض في الشهر نفسه (ومتوسطه للربع والسنة).",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"none",dataSource:"إدخال يدوي في المنصة",entryOnly:true},
     {code:"MYSTERY_SHOPPER",name:"الزائر السري",category:"الجودة",department:"إدارة الجودة",unit:"%",definition:"نتيجة تقييم الزائر السري للفترة (نسبة الالتزام بالمعايير). تُدخل شهرياً يدوياً في المنصة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدخال يدوي في المنصة"},
     {code:"OCC_HEALTH",name:"مؤشر الصحة المهنية",category:"الجودة",department:"الصحة المهنية",unit:"%",definition:"نتيجة مؤشر الصحة المهنية الشهري. تُدخل شهرياً يدوياً في المنصة.",frequency:"monthly",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"higher",dataSource:"إدخال يدوي في المنصة"},
     // Nursing administration's monthly KPIs (final rates as reported; target 0 for the three safety events).
@@ -1647,7 +1648,8 @@ function groupByCategory(items, catOf){
 // Version 16: unplanned ED return within 72 hours is a count of cases, not a rate.
 // Version 17: medication safety 100% for Q1–Q3 2026 (OFFICIAL_QUARTERS).
 // Version 18: bed occupancy target 75% with lower as better (owner's decision); inpatient counts follow it.
-const KPI_LAYOUT_V = 18;
+// Version 19: patient experience (OPD) monthly, judged against the ministry's monthly target entered by data entry.
+const KPI_LAYOUT_V = 19;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1659,7 +1661,7 @@ const KPI_LAYOUT = {
     "الشؤون الهندسية": ["MAINT_REQUESTS","MAINT_COMPLETED","MAINT_COMPLETION_PCT","SECURITY_OBS","SWITCH_INCOMING_CALLS"],
     "التنسيق الطبي": ["REFERRALS_OUT","REFERRALS_IN"],
     "بلاغات 937": ["CALLS937_REPORTS","CALLS937_CLOSED","CALLS937_SATISFACTION","CALLS937_OVERALL_INDEX","CALLS937_REPORTS_WEEKLY","CALLS937_CLOSURE_RATE"],
-    "تجربة المريض": ["PATIENT_EXP_OPD"],
+    "تجربة المريض": ["PATIENT_EXP_OPD","PATIENT_EXP_OPD_MOH"],
     "الموارد الذاتية": ["SELF_REVENUE"]
 };
 // Related KPIs sit together under a small heading inside their category (layout 10).
@@ -1710,7 +1712,10 @@ const KPI_TARGETS = {
                                 definition: "عدد المرضى المنومين مع المنزل ÷ الأسرّة المعتمدة (153 حتى 30/9/2026، ثم 183) × 100" },
     OCC_NO_HOME_PCT:          { v: 18, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، ثم 150",
                                 definition: "عدد المرضى المنومين بدون المنزل ÷ الأسرّة المعتمدة (123 حتى 30/9/2026، ثم 150) × 100" },
-    PATIENT_EXP_OPD:          { v: 6, target: 88.69, direction: "higher" },
+    // Monthly readings; the target of each period is the ministry's target entered for it (PATIENT_EXP_OPD_MOH),
+    // and 88.69% for a period without one.
+    PATIENT_EXP_OPD:          { v: 19, target: 88.69, direction: "higher", frequency: "monthly", aggregation: "AVERAGE", targetFromKpi: "PATIENT_EXP_OPD_MOH" },
+    PATIENT_EXP_OPD_MOH:      { v: 19, entryOnly: true },
     TELE_APPTS:               { v: 7, target: 339, targetBasis: "weekly", direction: "higher" },
     SENTINEL_EVENTS:          { v: 9, target: 0, direction: "lower" },
     SECURITY_OBS:             { v: 9, target: 0, direction: "lower" },
@@ -3200,6 +3205,7 @@ function targetFor(kpi, year){
 }
 function targetSource(kpi, year){
     const t = kpi.targets && kpi.targets[year];
+    if(kpi.targetFromKpi && isNum(getPeriodValue(kpi.targetFromKpi, year, getFilters().q))) return "المستهدف الوزاري للفترة";
     if(t && isNum(t.value)) return `مستهدف ${year} المعتمد`;
     if(isNum(kpi.target)) return standingTargetLabel(kpi);
     if(isNum(kpi.greenMin)) return "حد الأخضر";
@@ -3228,6 +3234,11 @@ function unitKey(r, frequency){
     return r.date;
 }
 function periodTarget(kpi, year, q, base){
+    // A target entered as its own readings (e.g. the ministry's monthly patient-experience target): its value for the period.
+    if(kpi.targetFromKpi){
+        const t = getPeriodValue(kpi.targetFromKpi, year, q);
+        if(isNum(t)) return Number(t);
+    }
     if(base == null) return base;
     // An average with a quarterly plan (e.g. inpatients by the beds of each quarter): the period's quarter value.
     if(kpi.aggregation !== "SUM"){
@@ -4718,13 +4729,18 @@ async function handleExcelUpload(event){
     const file = input.files[0];
     if(!file) return;
     try {
-        const workbook = XLSX.read(await file.arrayBuffer(), { type:"array", cellDates:true });
+        const buf = await file.arrayBuffer();
+        const workbook = XLSX.read(buf, { type:"array", cellDates:true });
         importedRows = [];
         // The entry templates (simple daily sheet, or IMPORT_TEMPLATE / DATA with Indicator_ID) go through the data management import.
-        if(dmLocateSimpleSheet(workbook) || dmLocateSheet(workbook)){
+        // They are recognised from the raw workbook: the monthly sheets' date row is found as Excel date numbers.
+        // The consolidated KPI workbook (KPI_Dashboard_FINAL) keeps its own import below.
+        const raw = XLSX.read(buf, { type:"array", cellDates:false, cellFormula:false });
+        if(!locateDashboardSheets(workbook) && (dmLocateSimpleSheet(raw) || dmLocateSheet(raw))){
             input.value = "";
             showSection("dataMgmt"); dmTab("upload");
-            try{ await dmProcessFile(file); }
+            showToast("هذا قالب إدخال المؤشرات — يُفحص ويُرفع من «إدارة البيانات».");
+            try{ await dmProcessFile(file, buf); }
             catch(e){ dmShowFileFailure(file, e); }
             return;
         }
@@ -4984,7 +5000,7 @@ async function confirmWorkbookImport(){
         ["target","greenMin","yellowMin"].forEach(f => { if(fk[f] == null && old[f] != null) keep[f] = old[f]; });
         if(fk.direction === "none" && old.direction && old.direction !== "none") keep.direction = old.direction;
         // The platform's categories, names and order (daily-sheet layout) win over the file's labels.
-        if((old.layoutV || 0) >= KPI_LAYOUT_V) ["category","name","department","definition","dataSource","sortOrder","layoutV","active"].forEach(f => { if(old[f] != null) keep[f] = old[f]; });
+        if((old.layoutV || 0) >= KPI_LAYOUT_V) ["category","name","department","definition","dataSource","sortOrder","layoutV","active","frequency","aggregation"].forEach(f => { if(old[f] != null) keep[f] = old[f]; });
         return { ...old, ...fk, ...keep };
     });
     if(mayEditKpis){
