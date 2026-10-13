@@ -291,7 +291,13 @@
         .kp-foot .lg { display: flex; gap: 10px; }
         .kp-foot i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-left: 3px; vertical-align: middle; }
         /* All-KPI cards export */
-        #printArea .pa-cat { font-size: 12px; font-weight: 900; color: #0b1f33; margin: 8px 0 4px; border-right: 4px solid #0b1f33; padding-right: 6px; break-after: avoid; }
+        #printArea .pa-page { display: block; }
+        #printArea .pa-page > * + * { margin-top: 8px; }
+        /* Small categories share a row: each takes as many of the 5 columns as it has cards. */
+        #printArea .pa-flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px 6px; align-items: start; }
+        #printArea .pa-sec { min-width: 0; break-inside: avoid; }
+        #printArea .pa-cat { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 900; color: #fff; background: #0b1f33 !important; border-radius: 8px; padding: 4px 10px; margin-bottom: 6px; break-after: avoid; }
+        #printArea .pa-cat span { font-size: 9.5px; font-weight: 800; background: rgba(255,255,255,.18) !important; border-radius: 999px; padding: 0 7px; }
         #printArea .kpi-card .font-mono, #printArea .kq-manual { display: none; }
         #printArea .pa-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
         #printArea .kpi-card { min-height: 0; padding: 8px 10px 6px; gap: 4px; border-radius: 10px; break-inside: avoid; box-shadow: none; transform: none; }
@@ -1378,7 +1384,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.16 — 2026-10-13";
+const APP_VERSION = "الإصدار 4.17 — 2026-10-13";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -3637,8 +3643,9 @@ function viewPeriods(year, q){
     // A chosen range: the same dates last year, the period just before, and the range itself.
     if(q[0] === "R"){ const [ly, lq] = samePeriodLastYear(year, q), [py, pq] = prevPeriod(year, q); return [[ly, lq, "العام الماضي"], [py, pq, "السابقة"], [Number(q.slice(1, 5)), q, "المحددة"]]; }
     if(q === "ALL") return [[year - 2, "ALL", String(year - 2)], [year - 1, "ALL", String(year - 1)], [year, "ALL", String(year)]];
-    if(q[0] === "Q") return QUARTERS.map(x => [year, x, x]);
-    if(q[0] === "M") return MONTHS_AR.map((m, i) => [year, "M" + (i + 1), m.slice(0, 3)]);
+    // Up to the selected quarter or month; later ones have not happened yet.
+    if(q[0] === "Q") return quartersThrough(q).map(x => [year, x, x]);
+    if(q[0] === "M") return MONTHS_AR.slice(0, Number(q.slice(1))).map((m, i) => [year, "M" + (i + 1), m.slice(0, 3)]);
     const out = []; let [y, w] = [year, q];
     for(let i = 0; i < 8; i++){ out.unshift([y, w, `${Number(w.slice(9, 11))}/${Number(w.slice(6, 8))}`]); [y, w] = prevPeriod(y, w); }
     return out;
@@ -4243,8 +4250,9 @@ function printAllKpiCards(){
     const type = q === "ALL" ? "سنوي" : q[0] === "Q" ? "ربع سنوي" : q[0] === "M" ? "شهري" : q[0] === "R" ? "لفترة محددة" : "أسبوعي";
     const period = `${periodName(q)} ${q === "ALL" || /^[QM]/.test(q) ? year : ""}`.trim();
     const groups = groupByCategory(results, r => r.kpi.category).map(([c, rows]) =>
-        `<div class="pa-cat">${escapeHtml(catLabel(c))} (${rows.length})</div><div class="pa-grid">${withGroupHeads(rows, r => r.kpi, r => kpiCard(r, year))}</div>`).join("");
-    document.getElementById("printArea").innerHTML = `<div class="kp-page">
+        { const n = Math.min(rows.length, 5);
+            return `<section class="pa-sec" style="grid-column:span ${n}"><div class="pa-cat">${escapeHtml(catLabel(c))} <span>${rows.length}</span></div><div class="pa-grid" style="grid-template-columns:repeat(${n},1fr)">${rows.map(r => kpiCard(r, year)).join("")}</div></section>`; }).join("");
+    document.getElementById("printArea").innerHTML = `<div class="kp-page pa-page">
         <div class="kp-band">
             <div style="display:flex;align-items:center;gap:10px"><img src="logo.png" alt=""><div>
                 <div class="t1">مؤشرات الأداء — ${escapeHtml(period)}</div>
@@ -4259,7 +4267,7 @@ function printAllKpiCards(){
             <div style="color:#b91c1c">غير محقق <b>${count("red")}</b></div>
             <div>بدون حالة <b>${count("gray")}</b></div>
         </div>
-        ${groups}
+        <div class="pa-flow">${groups}</div>
         <div class="kp-foot">
             <div class="lg"><span><i style="background:#10b981"></i>محقق</span><span><i style="background:#f59e0b"></i>تحذير</span><span><i style="background:#ef4444"></i>غير محقق</span><span><i style="background:#94a3b8"></i>بدون حالة</span><span>- - - المستهدف للفترة (مكتوب بجانب الخط)</span><span>▢ الفترة المختارة</span></div>
             <div>${escapeHtml(APP_VERSION)}</div>
