@@ -292,6 +292,7 @@
         .kp-foot i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-left: 3px; vertical-align: middle; }
         /* All-KPI cards export */
         #printArea .pa-cat { font-size: 12px; font-weight: 900; color: #0b1f33; margin: 8px 0 4px; border-right: 4px solid #0b1f33; padding-right: 6px; break-after: avoid; }
+        #printArea .kpi-card .font-mono, #printArea .kq-manual { display: none; }
         #printArea .pa-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
         #printArea .kpi-card { min-height: 0; padding: 8px 10px 6px; gap: 4px; border-radius: 10px; break-inside: avoid; box-shadow: none; transform: none; }
         #printArea .kpi-card .kpi-title { font-size: 10px; min-height: 0; }
@@ -1377,7 +1378,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.15 — 2026-10-13";
+const APP_VERSION = "الإصدار 4.16 — 2026-10-13";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -4134,7 +4135,7 @@ function printReport(){
         const qs = QUARTERS.map(qq => keyQuarter(k, year, qq));
         const cur = /^Q[1-4]$/.test(q) ? qs.find(x => x.q === q) : null;
         const shown = quartersThrough(q);
-        return `<tr><td><b>${escapeHtml(label)}</b></td>${qs.map(x => !shown.includes(x.q) ? `<td>—</td>` : `<td class="${x.q === q ? "sel" : ""}">${dot(x.status.key)}${fmt(x.act, k)}${manualQuarter(k, year, x.q) != null ? " ✎" : ""}</td>`).join("")}
+        return `<tr><td><b>${escapeHtml(label)}</b></td>${qs.map(x => !shown.includes(x.q) ? `<td>—</td>` : `<td class="${x.q === q ? "sel" : ""}">${dot(x.status.key)}${fmt(x.act, k)}</td>`).join("")}
             <td>${targetText(k, (cur || qs[qs.length - 1]).target)}</td><td>${cur ? `${dot(cur.status.key)}${escapeHtml(cur.status.label)}` : "—"}</td></tr>`;
     }).join("");
     const allRows = groupByCategory(results, r => r.kpi.category).map(([c, rows]) => `<tr class="cat"><td colspan="7">${escapeHtml(catLabel(c))} (${rows.length})</td></tr>` + rows.map(r => `
@@ -4157,7 +4158,7 @@ function printReport(){
         <table><thead><tr><th>المؤشر</th>${QUARTERS.map(x => `<th>${x}</th>`).join("")}<th>المستهدف</th><th>حالة ${/^Q[1-4]$/.test(q) ? q : "الفترة"}</th></tr></thead><tbody>${keyRows}</tbody></table>` : ""}
         <div class="pr-h2">جميع المؤشرات — ${escapeHtml(period)}</div>
         <table><thead><tr><th>المؤشر</th><th>الفعلي</th><th>المستهدف</th><th>الإنجاز</th><th>الحالة</th><th>الفترة السابقة</th><th>الاتجاه</th></tr></thead><tbody>${allRows}</tbody></table>
-        <div class="pr-foot">✎ قيمة ربعية عدّلها مدير النظام. الربع الجاري يُحسب تلقائياً من القراءات. مستهدفات مؤشرات العدد ربع سنوية وتُوزع تلقائياً على الفترة المعروضة؛ النسب والمتوسطات ثابتة لكل الفترات.</div>`;
+        <div class="pr-foot">مستهدفات مؤشرات العدد ربع سنوية وتُوزع تلقائياً على الفترة المعروضة؛ النسب والمتوسطات ثابتة لكل الفترات.</div>`;
     const img = document.querySelector("#printArea img");
     const go = () => setTimeout(() => window.print(), 50);
     if(img && !img.complete){ img.onload = go; img.onerror = go; } else go();
@@ -4197,7 +4198,7 @@ function printKeyKpis(){
                 const lines = band ? band.map(v => `<div class="tg" style="bottom:${pct(v)}%"></div>`).join("") : x.target != null ? `<div class="tg" style="bottom:${pct(x.target)}%"></div>` : "";
                 return `<div class="kp-col ${x.q === selQ ? "sel" : ""}">${x.act != null ? `<div class="bar" style="height:${pct(x.act)}%;background:${c} !important"></div>` : ""}${lines}</div>`;
             }).join("")}</div>
-            <div class="kp-lab" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}${manualQuarter(k, year, x.q) != null ? " ✎" : ""}<b>${fmt(x.act, k)}</b></div>`).join("")}</div>
+            <div class="kp-lab" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${fmt(x.act, k)}</b></div>`).join("")}</div>
         </div>`);
     });
     const total = cards.length;
@@ -4218,7 +4219,7 @@ function printKeyKpis(){
         </div>
         <div class="kp-grid ${total > 12 ? "five" : total > 9 ? "four" : ""}">${cards.join("")}</div>
         <div class="kp-foot">
-            <div class="lg"><span><i style="background:#10b981"></i>محقق</span><span><i style="background:#f59e0b"></i>تحذير</span><span><i style="background:#ef4444"></i>غير محقق</span><span><i style="background:#94a3b8"></i>بدون حالة</span><span>- - - المستهدف أو حدود النطاق</span><span>▢ الربع المختار</span><span>✎ قيمة عدّلها مدير النظام</span></div>
+            <div class="lg"><span><i style="background:#10b981"></i>محقق</span><span><i style="background:#f59e0b"></i>تحذير</span><span><i style="background:#ef4444"></i>غير محقق</span><span><i style="background:#94a3b8"></i>بدون حالة</span><span>- - - المستهدف أو حدود النطاق</span><span>▢ الربع المختار</span></div>
             <div>${escapeHtml(APP_VERSION)}</div>
         </div>
     </div>`;
