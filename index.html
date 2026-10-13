@@ -1384,7 +1384,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.17 — 2026-10-13";
+const APP_VERSION = "الإصدار 4.18 — 2026-10-13";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1638,9 +1638,11 @@ function inCategory(k, cat){
     return (CATEGORY_TREE.find(c => c.name === cat)?.children || []).includes(k.category);
 }
 // Groups [category, rows] in the sheet's order; categories outside it follow alphabetically.
+// Sub-categories (pharmacy, Ainati lab) are shown inside their parent as one section, after its own KPIs.
 function groupByCategory(items, catOf){
     const groups = new Map();
-    items.forEach(x => { const c = catOf(x) || "أخرى"; if(!groups.has(c)) groups.set(c, []); groups.get(c).push(x); });
+    items.forEach(x => { const own = catOf(x) || "أخرى", c = CATEGORY_PARENT[own] || own; if(!groups.has(c)) groups.set(c, []); groups.get(c).push(x); });
+    groups.forEach(list => list.sort((a, b) => catRank(catOf(a)) - catRank(catOf(b))));
     return [...groups.entries()].sort((a, b) => catRank(a[0]) - catRank(b[0]) || String(a[0]).localeCompare(String(b[0]), "ar"));
 }
 
