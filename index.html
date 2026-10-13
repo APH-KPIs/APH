@@ -252,7 +252,7 @@
         #printArea .cat td { background: #f8fafc; font-weight: 900; color: #0b1f33; }
         #printArea .sel { background: #e0f2fe; font-weight: 800; }
         .pr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 4px; vertical-align: middle; }
-        /* Key KPIs export: landscape A4, 3 × 3 cards on one page */
+        /* Key KPIs export: landscape A4, cards on one page (3, 4 or 5 a row by count) */
         .kp-page { display: flex; flex-direction: column; gap: 8px; }
         .kp-band { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: linear-gradient(90deg, #0b1f33, #102a43) !important; color: #fff; border-radius: 12px; padding: 10px 14px; }
         .kp-band img { width: 46px; height: 46px; }
@@ -265,6 +265,8 @@
         .kp-summary div { border: 1px solid #e2e8f0; border-radius: 10px; padding: 5px 8px; display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 700; color: #475569; }
         .kp-summary b { font-size: 16px; font-weight: 900; }
         .kp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .kp-grid.four { grid-template-columns: repeat(4, 1fr); }
+        .kp-grid.five { grid-template-columns: repeat(5, 1fr); }
         .kp-card { border: 1px solid #e2e8f0; border-top: 4px solid var(--st); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; break-inside: avoid; }
         .kp-card .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
         .kp-card .lb { font-size: 11px; font-weight: 900; color: #0b1f33; }
@@ -1375,7 +1377,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.13 — 2026-10-12";
+const APP_VERSION = "الإصدار 4.14 — 2026-10-13";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1587,7 +1589,11 @@ const KEY_KPIS = [
     { code:"PSY_NOSHOW_PCT",           label:"نسبة عدم الحضور للموعد (No Show)" },
     { code:"CALLS937_OVERALL_INDEX",   label:"مؤشر أداء 937" },
     { code:"LAB_COMPLETION_PCT",       label:"مؤشر أداء عينتي للمختبر" },
-    { code:"SELF_REVENUE",             label:"الموارد الذاتية" }
+    { code:"SELF_REVENUE",             label:"الموارد الذاتية" },
+    { code:"MYSTERY_SHOPPER",          label:"الزائر السري" },
+    { code:"NURS_PRESSURE_ULCER",      label:"قرح الفراش المكتسبة" },
+    { code:"NURS_PATIENT_FALL",        label:"سقوط المرضى" },
+    { code:"NURS_ATTEMPTED_SUICIDE",   label:"محاولات الانتحار" }
 ];
 // How each KPI is judged, per the performance unit's evaluation list. Applied to KPIs whose direction
 // is still unset, so a direction the admin or manager already chose is kept.
@@ -4202,7 +4208,7 @@ function printKeyKpis(){
             <div style="color:#b91c1c">غير محقق <b>${counts.red}</b></div>
             <div>بدون حالة <b>${counts.gray}</b></div>
         </div>
-        <div class="kp-grid">${cards.join("")}</div>
+        <div class="kp-grid ${total > 12 ? "five" : total > 9 ? "four" : ""}">${cards.join("")}</div>
         <div class="kp-foot">
             <div class="lg"><span><i style="background:#10b981"></i>محقق</span><span><i style="background:#f59e0b"></i>تحذير</span><span><i style="background:#ef4444"></i>غير محقق</span><span><i style="background:#94a3b8"></i>بدون حالة</span><span>- - - المستهدف أو حدود النطاق</span><span>▢ الربع المختار</span><span>✎ قيمة عدّلها مدير النظام</span></div>
             <div>${escapeHtml(APP_VERSION)}</div>
