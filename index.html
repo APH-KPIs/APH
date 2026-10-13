@@ -1674,7 +1674,7 @@ function groupByCategory(items, catOf){
 // Version 19: patient experience (OPD) monthly, judged against the ministry's monthly target entered by data entry.
 // Version 20: mystery shopper target 95% and its official Q3 2026 result (87.33%).
 // Version 21: patient experience (OPD) target 88.48% when a month has no ministry target.
-// Version 22: closed 937 reports judged against the period's 937 reports (green when all are closed).
+// Version 22: every 937 report is closed (owner's confirmation): the closed count follows the report count, 100% closure.
 const KPI_LAYOUT_V = 22;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
@@ -1742,8 +1742,9 @@ const KPI_TARGETS = {
     // and 88.48% for a period without one (a year target from the targets page no longer applies).
     PATIENT_EXP_OPD:          { v: 21, target: 88.48, targets: {}, direction: "higher", frequency: "monthly", aggregation: "AVERAGE", targetFromKpi: "PATIENT_EXP_OPD_MOH" },
     PATIENT_EXP_OPD_MOH:      { v: 19, entryOnly: true },
-    // Every report of the period closed = green.
-    CALLS937_CLOSED:          { v: 22, direction: "higher", targetFromKpi: "CALLS937_REPORTS" },
+    // Every report is closed: the count follows the 937 reports and is judged against them (green from 90%, warning from 80%).
+    CALLS937_CLOSED:          { v: 22, direction: "higher", valueFromKpi: "CALLS937_REPORTS", targetFromKpi: "CALLS937_REPORTS", greenAchievement: 90,
+                                definition: "عدد بلاغات 937 المغلقة خلال الفترة — جميع البلاغات تُغلق، فيساوي عدد البلاغات (نسبة الإغلاق 100%)." },
     TELE_APPTS:               { v: 7, target: 339, targetBasis: "weekly", direction: "higher" },
     SENTINEL_EVENTS:          { v: 9, target: 0, direction: "lower" },
     SECURITY_OBS:             { v: 9, target: 0, direction: "lower" },
@@ -2740,7 +2741,7 @@ let entryFreq = "daily";
 
 function entryFreqOf(k){ return ENTRY_FREQS.includes(k.frequency) ? k.frequency : (k.frequency === "annual" ? "quarterly" : "daily"); }
 // KPIs received as Excel files (Re-admission) are imported from their own card, not typed.
-function entryKpis(freq){ return activeKpis().filter(k => !DERIVED_KPIS[k.code] && k.intake !== "excel" && (!freq || entryFreqOf(k) === freq)); }
+function entryKpis(freq){ return activeKpis().filter(k => !DERIVED_KPIS[k.code] && !k.valueFromKpi && k.intake !== "excel" && (!freq || entryFreqOf(k) === freq)); }
 function entryMode(k){ return k.aggregation === "RATIO" ? "ratio" : k.aggregation === "WEIGHTED_AVERAGE" ? "weighted" : "value"; }
 
 function populateRecordKpis(){
@@ -3147,6 +3148,8 @@ function aggregateRows(rows, kpi){
 function getPeriodValue(code, year, q){
     const kpi = kpis.find(k=>k.code===code);
     if(!kpi) return null;
+    // A KPI that equals another (closed 937 reports = 937 reports) takes its value.
+    if(kpi.valueFromKpi && kpi.valueFromKpi !== code) return getPeriodValue(kpi.valueFromKpi, year, q);
     const manual = manualQuarter(kpi, year, q);
     if(manual != null) return manual;
     // A count KPI's year total adds up its quarters, so a quarter the admin set counts in the year.
@@ -3398,9 +3401,10 @@ function getStatus(kpi, act, ach, target){
     if(!isNum(target)) return { key:"gray", label:"بلا مستهدف" };
     if(ach == null) return { key:"gray", label:"غير متاح" };
     // A "target" KPI is never above 100%, so allow a 2% tolerance band around the exact target.
-    const greenAt = kpi.direction === "target" ? 98 : 100;
+    // greenAchievement: a KPI met below 100% of its target (e.g. 90% of 937 reports closed); warning 10 points below.
+    const greenAt = isNum(kpi.greenAchievement) ? Number(kpi.greenAchievement) : kpi.direction === "target" ? 98 : 100;
     if(ach >= greenAt) return { key:"green", label:"محقق" };
-    if(ach >= 90) return { key:"yellow", label:"تحذير" };
+    if(ach >= Math.min(90, greenAt - 10)) return { key:"yellow", label:"تحذير" };
     return { key:"red", label:"غير محقق" };
 }
 
