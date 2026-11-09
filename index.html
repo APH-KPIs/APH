@@ -1392,7 +1392,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.23 — 2026-11-09";
+const APP_VERSION = "الإصدار 4.24 — 2026-11-09";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -3192,11 +3192,17 @@ function computedPeriodValue(kpi, year, q){ return aggregateRows(periodRecords(k
 // They take the place of the value computed from readings for that quarter.
 // A quarter still in progress (Q4 2026 from 1 October) is always computed from its readings;
 // only quarters that have ended take a value set by the admin.
+// The latest edit wins: once a reading of that quarter is saved or imported (e.g. an edited Excel file) after the
+// value was set, the quarter is computed from its readings again (owner's request, v4.24).
 function quarterOpen(year, q){ return formatDateInput(quarterBounds(Number(year), q)[1]) >= formatDateInput(new Date()); }
+const editedAt = r => Date.parse(r.updatedAt || r.createdAt || "") || 0;
 function manualQuarter(kpi, year, q){
     if(!/^Q[1-4]$/.test(q) || !kpi.quarterValues || quarterOpen(year, q)) return null;
     const m = kpi.quarterValues[`${Number(year)}-${q}`];
-    return m && isNum(m.value) ? Number(m.value) : null;
+    if(!m || !isNum(m.value)) return null;
+    const setAt = Date.parse(m.at || "") || 0;
+    if(periodRecords(kpi.code, year, q).some(r => editedAt(r) > setAt)) return null;
+    return Number(m.value);
 }
 function hasManualQuarters(kpi, year){ return QUARTERS.some(q => manualQuarter(kpi, year, q) != null); }
 
@@ -3599,7 +3605,7 @@ function openQuarterModal(code, year){
     document.getElementById("qmSub").textContent = `${k.name} · سنة ${year}${k.unit ? ` · الوحدة: ${k.unit}` : ""}`;
     document.getElementById("qmRows").innerHTML = QUARTERS.map((q, i) => {
         const m = k.quarterValues?.[`${year}-${q}`];
-        const calc = computedPeriodValue(k, year, q);
+        const calc = computedPeriodValue(k, year, q), live = manualQuarter(k, year, q);
         if(quarterOpen(year, q)) return `<div class="grid grid-cols-[110px_1fr_1fr] gap-3 items-center bg-sky-50 border border-sky-200 rounded-xl px-3 py-2">
             <div class="text-xs font-black text-slate-800">${QUARTER_LABELS[i]} <span class="text-slate-400 font-mono">${q}</span></div>
             <div class="text-[11px] text-slate-500">المحسوبة: <b class="text-slate-800">${fmt(calc, k)}</b></div>
@@ -3608,8 +3614,9 @@ function openQuarterModal(code, year){
         return `<div class="grid grid-cols-[110px_1fr_1fr] gap-3 items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
             <div class="text-xs font-black text-slate-800">${QUARTER_LABELS[i]} <span class="text-slate-400 font-mono">${q}</span></div>
             <div class="text-[11px] text-slate-500">المحسوبة: <b class="text-slate-800">${fmt(calc, k)}</b></div>
-            <div><input data-qm="${q}" type="number" step="any" class="!py-1.5 !text-xs" value="${m && isNum(m.value) ? m.value : ""}" placeholder="القيمة المحسوبة">
-                ${m ? `<div class="text-[10px] text-violet-600 mt-0.5">عدّلها ${escapeHtml(m.by || "")} ${m.at ? formatDateTime(m.at) : ""}</div>` : ""}</div>
+            <div><input data-qm="${q}" type="number" step="any" class="!py-1.5 !text-xs" value="${live != null ? m.value : ""}" placeholder="القيمة المحسوبة">
+                ${m && live != null ? `<div class="text-[10px] text-violet-600 mt-0.5">عدّلها ${escapeHtml(m.by || "")} ${m.at ? formatDateTime(m.at) : ""}</div>` : ""}
+                ${m && live == null && isNum(m.value) ? `<div class="text-[10px] text-sky-700 mt-0.5">القيمة اليدوية (${fmt(Number(m.value), k)}) حلّت محلها قراءات أحدث</div>` : ""}</div>
         </div>`;
     }).join("");
     document.getElementById("qmReason").value = "";
@@ -3628,7 +3635,8 @@ async function saveQuarterValues(){
         const q = input.dataset.qm, key = `${year}-${q}`, raw = input.value.trim();
         if(quarterOpen(year, q)) continue;
         if(raw !== "" && !isNum(raw)){ showToast(`قيمة ${q} غير صحيحة.`); return; }
-        const old = before[key] && isNum(before[key].value) ? Number(before[key].value) : null;
+        // A value that later readings replaced counts as the computed one.
+        const old = manualQuarter(k, year, q);
         const val = raw === "" ? null : Number(raw);
         if(old === val) continue;
         if(val == null) delete next[key];
