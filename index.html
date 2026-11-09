@@ -1392,7 +1392,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.24 — 2026-11-09";
+const APP_VERSION = "الإصدار 4.25 — 2026-11-09";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1788,7 +1788,8 @@ const OFFICIAL_QUARTERS = {
     MAINT_REQUESTS:  { v: 11, values: { "2026-Q3": 474 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" },
     MAINT_COMPLETED: { v: 11, values: { "2026-Q3": 472 }, reason: "الأرقام الرسمية للربع الثالث 2026 (1/7–30/9) من الشؤون الهندسية" },
     LAB_COMPLETION_PCT: { v: 12, values: { "2026-Q1": 98, "2026-Q2": 98, "2026-Q3": 98 }, reason: "اعتماد وحدة مؤشرات الأداء: نسب إنجاز عينتي 98% فأعلى" },
-    MED_ERR_REPORTING_PHARMACISTS: { v: 17, values: { "2026-Q1": 100, "2026-Q2": 100, "2026-Q3": 100 }, reason: "ملف الإدخال المعتمد 2026: السلامة الدوائية 100% كل شهر" },
+    // keep: the owner confirmed 100% for every month, so later readings never replace these quarters (v4.25).
+    MED_ERR_REPORTING_PHARMACISTS: { v: 17, keep: true, values: { "2026-Q1": 100, "2026-Q2": 100, "2026-Q3": 100 }, reason: "ملف الإدخال المعتمد 2026: السلامة الدوائية 100% كل شهر" },
     MYSTERY_SHOPPER: { v: 20, values: { "2026-Q3": 87.33 }, reason: "نتيجة الزائر السري الرسمية للربع الثالث 2026" }
 };
 // code → layout version that removed it (a KPI stored at an older version is dropped once).
@@ -3200,6 +3201,8 @@ function manualQuarter(kpi, year, q){
     if(!/^Q[1-4]$/.test(q) || !kpi.quarterValues || quarterOpen(year, q)) return null;
     const m = kpi.quarterValues[`${Number(year)}-${q}`];
     if(!m || !isNum(m.value)) return null;
+    const official = OFFICIAL_QUARTERS[kpi.code];
+    if(official?.keep && official.values[`${Number(year)}-${q}`] === Number(m.value)) return Number(m.value);
     const setAt = Date.parse(m.at || "") || 0;
     if(periodRecords(kpi.code, year, q).some(r => editedAt(r) > setAt)) return null;
     return Number(m.value);
