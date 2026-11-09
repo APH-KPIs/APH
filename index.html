@@ -1392,7 +1392,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.22 — 2026-10-13";
+const APP_VERSION = "الإصدار 4.23 — 2026-11-09";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1675,7 +1675,7 @@ function groupByCategory(items, catOf){
 // Version 20: mystery shopper target 95% and its official Q3 2026 result (87.33%).
 // Version 21: patient experience (OPD) target 88.48% when a month has no ministry target.
 // Version 22: every 937 report is closed (owner's confirmation): the closed count follows the report count, 100% closure.
-const KPI_LAYOUT_V = 22;
+const KPI_LAYOUT_V = 23;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1761,9 +1761,10 @@ const KPI_TARGETS = {
                                 definition: "إجمالي إيرادات الموارد الذاتية المحصلة خلال الفترة. مستهدف تنمية الإيرادات 2026: 150,000 ريال (إيراد 2025: 58,241 ريال)." },
     // Inpatients: 75% occupancy of the beds (BED_CAPACITY) in each quarter; the year is the days-weighted mean.
     // At or below the target is good, like the occupancy rate.
-    INPATIENTS_WITH_HOME:     { v: 18, target: 121, direction: "lower",
+    // Shown as a whole number of patients (the owner's request, layout 23): the daily census averaged, then rounded.
+    INPATIENTS_WITH_HOME:     { v: 23, target: 121, direction: "lower", unit: "عدد", wholeNumber: true,
                                 quarterTargets: { "2026-Q1": 115, "2026-Q2": 115, "2026-Q3": 115, "2026-Q4": 137 } },
-    INPATIENTS_NO_HOME:       { v: 18, target: 97, direction: "lower",
+    INPATIENTS_NO_HOME:       { v: 23, target: 97, direction: "lower", unit: "عدد", wholeNumber: true,
                                 quarterTargets: { "2026-Q1": 92, "2026-Q2": 92, "2026-Q3": 92, "2026-Q4": 113 } },
     // Clinics: no-shows within the 15% no-show target of 9,000 visits a quarter; confirmations 80% of the
     // 32,000 outgoing calls a year, half of clinic visits confirmed by call; postponements about 1% of confirmations.
@@ -1876,9 +1877,9 @@ const defaultKpis = [
     {code:"INVALID_NUMBERS",name:"عدد الحالات رقم (غير صحيح + خارج الخدمة)",category:"تقليل عدم الحضور (داعم)",department:"الخدمات العلاجية",unit:"عدد",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"lower",dataSource:"البيانات الأصلية"},
     {code:"REFERRALS_OUT",name:"عدد الاحالات المرسلة (الصادرة)",category:"حجم النشاط",department:"التنسيق الطبي",unit:"عدد",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"none",dataSource:"البيانات الأصلية"},
     {code:"REFERRALS_IN",name:"عدد الاحالات المستقبلة (الواردة)",category:"حجم النشاط",department:"التنسيق الطبي",unit:"عدد",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"none",dataSource:"البيانات الأصلية"},
-    {code:"INPATIENTS_WITH_HOME",name:"عدد المرضى المنومين - مع المنزل",category:"السعة السريرية",department:"الخدمات العلاجية",unit:"متوسط يومي",frequency:"daily",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"none",dataSource:"البيانات الأصلية"},
+    {code:"INPATIENTS_WITH_HOME",wholeNumber:true,name:"عدد المرضى المنومين - مع المنزل",category:"السعة السريرية",department:"الخدمات العلاجية",unit:"عدد",frequency:"daily",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"none",dataSource:"البيانات الأصلية"},
     {code:"OCC_WITH_HOME_PCT",name:"نسبة اشغال الاسرة - مع المنزل",category:"السعة السريرية",department:"الخدمات العلاجية",unit:"%",definition:"Inpatients including the halfway house divided by 153 approved beds (owner statement).",frequency:"daily",reportingFrequency:"quarterly",aggregation:"RATIO",direction:"none",dataSource:"البيانات الأصلية"},
-    {code:"INPATIENTS_NO_HOME",name:"عدد المرضى المنومين - بدون المنزل",category:"السعة السريرية",department:"الخدمات العلاجية",unit:"متوسط يومي",frequency:"daily",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"none",dataSource:"البيانات الأصلية"},
+    {code:"INPATIENTS_NO_HOME",wholeNumber:true,name:"عدد المرضى المنومين - بدون المنزل",category:"السعة السريرية",department:"الخدمات العلاجية",unit:"عدد",frequency:"daily",reportingFrequency:"quarterly",aggregation:"AVERAGE",direction:"none",dataSource:"البيانات الأصلية"},
     {code:"OCC_NO_HOME_PCT",name:"نسبة اشغال الاسرة - بدون المنزل",category:"السعة السريرية",department:"الخدمات العلاجية",unit:"%",definition:"Inpatients without the halfway house divided by 123 approved beds (owner statement).",frequency:"daily",reportingFrequency:"quarterly",aggregation:"RATIO",direction:"none",dataSource:"البيانات الأصلية"},
     {code:"CLINIC_CONFIRM_PCT_OF_VISITS",name:"نسبة الذين اكدوا الحضور بالاتصال من مراجعي العيادات",category:"تقليل عدم الحضور (داعم)",department:"العيادات الخارجية",unit:"%",frequency:"daily",reportingFrequency:"quarterly",aggregation:"RATIO",direction:"none",dataSource:"البيانات الأصلية"},
     {code:"DRUGMAIL_SHIPMENTS_DAILY",name:"عدد شحنات - البريد الدوائي",category:"العمليات",department:"الخدمات المساندة",unit:"عدد",frequency:"daily",reportingFrequency:"quarterly",aggregation:"SUM",direction:"none",dataSource:"البيانات الأصلية"},
@@ -3124,7 +3125,7 @@ function aggregateRows(rows, kpi){
     const vals = rows.map(r=>r.actualValue).filter(v => v != null && Number.isFinite(Number(v))).map(Number);
     const avg = () => vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
     if(m === "SUM") return vals.length ? vals.reduce((a,b)=>a+b,0) : null;
-    if(m === "AVERAGE") return avg();
+    if(m === "AVERAGE"){ const a = avg(); return kpi.wholeNumber && a != null ? Math.round(a) : a; }
     if(m === "WEIGHTED_AVERAGE"){
         const valid = rows.filter(r => Number.isFinite(Number(r.actualValue)) && r.weight != null && Number.isFinite(Number(r.weight)));
         const den = valid.reduce((s,r)=>s+Number(r.weight),0);
@@ -3429,7 +3430,7 @@ function calcTrend(act, prev, kpi, target){
 
 function fmt(val, kpi){
     if(val == null || !Number.isFinite(Number(val))) return "—";
-    return Number(val).toLocaleString("en-US",{maximumFractionDigits:2}) + (kpi.unit === "%" ? "%" : "");
+    return Number(val).toLocaleString("en-US",{maximumFractionDigits: kpi.wholeNumber ? 0 : 2}) + (kpi.unit === "%" ? "%" : "");
 }
 
 function rangeKey(){
