@@ -3191,9 +3191,29 @@ function aggregateRows(rows, kpi){
     return avg();
 }
 
+// A month or quarter is calculated once it is due: a month on the 1st of the following month, a quarter on the 1st of
+// the following quarter, and Q4 (and December) on 31 December. Until then it shows «لم يتم الإدخال بعد», even for
+// daily KPIs, and the year counts only the quarters already due (the owner's final 2026 template, v4.27).
+function periodDue(year, q){
+    year = Number(year);
+    const today = formatDateInput(new Date()), pad = n => String(n).padStart(2, "0");
+    const m = /^([QM])(\d+)$/.exec(q || "");
+    if(!m) return true;
+    const n = Number(m[2]);
+    if((m[1] === "Q" && n === 4) || (m[1] === "M" && n === 12)) return today >= `${year}-12-31`;
+    const next = m[1] === "Q" ? n * 3 + 1 : n + 1;
+    return today >= `${year}-${pad(next)}-01`;
+}
+// The first day of the year that is not counted yet (the start of the first quarter not due); null when all are due.
+function yearCutoff(year){
+    const q = QUARTERS.find(qq => !periodDue(year, qq));
+    return q ? formatDateInput(quarterBounds(Number(year), q)[0]) : null;
+}
+
 function getPeriodValue(code, year, q){
     const kpi = kpis.find(k=>k.code===code);
     if(!kpi) return null;
+    if(!periodDue(year, q)) return null;
     // A KPI that equals another (closed 937 reports = 937 reports) takes its value.
     if(kpi.valueFromKpi && kpi.valueFromKpi !== code) return getPeriodValue(kpi.valueFromKpi, year, q);
     if(SUM_KPIS[code]){
@@ -3214,7 +3234,9 @@ function getPeriodValue(code, year, q){
     }
     const parts = derivedManualParts(kpi, year, q);
     if(parts) return parts[1] > 0 ? parts[0] / parts[1] * 100 : null;
-    return aggregateRows(periodRecords(code, year, q), kpi);
+    const cut = q === "ALL" ? yearCutoff(year) : null;
+    const rows = periodRecords(code, year, q);
+    return aggregateRows(cut ? rows.filter(r => String(r.date) < cut) : rows, kpi);
 }
 
 // A calculated rate whose sources have official quarter values (e.g. completed ÷ reported maintenance) uses them.
@@ -3231,7 +3253,7 @@ function derivedManualParts(kpi, year, q){
     };
     if(/^Q[1-4]$/.test(q)){ const p = quarterParts(q); return p[2] ? p : null; }
     if(q !== "ALL") return null;
-    const parts = QUARTERS.map(quarterParts);
+    const parts = QUARTERS.filter(qq => periodDue(year, qq)).map(quarterParts);
     if(!parts.some(p => p[2])) return null;
     return [parts.reduce((a, p) => a + p[0], 0), parts.reduce((a, p) => a + p[1], 0), true];
 }
@@ -3946,7 +3968,7 @@ function renderDetailMonthChart(k, year){
     if(detailMonthChart) detailMonthChart.destroy();
     const rows = indexedRecords(k.code, year);
     const months = MONTHS_AR.map((name, i) => {
-        if(SUM_KPIS[k.code]) return round(getPeriodValue(k.code, year, "M" + (i + 1)));
+        if(SUM_KPIS[k.code] || !periodDue(year, "M" + (i + 1))) return round(getPeriodValue(k.code, year, "M" + (i + 1)));
         const m = rows.filter(r => Number(String(r.date).slice(5,7)) === i + 1);
         return round(aggregateRows(m, k));
     });
@@ -4259,7 +4281,7 @@ function printReport(){
 function printKeyKpis(){
     if(!currentUser) return;
     const { year, q } = getFilters();
-    const selQ = /^Q[1-4]$/.test(q) ? q : "Q" + Math.ceil((new Date().getMonth() + 1) / 3);
+    const selQ = /^Q[1-4]$/.test(q) ? q : QUARTERS.filter(qq => periodDue(year, qq)).pop() || "Q1";
     const tone = { green: ["#10b981", "#d1fae5", "#065f46"], yellow: ["#f59e0b", "#fef3c7", "#92400e"], red: ["#ef4444", "#fee2e2", "#991b1b"], gray: ["#94a3b8", "#f1f5f9", "#475569"] };
     const cards = [], counts = { green: 0, yellow: 0, red: 0, gray: 0 };
     KEY_KPIS.forEach(({ code, label }) => {
