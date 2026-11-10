@@ -201,6 +201,7 @@
         .key-card:focus-visible { outline: 3px solid rgba(2,132,199,.35); outline-offset: 2px; }
         .key-card .k-title { font-size: 12.5px; font-weight: 900; color: #0b1f33; line-height: 1.4; }
         .key-card .k-value { font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1; }
+        .kpi-value.not-entered, .k-value.not-entered { font-size: 16px; color: #94a3b8; }
         .key-card .k-meta { font-size: 11px; color: #64748b; display: flex; justify-content: space-between; gap: 8px; }
         .key-card .k-meta b { color: #0f172a; }
         .key-wrap { position: relative; display: flex; }
@@ -1392,7 +1393,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.26 — 2026-11-10";
+const APP_VERSION = "الإصدار 4.28 — 2026-11-10";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1426,8 +1427,8 @@ const KPI_ARABIC_LABELS = {
     PSY_CLINIC_VISITS: { label:"عدد مراجعي العيادات (نظام أبكس)" },
     PSY_NOSHOW_COUNT: { label:"المرضى الذين لم يحضروا للمواعيد (نظام أبكس)" },
     PATIENT_EXP_OPD: { label:"تجربة المريض - العيادات الخارجية" },
-    READMIT30_PSY: { definition:"نسبة المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص من إجمالي المخرَّجين أحياء (%)" },
-    READMIT30_DETOX: { definition:"نسبة المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص من إجمالي المخرَّجين أحياء (%)" },
+    READMIT30_PSY: { definition:"عدد المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص — الطب النفسي" },
+    READMIT30_DETOX: { definition:"عدد المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص — الإدمان وما بعده" },
     ED_REVISIT_72H: { definition:"عدد حالات العودة غير المخطط لها للطوارئ خلال 72 ساعة بنفس التشخيص" }
 };
 // First date accepted; there is no end date (any date up to today).
@@ -1530,9 +1531,9 @@ const KPI_TEMPLATE_META = {
     OCC_WITH_HOME_PCT: { englishName:"Bed occupancy % (incl. halfway house)", validMax:null, numeratorDefinition:"عدد المرضى المنومين مع المنزل (INPATIENTS_WITH_HOME)", denominatorDefinition:"153 سريراً معتمداً" },
     INPATIENTS_NO_HOME: { englishName:"Inpatients (excl. halfway house)" },
     OCC_NO_HOME_PCT: { englishName:"Bed occupancy % (excl. halfway house)", validMax:null, numeratorDefinition:"عدد المرضى المنومين بدون المنزل (INPATIENTS_NO_HOME)", denominatorDefinition:"123 سريراً معتمداً" },
-    READMIT30_ALL: { englishName:"30-day readmission rate - total", validMax:100, numeratorDefinition:"مجموع بسط الطب النفسي والإدمان", denominatorDefinition:"مجموع مقام الطب النفسي والإدمان" },
-    READMIT30_PSY: { englishName:"30-day readmission rate - psychiatry", validMax:100, numeratorDefinition:"المعادون خلال 30 يوماً بنفس التشخيص", denominatorDefinition:"المخرَّجون أحياء" },
-    READMIT30_DETOX: { englishName:"30-day readmission rate - detox & post-detox", validMax:100, numeratorDefinition:"المعادون خلال 30 يوماً بنفس التشخيص", denominatorDefinition:"المخرَّجون أحياء" },
+    READMIT30_ALL: { englishName:"30-day readmissions - total" },
+    READMIT30_PSY: { englishName:"30-day readmissions - psychiatry" },
+    READMIT30_DETOX: { englishName:"30-day readmissions - detox & post-detox" },
     MED_ERR_REPORTING_PHARMACISTS: { englishName:"Medication safety (error reporting)", validMax:null, numeratorDefinition:"الأخطاء الدوائية المرفوعة", denominatorDefinition:"عدد الأخطاء المطلوبة (الصيادلة)" },
     DRUGMAIL_SHIPMENTS_DAILY: { englishName:"Drug mail shipments" },
     LAB_COMPLETION_PCT: { englishName:"Enayati lab completion %", validMax:100, numeratorDefinition:"الفحوصات المنجزة", denominatorDefinition:"الفحوصات المستلمة" },
@@ -1676,8 +1677,9 @@ function groupByCategory(items, catOf){
 // Version 21: patient experience (OPD) target 88.48% when a month has no ministry target.
 // Version 22: every 937 report is closed (owner's confirmation): the closed count follows the report count, 100% closure.
 // Version 23: inpatient counts shown as whole numbers.
-// Version 24: from 1/11/2026 the halfway house has 60 beds and regular inpatient 123 (183 in all).
-const KPI_LAYOUT_V = 24;
+// Version 25: mystery shopper quarterly; re-admissions are counts.
+// Version 26: from 1/11/2026 the halfway house has 60 beds and regular inpatient 123 (183 in all).
+const KPI_LAYOUT_V = 26;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1731,6 +1733,8 @@ const KPI_DUPLICATES = { APEX_CLINIC_VISITS: "PSY_CLINIC_VISITS", APEX_NOSHOW_CO
 // Standing targets from the performance unit (layout 4). Counts are per quarter (or per week with
 // targetBasis "weekly") and scale to the period shown;
 // rates hold for every period. A year's approved target on the targets page still takes precedence.
+const READMIT_COUNT = { unit: "عدد", aggregation: "SUM", calculationType: "COUNT", direction: "lower", target: null, targets: {}, quarterTargets: null,
+    validMax: null, numeratorDefinition: null, denominatorDefinition: null };
 const KPI_TARGETS = {
     DRUGMAIL_SHIPMENTS_DAILY: { v: 4, target: 6000, direction: "higher" },
     PSY_CLINIC_VISITS:        { v: 4, target: 9000, direction: "higher" },
@@ -1738,7 +1742,7 @@ const KPI_TARGETS = {
     CALLS937_OVERALL_INDEX:   { v: 4, target: 95 },
     OCC_WITH_HOME_PCT:        { v: 18, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 153 حتى 30/9/2026، ثم 183",
                                 definition: "عدد المرضى المنومين مع المنزل ÷ الأسرّة المعتمدة (153 حتى 30/9/2026، ثم 183) × 100" },
-    OCC_NO_HOME_PCT:          { v: 24, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، و150 في أكتوبر 2026، ثم 123 من 1/11/2026 (المنزل 60 سريراً)",
+    OCC_NO_HOME_PCT:          { v: 26, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، و150 في أكتوبر 2026، ثم 123 من 1/11/2026 (المنزل 60 سريراً)",
                                 definition: "عدد المرضى المنومين بدون المنزل ÷ الأسرّة المعتمدة (123 حتى 30/9/2026، و150 في أكتوبر 2026، ثم 123 من 1/11/2026) × 100" },
     // Monthly readings; the target of each period is the ministry's target entered for it (PATIENT_EXP_OPD_MOH),
     // and 88.48% for a period without one (a year target from the targets page no longer applies).
@@ -1751,7 +1755,9 @@ const KPI_TARGETS = {
     SENTINEL_EVENTS:          { v: 9, target: 0, direction: "lower" },
     SECURITY_OBS:             { v: 9, target: 0, direction: "lower" },
     OCC_HEALTH:               { v: 9, target: 90, direction: "higher" },
-    MYSTERY_SHOPPER:          { v: 20, target: 95, direction: "higher" },
+    // Quarterly in the final 2026 entry template (owner, 2026-11-10): one score a quarter.
+    MYSTERY_SHOPPER:          { v: 25, target: 95, direction: "higher", frequency: "quarterly",
+                                definition: "نتيجة تقييم الزائر السري للفترة (نسبة الالتزام بالمعايير). تُدخل ربع سنوياً." },
     MAINT_REQUESTS:           { v: 9, target: 30, targetBasis: "weekly", direction: "lower" },
     // Q3 2026 rate 472 ÷ 474 (shown as 99.58%).
     MAINT_COMPLETION_PCT:     { v: 12, target: 99.578, direction: "higher" },
@@ -1767,7 +1773,7 @@ const KPI_TARGETS = {
     INPATIENTS_WITH_HOME:     { v: 23, target: 121, direction: "lower", unit: "عدد", wholeNumber: true,
                                 quarterTargets: { "2026-Q1": 115, "2026-Q2": 115, "2026-Q3": 115, "2026-Q4": 137 } },
     // Q4 2026 without the halfway house: 150 beds in October, 123 in November and December (owner, 2026-11-10).
-    INPATIENTS_NO_HOME:       { v: 24, target: 94, direction: "lower", unit: "عدد", wholeNumber: true,
+    INPATIENTS_NO_HOME:       { v: 26, target: 94, direction: "lower", unit: "عدد", wholeNumber: true,
                                 quarterTargets: { "2026-Q1": 92, "2026-Q2": 92, "2026-Q3": 92, "2026-Q4": 99 } },
     // Clinics: no-shows within the 15% no-show target of 9,000 visits a quarter; confirmations 80% of the
     // 32,000 outgoing calls a year, half of clinic visits confirmed by call; postponements about 1% of confirmations.
@@ -1782,6 +1788,11 @@ const KPI_TARGETS = {
     ED_REVISIT_72H: { v: 16, unit: "عدد", aggregation: "SUM", calculationType: "COUNT", direction: "lower", target: null, targets: {}, quarterTargets: null,
         validMax: null, numeratorDefinition: null, denominatorDefinition: null,
         definition: "عدد حالات العودة غير المخطط لها للطوارئ خلال 72 ساعة بنفس التشخيص" },
+    // Re-admission within 30 days is a count of patients, not a rate (the owner's final 2026 template, layout 25);
+    // the 20% target no longer applies. The total adds up psychiatry and detox (SUM_KPIS).
+    READMIT30_PSY:   { v: 25, ...READMIT_COUNT, definition: "عدد المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص — الطب النفسي" },
+    READMIT30_DETOX: { v: 25, ...READMIT_COUNT, definition: "عدد المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص — الإدمان وما بعده" },
+    READMIT30_ALL:   { v: 25, ...READMIT_COUNT, definition: "عدد المرضى الذين أُعيد تنويمهم خلال 30 يوماً بنفس التشخيص — الطب النفسي والإدمان معاً" },
     // Entered (it feeds the completion rate) but not shown on the dashboard.
     MAINT_COMPLETED:          { v: 9, entryOnly: true }
 };
@@ -2080,8 +2091,10 @@ function indexedRecords(code, year){
         // Every reading counts on the dashboard as soon as it is entered; approval is a monthly sign-off.
         // The facility filter (shown once there is more than one facility) limits the readings counted.
         const fac = document.getElementById("filterFacility")?.value || "ALL", primary = primaryFacilityId();
-        records.forEach(r => {
-            if(fac !== "ALL" && (r.facilityId || primary) !== fac) return;
+        const counted = records.filter(r => fac === "ALL" || (r.facilityId || primary) === fac);
+        const blank = notEnteredMonths(counted);
+        counted.forEach(r => {
+            if(blank.has(r.kpiCode + "|" + String(r.date || "").slice(0, 7))) return;
             if(isNum(r.actualValue) || isNum(r.numerator)){ const d = lastReading.get(r.kpiCode); if(!d || r.date > d) lastReading.set(r.kpiCode, r.date); }
             const key = r.kpiCode + "|" + r.year;
             if(!recordIndex.has(key)) recordIndex.set(key, []);
@@ -2089,6 +2102,35 @@ function indexedRecords(code, year){
         });
     }
     return recordIndex.get(code + "|" + year) || [];
+}
+
+// Months that were not entered: the entry file puts 0 in every cell of a month nobody filled in, so a month whose
+// readings are all zero for a KPI where more is better (e.g. clinic visits, completed maintenance) counts as
+// «لم يتم الإدخال بعد» — no value and no achievement, and it is left out of quarter and year results (owner's request, v4.26).
+// Zero stays a real result where less is better (sentinel events, falls). A calculated rate is not entered for a month
+// when one of its sources is not entered, and an all-zero count over a source that was not entered (no-shows over clinic visits) neither.
+function notEnteredMonths(list){
+    const groups = new Map();
+    list.forEach(r => {
+        const key = r.kpiCode + "|" + String(r.date || "").slice(0, 7);
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(r);
+    });
+    const zero = r => !(isNum(r.actualValue) && Number(r.actualValue) !== 0) && !(isNum(r.numerator) && Number(r.numerator) !== 0);
+    const blank = new Set();
+    groups.forEach((rows, key) => {
+        const k = kpis.find(x => x.code === key.split("|")[0]);
+        if(k && !DERIVED_KPIS[k.code] && (k.direction === "higher" || k.direction === "target") && rows.every(zero)) blank.add(key);
+    });
+    const months = new Set([...groups.keys()].map(key => key.split("|")[1]));
+    Object.entries(DERIVED_KPIS).forEach(([code, d]) => {
+        const num = d.num.filter(([, part]) => part === "value").map(([c]) => c), den = (d.den || []).filter(([, part]) => part === "value").map(([c]) => c);
+        months.forEach(m => {
+            if(den.some(c => blank.has(c + "|" + m))){ blank.add(code + "|" + m); num.forEach(c => { const g = groups.get(c + "|" + m); if(g && g.every(zero)) blank.add(c + "|" + m); }); }
+            else if(num.some(c => blank.has(c + "|" + m))) blank.add(code + "|" + m);
+        });
+    });
+    return blank;
 }
 
 // =====================================================================
@@ -2664,8 +2706,9 @@ const DERIVED_KPIS = {
     CLINIC_CONFIRM_PCT_OF_VISITS: { num:[["APPT_CONFIRMED","value"]], den:[["PSY_CLINIC_VISITS","value"]] },
     OCC_WITH_HOME_PCT:            { num:[["INPATIENTS_WITH_HOME","value"]], denConst: date => bedCapacity("WITH_HOME", date) },
     OCC_NO_HOME_PCT:              { num:[["INPATIENTS_NO_HOME","value"]], denConst: date => bedCapacity("NO_HOME", date) },
-    READMIT30_ALL:                { num:[["READMIT30_PSY","num"],["READMIT30_DETOX","num"]], den:[["READMIT30_PSY","den"],["READMIT30_DETOX","den"]], anySource:true }
 };
+// A KPI that is the total of other KPIs (re-admission: psychiatry + detox), computed for every period from their values.
+const SUM_KPIS = { READMIT30_ALL: ["READMIT30_PSY", "READMIT30_DETOX"] };
 const DERIVED_SOURCE = "حساب تلقائي";
 // Approved beds, from the date each count took effect (the owner: 153 until September 2026, then 183;
 // in October 2026 the halfway house had 33 beds, so 150 without it; from 1/11/2026 the halfway house
@@ -2723,8 +2766,8 @@ function staleOccupancySources(){
 
 // What staff enter for rate KPIs (from the workbook's LISTS sheet).
 const ENTRY_HINTS = {
-    READMIT30_PSY: "البسط = المعادون خلال 30 يوم بنفس التشخيص | المقام = المخرَّجون أحياء",
-    READMIT30_DETOX: "البسط = المعادون خلال 30 يوم بنفس التشخيص | المقام = المخرَّجون أحياء",
+    READMIT30_PSY: "عدد المرضى المعادين خلال 30 يوماً بنفس التشخيص في الشهر",
+    READMIT30_DETOX: "عدد المرضى المعادين خلال 30 يوماً بنفس التشخيص في الشهر",
     MED_ERR_REPORTING_DOCTORS: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
     MED_ERR_REPORTING_NURSES: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
     MED_ERR_REPORTING_PHARMACISTS: "البسط = الأخطاء المرفوعة | المقام = الأخطاء المطلوبة",
@@ -2745,6 +2788,8 @@ const DATE_HINTS = {
 };
 let entryFreq = "daily";
 
+// Monthly and quarterly KPIs are reported once their period has ended (on the 1st of the next month or quarter).
+function reportedAfterPeriod(k){ return k.frequency === "monthly" || k.frequency === "quarterly"; }
 function entryFreqOf(k){ return ENTRY_FREQS.includes(k.frequency) ? k.frequency : (k.frequency === "annual" ? "quarterly" : "daily"); }
 // KPIs received as Excel files (Re-admission) are imported from their own card, not typed.
 function entryKpis(freq){ return activeKpis().filter(k => !DERIVED_KPIS[k.code] && !k.valueFromKpi && k.intake !== "excel" && (!freq || entryFreqOf(k) === freq)); }
@@ -3151,11 +3196,35 @@ function aggregateRows(rows, kpi){
     return avg();
 }
 
+// A month or quarter is calculated once it is due: a month on the 1st of the following month, a quarter on the 1st of
+// the following quarter, and Q4 (and December) on 31 December. Until then it shows «لم يتم الإدخال بعد», even for
+// daily KPIs, and the year counts only the quarters already due (the owner's final 2026 template, v4.27).
+function periodDue(year, q){
+    year = Number(year);
+    const today = formatDateInput(new Date()), pad = n => String(n).padStart(2, "0");
+    const m = /^([QM])(\d+)$/.exec(q || "");
+    if(!m) return true;
+    const n = Number(m[2]);
+    if((m[1] === "Q" && n === 4) || (m[1] === "M" && n === 12)) return today >= `${year}-12-31`;
+    const next = m[1] === "Q" ? n * 3 + 1 : n + 1;
+    return today >= `${year}-${pad(next)}-01`;
+}
+// The first day of the year that is not counted yet (the start of the first quarter not due); null when all are due.
+function yearCutoff(year){
+    const q = QUARTERS.find(qq => !periodDue(year, qq));
+    return q ? formatDateInput(quarterBounds(Number(year), q)[0]) : null;
+}
+
 function getPeriodValue(code, year, q){
     const kpi = kpis.find(k=>k.code===code);
     if(!kpi) return null;
+    if(!periodDue(year, q)) return null;
     // A KPI that equals another (closed 937 reports = 937 reports) takes its value.
     if(kpi.valueFromKpi && kpi.valueFromKpi !== code) return getPeriodValue(kpi.valueFromKpi, year, q);
+    if(SUM_KPIS[code]){
+        const parts = SUM_KPIS[code].map(c => getPeriodValue(c, year, q)).filter(isNum);
+        return parts.length ? parts.reduce((a, v) => a + Number(v), 0) : null;
+    }
     const manual = manualQuarter(kpi, year, q);
     if(manual != null) return manual;
     // A count KPI's year total adds up its quarters, so a quarter the admin set counts in the year.
@@ -3170,7 +3239,9 @@ function getPeriodValue(code, year, q){
     }
     const parts = derivedManualParts(kpi, year, q);
     if(parts) return parts[1] > 0 ? parts[0] / parts[1] * 100 : null;
-    return aggregateRows(periodRecords(code, year, q), kpi);
+    const cut = q === "ALL" ? yearCutoff(year) : null;
+    const rows = periodRecords(code, year, q);
+    return aggregateRows(cut ? rows.filter(r => String(r.date) < cut) : rows, kpi);
 }
 
 // A calculated rate whose sources have official quarter values (e.g. completed ÷ reported maintenance) uses them.
@@ -3187,7 +3258,7 @@ function derivedManualParts(kpi, year, q){
     };
     if(/^Q[1-4]$/.test(q)){ const p = quarterParts(q); return p[2] ? p : null; }
     if(q !== "ALL") return null;
-    const parts = QUARTERS.map(quarterParts);
+    const parts = QUARTERS.filter(qq => periodDue(year, qq)).map(quarterParts);
     if(!parts.some(p => p[2])) return null;
     return [parts.reduce((a, p) => a + p[0], 0), parts.reduce((a, p) => a + p[1], 0), true];
 }
@@ -3393,7 +3464,7 @@ function targetText(k, tgt){
 }
 
 function getStatus(kpi, act, ach, target){
-    if(act == null) return { key:"gray", label:"بدون بيانات" };
+    if(act == null) return { key:"gray", label:NOT_ENTERED };
     if(kpi.direction === "info") return { key:"gray", label:"مؤشر معلوماتي" };
     if(kpi.direction === "none" || !kpi.direction) return { key:"gray", label:"يحتاج تحديد الاتجاه" };
     if(kpi.direction === "conditional") return { key:"gray", label:"مؤشر مشروط" };
@@ -3441,6 +3512,10 @@ function calcTrend(act, prev, kpi, target){
     return better ? { key:"up", label:"تحسن ↗" } : { key:"down", label:"تراجع ↘" };
 }
 
+// A period with no reading shows «لم يتم الإدخال بعد» (not entered yet), never zero (owner's request, v4.26–4.27).
+const NOT_ENTERED = "لم يتم الإدخال بعد";
+function actText(val, kpi){ return val == null || !Number.isFinite(Number(val)) ? NOT_ENTERED : fmt(val, kpi); }
+const actHtml = (val, kpi, cls) => val == null || !Number.isFinite(Number(val)) ? `<span class="${cls} not-entered">${NOT_ENTERED}</span>` : `<span class="${cls}">${fmt(val, kpi)}</span>`;
 function fmt(val, kpi){
     if(val == null || !Number.isFinite(Number(val))) return "—";
     return Number(val).toLocaleString("en-US",{maximumFractionDigits: kpi.wholeNumber ? 0 : 2}) + (kpi.unit === "%" ? "%" : "");
@@ -3573,7 +3648,7 @@ function keyKpiCard(k, label, year, selQ){
     const barColor = x => x.status.key === "gray" ? "#94a3b8" : statusColor(x.status.key);
     const tgtText = targetText(k, cur.target);
     const unit = k.unit && k.unit !== "%" ? `<span class="kpi-unit text-[11px] font-bold text-slate-500 mr-1">${escapeHtml(k.unit)}</span>` : "";
-    const tip = x => `${periodName(x.q)}: الفعلي ${fmt(x.act, k)} · المستهدف ${x.target != null ? fmt(x.target, k) : "غير محدد"} · ${x.status.label}`;
+    const tip = x => `${periodName(x.q)}: الفعلي ${actText(x.act, k)} · المستهدف ${x.target != null ? fmt(x.target, k) : "غير محدد"} · ${x.status.label}`;
     const edit = can("editKpi") ? `<button type="button" class="key-edit" onclick="openQuarterModal('${escapeAttr(k.code)}', ${year})" title="تعديل القيم الربعية مباشرة"><i class="fa-solid fa-pen ml-1"></i>تعديل القيم</button>` : "";
     return `<div class="key-wrap">
     <button type="button" class="key-card" style="--status:${color}" onclick="openKpiDetail('${escapeAttr(k.code)}')" aria-label="تفاصيل ${escapeAttr(label)}">
@@ -3585,7 +3660,7 @@ function keyKpiCard(k, label, year, selQ){
             <span class="pill status-${cur.status.key} !py-0.5 !px-2 !text-[10px] shrink-0">${cur.status.label}</span>
         </div>
         <div class="flex items-end justify-between gap-2">
-            <div><span class="k-value">${fmt(cur.act, k)}</span>${cur.act != null ? unit : ""}</div>
+            <div>${actHtml(cur.act, k, "k-value")}${cur.act != null ? unit : ""}</div>
             <div class="text-[10px] text-slate-500 font-bold">${periodName(selQ)}</div>
         </div>
         <div class="k-meta"><span>المستهدف: <b>${tgtText}</b></span><span>${cur.ach != null ? `الإنجاز: <b>${cur.ach.toFixed(0)}%</b>` : ""}</span></div>
@@ -3596,7 +3671,7 @@ function keyKpiCard(k, label, year, selQ){
                     : x.target != null ? `<div class="tgt" style="bottom:${pct(x.target).toFixed(1)}%"></div>` : ""}
             </div>`).join("")}
         </div>
-        <div class="kq-labels" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${fmt(x.act, k)}</b>${manualQuarter(k, year, x.q) != null ? `<span class="kq-manual" title="قيمة معدلة من مدير النظام">✎ يدوي</span>` : ""}</div>`).join("")}</div>
+        <div class="kq-labels" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${actText(x.act, k)}</b>${manualQuarter(k, year, x.q) != null ? `<span class="kq-manual" title="قيمة معدلة من مدير النظام">✎ يدوي</span>` : ""}</div>`).join("")}</div>
         ${edit ? `<div class="h-5"></div>` : ""}
     </button>${edit}</div>`;
 }
@@ -3698,7 +3773,7 @@ function periodColumns(k, year, q, compact){
     const many = pts.length > 6;
     const col = x => {
         const c = x.status.key === "gray" ? "#94a3b8" : statusColor(x.status.key);
-        const tip = `${x.label}${x.y !== Number(year) && q !== "ALL" ? " " + x.y : ""}: ${fmt(x.act, k)}${x.target != null ? ` · المستهدف ${targetText(k, x.target)}` : ""} · ${x.status.label}`;
+        const tip = `${x.label}${x.y !== Number(year) && q !== "ALL" ? " " + x.y : ""}: ${actText(x.act, k)}${x.target != null ? ` · المستهدف ${targetText(k, x.target)}` : ""} · ${x.status.label}`;
         return `<div class="pc-col ${x === sel ? "sel" : ""}" title="${escapeAttr(tip)}">${x.act != null ? `<div class="bar" style="height:${pct(x.act)}%;background:${c}"></div>` : ""}</div>`;
     };
     return `<div class="pc ${compact ? "compact" : ""}">
@@ -3706,7 +3781,7 @@ function periodColumns(k, year, q, compact){
             <div class="pc-bars" style="grid-template-columns:repeat(${pts.length},1fr)">${pts.map(col).join("")}</div>
             ${lines.map(l => `<div class="pc-line" style="bottom:${pct(l.v)}%"><span dir="rtl">${l.html}</span></div>`).join("")}
         </div>
-        <div class="pc-labels" style="grid-template-columns:repeat(${pts.length},1fr)">${pts.map(x => `<div class="${x === sel ? "sel" : ""}">${escapeHtml(x.label)}${!many ? `<b>${fmt(x.act, k)}</b>` : ""}</div>`).join("")}</div>
+        <div class="pc-labels" style="grid-template-columns:repeat(${pts.length},1fr)">${pts.map(x => `<div class="${x === sel ? "sel" : ""}">${escapeHtml(x.label)}${!many ? `<b>${actText(x.act, k)}</b>` : ""}</div>`).join("")}</div>
     </div>`;
 }
 
@@ -3779,7 +3854,7 @@ function kpiCard(r, year){
             <span class="pill status-${r.status.key} !py-0.5 !px-2 !text-[10px] shrink-0">${r.status.label}</span>
         </div>
         <div class="flex items-end justify-between gap-2">
-            <div><span class="kpi-value">${fmt(r.act, k)}</span>${r.act != null ? unit : ""}</div>
+            <div>${actHtml(r.act, k, "kpi-value")}${r.act != null ? unit : ""}</div>
             ${r.act != null && r.prev != null ? trendPill(r.trend) : ""}
         </div>
         <div class="kpi-meta"><span>المستهدف: <b>${targetText(k, tgt)}</b></span><span>${r.ach != null ? `الإنجاز: <b>${r.ach.toFixed(0)}%</b>` : ""}</span></div>
@@ -3890,7 +3965,7 @@ function renderDetailQuarterChart(k){
         type:"line", data:{ labels: pts.map(p => p.label), datasets },
         options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:12 } }, interaction:{ mode:"index", intersect:false },
             scales:{ y:{ position:"right", beginAtZero: k.unit !== "%", ticks:{ callback:v => fmt(v, k) } }, x:{ reverse:true, offset:true, grid:{ display:false } } },
-            plugins:{ legend:{ position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : fmt(c.raw, k)}` } } } }
+            plugins:{ legend:{ position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? NOT_ENTERED : fmt(c.raw, k)}` } } } }
     });
 }
 
@@ -3898,6 +3973,7 @@ function renderDetailMonthChart(k, year){
     if(detailMonthChart) detailMonthChart.destroy();
     const rows = indexedRecords(k.code, year);
     const months = MONTHS_AR.map((name, i) => {
+        if(SUM_KPIS[k.code] || !periodDue(year, "M" + (i + 1))) return round(getPeriodValue(k.code, year, "M" + (i + 1)));
         const m = rows.filter(r => Number(String(r.date).slice(5,7)) === i + 1);
         return round(aggregateRows(m, k));
     });
@@ -3913,7 +3989,7 @@ function renderDetailMonthChart(k, year){
         ] },
         options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:12 } }, interaction:{ mode:"index", intersect:false },
             scales:{ y:{ position:"right", beginAtZero:true, ticks:{ callback:v => fmt(v, k) } }, x:{ reverse:true, grid:{ display:false } } },
-            plugins:{ legend:{ display: showTarget, position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : fmt(c.raw, k)}` } } } }
+            plugins:{ legend:{ display: showTarget, position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? NOT_ENTERED : fmt(c.raw, k)}` } } } }
     });
 }
 
@@ -3932,7 +4008,7 @@ function renderDetailQuarterTable(k, year){
         const tgt = effectiveTarget(k, y);
         return `<tr><td class="font-black">${y}</td>${cols.map(q => {
             const c = detailCell(k, y, q);
-            return `<td><div class="font-bold text-slate-900">${fmt(c.act, k)}</div>${c.ach != null ? `<div class="text-[10px] font-bold" style="color:${statusColor(c.st.key)}">${c.ach.toFixed(0)}% · ${c.st.label}</div>` : ""}</td>`;
+            return `<td><div class="font-bold ${c.act == null ? "text-slate-400" : "text-slate-900"}">${actText(c.act, k)}</div>${c.ach != null ? `<div class="text-[10px] font-bold" style="color:${statusColor(c.st.key)}">${c.ach.toFixed(0)}% · ${c.st.label}</div>` : ""}</td>`;
         }).join("")}<td class="text-xs">${tgt != null ? fmt(tgt, k) : "—"}<div class="text-[10px] text-slate-400">${targetSource(k, y)}</div></td></tr>`;
     }).join("");
 }
@@ -4112,7 +4188,7 @@ function renderTable(results){
             <tr class="cursor-pointer" title="عرض تفاصيل المؤشر" onclick="openKpiDetail('${escapeAttr(k.code)}')">
                 <td class="kpi-name-cell"><div class="font-bold text-slate-900">${escapeHtml(k.name)}</div><div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}${staleNote(k)}</div></td>
                 <td>${frequencyName(k.frequency)}</td>
-                <td class="font-extrabold text-slate-900">${fmt(r.act, k)}</td>
+                <td class="font-extrabold ${r.act == null ? "text-slate-400" : "text-slate-900"}">${actText(r.act, k)}</td>
                 <td>${targetLabel(k, r.target)}</td>
                 <td><div class="font-bold">${achStr}</div>${r.ach!=null?`<div class="progress mt-1 w-20"><div style="width:${Math.min(r.ach,100)}%;background:${statusColor(r.status.key)}"></div></div>`:""}</td>
                 <td>${varNum}</td>
@@ -4131,7 +4207,7 @@ function renderCharts(results){
     if(statusChart) statusChart.destroy();
     statusChart = new Chart(document.getElementById("statusChart"), {
         type: 'doughnut',
-        data: { labels: ["محقق", "تحذير", "غير محقق", "بدون بيانات"], datasets:[{ data:[counts.green, counts.yellow, counts.red, counts.gray], backgroundColor:['#10b981','#f59e0b','#ef4444','#cbd5e1'], borderColor:'#ffffff', borderWidth:2 }] },
+        data: { labels: ["محقق", "تحذير", "غير محقق", NOT_ENTERED], datasets:[{ data:[counts.green, counts.yellow, counts.red, counts.gray], backgroundColor:['#10b981','#f59e0b','#ef4444','#cbd5e1'], borderColor:'#ffffff', borderWidth:2 }] },
         options: { responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{ legend:{ position:'bottom' } } }
     });
 
@@ -4210,7 +4286,7 @@ function printReport(){
 function printKeyKpis(){
     if(!currentUser) return;
     const { year, q } = getFilters();
-    const selQ = /^Q[1-4]$/.test(q) ? q : "Q" + Math.ceil((new Date().getMonth() + 1) / 3);
+    const selQ = /^Q[1-4]$/.test(q) ? q : QUARTERS.filter(qq => periodDue(year, qq)).pop() || "Q1";
     const tone = { green: ["#10b981", "#d1fae5", "#065f46"], yellow: ["#f59e0b", "#fef3c7", "#92400e"], red: ["#ef4444", "#fee2e2", "#991b1b"], gray: ["#94a3b8", "#f1f5f9", "#475569"] };
     const cards = [], counts = { green: 0, yellow: 0, red: 0, gray: 0 };
     KEY_KPIS.forEach(({ code, label }) => {
@@ -4232,7 +4308,7 @@ function printKeyKpis(){
         const unit = k.unit && k.unit !== "%" ? `<span class="unit">${escapeHtml(k.unit)}</span>` : "";
         cards.push(`<div class="kp-card" style="--st:${tone[key][0]};--stbg:${tone[key][1]};--stfg:${tone[key][2]}">
             <div class="hd"><div><div class="lb">${escapeHtml(label)}</div><div class="nm">${escapeHtml(k.name)}</div></div><span class="pill2">${escapeHtml(cur.status.label)}</span></div>
-            <div class="row"><div><span class="val">${fmt(cur.act, k)}</span>${cur.act != null ? unit : ""}</div>
+            <div class="row"><div><span class="val">${actText(cur.act, k)}</span>${cur.act != null ? unit : ""}</div>
                 <div class="delta" style="color:${trendColor}">${change != null ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% عن ${pq === "Q4" && py !== year ? `Q4 ${py}` : pq}` : ""}${cur.act != null && prev != null ? ` · ${escapeHtml(trend.label)}` : ""}</div></div>
             <div class="meta"><span>المستهدف: <b>${targetText(k, cur.target)}</b></span><span>${cur.ach != null ? `الإنجاز: <b>${cur.ach.toFixed(0)}%</b>` : ""}</span></div>
             <div class="kp-bars" ${cols}>${qs.map(x => {
@@ -4240,7 +4316,7 @@ function printKeyKpis(){
                 const lines = band ? band.map(v => `<div class="tg" style="bottom:${pct(v)}%"></div>`).join("") : x.target != null ? `<div class="tg" style="bottom:${pct(x.target)}%"></div>` : "";
                 return `<div class="kp-col ${x.q === selQ ? "sel" : ""}">${x.act != null ? `<div class="bar" style="height:${pct(x.act)}%;background:${c} !important"></div>` : ""}${lines}</div>`;
             }).join("")}</div>
-            <div class="kp-lab" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${fmt(x.act, k)}</b></div>`).join("")}</div>
+            <div class="kp-lab" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${actText(x.act, k)}</b></div>`).join("")}</div>
         </div>`);
     });
     const total = cards.length;
@@ -4760,7 +4836,8 @@ async function importReadmitFile(event){
             const existing = records.find(r => r.kpiCode === x.code && r.date === date);
             if(existing && Number(existing.numerator) === Number(n) && Number(existing.denominator) === Number(d)) return;
             if(existing && !canEditRecord(existing)){ skipped.push(`${month} — ${x.label}`); return; }
-            const value = Number(d) > 0 ? round(Number(n) / Number(d) * 100 * 1e4) / 1e4 : null;
+            // Re-admission is a count (layout 25): the reading is the number of patients re-admitted.
+            const value = kpi.aggregation === "SUM" ? Number(n) : Number(d) > 0 ? round(Number(n) / Number(d) * 100 * 1e4) / 1e4 : null;
             const rec = normalizeRecord({ id: existing?.id, date, kpiCode: x.code, kpiName: kpi.name, actualValue: value, numerator: Number(n), denominator: Number(d),
                 dataSource: "ملف Re-admission: " + file.name, notes: "", approved: savesApproved(),
                 createdBy: existing?.createdBy || currentUser.displayName, createdAt: existing?.createdAt || new Date().toISOString() });
@@ -5836,9 +5913,11 @@ function dmLocateSimpleSheet(wb){
         const k = byName.get(t); return k ? { k, part: "" } : null;
     };
     const countBy = list => list.reduce((m, x) => (m[x] = (m[x] || 0) + 1, m), {});
-    // A KPI reported on the 1st of the next month (k.reportedNextMonth): the reading belongs to the previous month's last day.
+    // A monthly KPI is reported on the 1st of the following month and a quarterly one on the 1st of the following quarter
+    // (the owner's final 2026 template): a reading on the 1st belongs to the period before it, so it moves to that period's
+    // last day. Readings on a period's last day (e.g. Q4 on 31 December) stay where they are.
     const dayOf = serial => new Date(Date.UTC(1899, 11, 30) + serial * 864e5).getUTCDate();
-    const readingDate = (k, d) => k.reportedNextMonth && typeof d === "number" && dayOf(d) === 1 ? d - 1 : d;
+    const readingDate = (k, d) => (k.reportedNextMonth || reportedAfterPeriod(k)) && typeof d === "number" && dayOf(d) === 1 ? d - 1 : d;
     const groups = new Map();   // indicator|date → { k, date, rowNumber, VAL/NUM/DEN: { v, header } }
     const put = (k, part, date, v, rowNumber, header) => {
         const key = k.code + "|" + String(date);
