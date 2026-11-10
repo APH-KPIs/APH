@@ -1392,7 +1392,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.25 — 2026-11-09";
+const APP_VERSION = "الإصدار 4.26 — 2026-11-10";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -1675,7 +1675,9 @@ function groupByCategory(items, catOf){
 // Version 20: mystery shopper target 95% and its official Q3 2026 result (87.33%).
 // Version 21: patient experience (OPD) target 88.48% when a month has no ministry target.
 // Version 22: every 937 report is closed (owner's confirmation): the closed count follows the report count, 100% closure.
-const KPI_LAYOUT_V = 23;
+// Version 23: inpatient counts shown as whole numbers.
+// Version 24: from 1/11/2026 the halfway house has 60 beds and regular inpatient 123 (183 in all).
+const KPI_LAYOUT_V = 24;
 const KPI_LAYOUT = {
     "الخدمات العلاجية": ["INPATIENTS_WITH_HOME","OCC_WITH_HOME_PCT","INPATIENTS_NO_HOME","OCC_NO_HOME_PCT","READMIT30_ALL","READMIT30_PSY","READMIT30_DETOX"],
     "الصيدلية": ["MED_ERR_REPORTING_PHARMACISTS","DRUGMAIL_SHIPMENTS_DAILY"],
@@ -1736,8 +1738,8 @@ const KPI_TARGETS = {
     CALLS937_OVERALL_INDEX:   { v: 4, target: 95 },
     OCC_WITH_HOME_PCT:        { v: 18, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 153 حتى 30/9/2026، ثم 183",
                                 definition: "عدد المرضى المنومين مع المنزل ÷ الأسرّة المعتمدة (153 حتى 30/9/2026، ثم 183) × 100" },
-    OCC_NO_HOME_PCT:          { v: 18, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، ثم 150",
-                                definition: "عدد المرضى المنومين بدون المنزل ÷ الأسرّة المعتمدة (123 حتى 30/9/2026، ثم 150) × 100" },
+    OCC_NO_HOME_PCT:          { v: 24, target: 75,   direction: "lower", rangeMin: null, rangeMax: null, denominatorDefinition: "الأسرّة المعتمدة: 123 حتى 30/9/2026، و150 في أكتوبر 2026، ثم 123 من 1/11/2026 (المنزل 60 سريراً)",
+                                definition: "عدد المرضى المنومين بدون المنزل ÷ الأسرّة المعتمدة (123 حتى 30/9/2026، و150 في أكتوبر 2026، ثم 123 من 1/11/2026) × 100" },
     // Monthly readings; the target of each period is the ministry's target entered for it (PATIENT_EXP_OPD_MOH),
     // and 88.48% for a period without one (a year target from the targets page no longer applies).
     PATIENT_EXP_OPD:          { v: 21, target: 88.48, targets: {}, direction: "higher", frequency: "monthly", aggregation: "AVERAGE", targetFromKpi: "PATIENT_EXP_OPD_MOH" },
@@ -1764,8 +1766,9 @@ const KPI_TARGETS = {
     // Shown as a whole number of patients (the owner's request, layout 23): the daily census averaged, then rounded.
     INPATIENTS_WITH_HOME:     { v: 23, target: 121, direction: "lower", unit: "عدد", wholeNumber: true,
                                 quarterTargets: { "2026-Q1": 115, "2026-Q2": 115, "2026-Q3": 115, "2026-Q4": 137 } },
-    INPATIENTS_NO_HOME:       { v: 23, target: 97, direction: "lower", unit: "عدد", wholeNumber: true,
-                                quarterTargets: { "2026-Q1": 92, "2026-Q2": 92, "2026-Q3": 92, "2026-Q4": 113 } },
+    // Q4 2026 without the halfway house: 150 beds in October, 123 in November and December (owner, 2026-11-10).
+    INPATIENTS_NO_HOME:       { v: 24, target: 94, direction: "lower", unit: "عدد", wholeNumber: true,
+                                quarterTargets: { "2026-Q1": 92, "2026-Q2": 92, "2026-Q3": 92, "2026-Q4": 99 } },
     // Clinics: no-shows within the 15% no-show target of 9,000 visits a quarter; confirmations 80% of the
     // 32,000 outgoing calls a year, half of clinic visits confirmed by call; postponements about 1% of confirmations.
     PSY_NOSHOW_COUNT:         { v: 15, target: 1350, direction: "lower" },
@@ -2665,8 +2668,9 @@ const DERIVED_KPIS = {
 };
 const DERIVED_SOURCE = "حساب تلقائي";
 // Approved beds, from the date each count took effect (the owner: 153 until September 2026, then 183;
-// the halfway house went from 30 to 33 beds, so the beds without it went from 123 to 150).
-const BED_CAPACITY = { WITH_HOME: [["2026-10-01", 183], ["", 153]], NO_HOME: [["2026-10-01", 150], ["", 123]] };
+// in October 2026 the halfway house had 33 beds, so 150 without it; from 1/11/2026 the halfway house
+// has 60 beds and regular inpatient 123, still 183 in all).
+const BED_CAPACITY = { WITH_HOME: [["2026-10-01", 183], ["", 153]], NO_HOME: [["2026-11-01", 123], ["2026-10-01", 150], ["", 123]] };
 function bedCapacity(kind, date){ return BED_CAPACITY[kind].find(([from]) => String(date) >= from)[1]; }
 // Occupancy readings saved with an older bed count are recalculated (e.g. October 2026 readings made before 183 beds).
 // Readings the owner supplied for KPIs that had none (nursing administration's 2026 sheet, Jan–Sep).
