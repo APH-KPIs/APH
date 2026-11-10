@@ -552,7 +552,7 @@
             <div id="backupReminder" class="hidden"></div>
             <!-- FILTERS -->
             <div class="card p-4">
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">السنة المالية</label>
                         <select id="filterYear" onchange="populatePeriodOptions(); renderDashboard()"></select>
@@ -587,6 +587,12 @@
                         <label class="block text-xs font-bold text-slate-600 mb-1">الإدارة</label>
                         <select id="filterDepartment" onchange="renderDashboard()">
                             <option value="ALL">جميع الإدارات</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">دورية المؤشر</label>
+                        <select id="filterFrequency" onchange="renderDashboard()" title="حسب عمود «الدورية» في ورقة المؤشرات بقالب الإدخال">
+                            <option value="ALL">جميع الدوريات</option>
                         </select>
                     </div>
                     <div id="filterFacilityBox" class="hidden">
@@ -1393,7 +1399,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.27 — 2026-11-10";
+const APP_VERSION = "الإصدار 4.29 — 2026-11-10";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -2685,6 +2691,13 @@ function populateFilters(){
         .map(id => [id, departmentName(id)]).sort((a, b) => a[1].localeCompare(b[1], "ar"));
     dSel.innerHTML = `<option value="ALL">جميع الإدارات</option>` + depts.map(([v, l]) => `<option value="${escapeAttr(v)}">${escapeHtml(l)}</option>`).join("");
     if(depts.some(d => d[0] === selDept)) dSel.value = selDept;
+    // Frequency as listed in the entry template's «المؤشرات» sheet; each option shows how many KPIs it has.
+    const qSel = document.getElementById("filterFrequency"), selFreq = qSel.value;
+    const freqCount = {};
+    dashboardKpis().forEach(k => { const f = templateFrequency(k); freqCount[f] = (freqCount[f] || 0) + 1; });
+    const freqs = ["daily","weekly","monthly","quarterly","annual"].filter(f => freqCount[f]);
+    qSel.innerHTML = `<option value="ALL">جميع الدوريات</option>` + freqs.map(f => `<option value="${f}">${frequencyName(f)} (${freqCount[f]})</option>`).join("");
+    if(freqs.includes(selFreq)) qSel.value = selFreq;
     const fSel = document.getElementById("filterFacility"), selFac = fSel.value;
     const facs = masterList("facilities").filter(f => f.active !== false);
     fSel.innerHTML = `<option value="ALL">جميع المنشآت</option>` + facs.map(f => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.nameAr)}</option>`).join("");
@@ -3540,13 +3553,20 @@ function getFilters(){
     };
 }
 
+// The frequency the 2026 entry template lists (sheet «المؤشرات», column «الدورية»), used by the dashboard's frequency
+// filter. Where the platform measures a KPI at another frequency for its calculations, the template's one is shown.
+const TEMPLATE_FREQUENCY = { MED_ERR_REPORTING_PHARMACISTS: "monthly", PATIENT_EXP_OPD: "quarterly" };
+function templateFrequency(k){ return TEMPLATE_FREQUENCY[k.code] || k.frequency || "daily"; }
+
 function activeKpis(){ return kpis.filter(k => k.active !== false); }
 // KPIs entered only to feed another (e.g. completed maintenance for the completion rate) stay off the dashboard.
 function dashboardKpis(){ return activeKpis().filter(k => !k.entryOnly); }
 
 function computeResults(year, q, cat){
     const dept = document.getElementById("filterDepartment")?.value || "ALL";
-    return dashboardKpis().filter(k => inCategory(k, cat) && (dept === "ALL" || kpiDepartmentId(k) === dept)).map(kpi => {
+    const freq = document.getElementById("filterFrequency")?.value || "ALL";
+    return dashboardKpis().filter(k => inCategory(k, cat) && (dept === "ALL" || kpiDepartmentId(k) === dept)
+        && (freq === "ALL" || templateFrequency(k) === freq)).map(kpi => {
         const act = getPeriodValue(kpi.code, year, q);
         const prev = getPrevValue(kpi.code, year, q);
         const sameY = getSameQPrevYear(kpi.code, year, q);
