@@ -201,6 +201,7 @@
         .key-card:focus-visible { outline: 3px solid rgba(2,132,199,.35); outline-offset: 2px; }
         .key-card .k-title { font-size: 12.5px; font-weight: 900; color: #0b1f33; line-height: 1.4; }
         .key-card .k-value { font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1; }
+        .kpi-value.not-entered, .k-value.not-entered { font-size: 16px; color: #94a3b8; }
         .key-card .k-meta { font-size: 11px; color: #64748b; display: flex; justify-content: space-between; gap: 8px; }
         .key-card .k-meta b { color: #0f172a; }
         .key-wrap { position: relative; display: flex; }
@@ -1392,7 +1393,7 @@ const STORAGE = { targetYears: "ASEER_TARGET_YEARS_V5", view: "ASEER_DASH_VIEW_V
 const LEGACY_STORAGE = { records: "ASEER_KPI_RECORDS_V4", audit: "ASEER_KPI_AUDIT_V4" };
 
 // Shown on the login screen so users can confirm the browser loaded the latest version.
-const APP_VERSION = "الإصدار 4.25 — 2026-11-09";
+const APP_VERSION = "الإصدار 4.26 — 2026-11-10";
 const SECTIONS = ["dashboard", "data", "dataMgmt", "kpis", "targets", "quality", "users", "audit"];
 
 const defaultUsers = [
@@ -2077,8 +2078,10 @@ function indexedRecords(code, year){
         // Every reading counts on the dashboard as soon as it is entered; approval is a monthly sign-off.
         // The facility filter (shown once there is more than one facility) limits the readings counted.
         const fac = document.getElementById("filterFacility")?.value || "ALL", primary = primaryFacilityId();
-        records.forEach(r => {
-            if(fac !== "ALL" && (r.facilityId || primary) !== fac) return;
+        const counted = records.filter(r => fac === "ALL" || (r.facilityId || primary) === fac);
+        const blank = notEnteredMonths(counted);
+        counted.forEach(r => {
+            if(blank.has(r.kpiCode + "|" + String(r.date || "").slice(0, 7))) return;
             if(isNum(r.actualValue) || isNum(r.numerator)){ const d = lastReading.get(r.kpiCode); if(!d || r.date > d) lastReading.set(r.kpiCode, r.date); }
             const key = r.kpiCode + "|" + r.year;
             if(!recordIndex.has(key)) recordIndex.set(key, []);
@@ -2086,6 +2089,35 @@ function indexedRecords(code, year){
         });
     }
     return recordIndex.get(code + "|" + year) || [];
+}
+
+// Months that were not entered: the entry file puts 0 in every cell of a month nobody filled in, so a month whose
+// readings are all zero for a KPI where more is better (e.g. clinic visits, completed maintenance) counts as
+// «غير مدخل» — no value and no achievement, and it is left out of quarter and year results (owner's request, v4.26).
+// Zero stays a real result where less is better (sentinel events, falls). A calculated rate is not entered for a month
+// when one of its sources is not entered, and an all-zero count over a source that was not entered (no-shows over clinic visits) neither.
+function notEnteredMonths(list){
+    const groups = new Map();
+    list.forEach(r => {
+        const key = r.kpiCode + "|" + String(r.date || "").slice(0, 7);
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(r);
+    });
+    const zero = r => !(isNum(r.actualValue) && Number(r.actualValue) !== 0) && !(isNum(r.numerator) && Number(r.numerator) !== 0);
+    const blank = new Set();
+    groups.forEach((rows, key) => {
+        const k = kpis.find(x => x.code === key.split("|")[0]);
+        if(k && !DERIVED_KPIS[k.code] && (k.direction === "higher" || k.direction === "target") && rows.every(zero)) blank.add(key);
+    });
+    const months = new Set([...groups.keys()].map(key => key.split("|")[1]));
+    Object.entries(DERIVED_KPIS).forEach(([code, d]) => {
+        const num = d.num.filter(([, part]) => part === "value").map(([c]) => c), den = (d.den || []).filter(([, part]) => part === "value").map(([c]) => c);
+        months.forEach(m => {
+            if(den.some(c => blank.has(c + "|" + m))){ blank.add(code + "|" + m); num.forEach(c => { const g = groups.get(c + "|" + m); if(g && g.every(zero)) blank.add(c + "|" + m); }); }
+            else if(num.some(c => blank.has(c + "|" + m))) blank.add(code + "|" + m);
+        });
+    });
+    return blank;
 }
 
 // =====================================================================
@@ -3389,7 +3421,7 @@ function targetText(k, tgt){
 }
 
 function getStatus(kpi, act, ach, target){
-    if(act == null) return { key:"gray", label:"بدون بيانات" };
+    if(act == null) return { key:"gray", label:NOT_ENTERED };
     if(kpi.direction === "info") return { key:"gray", label:"مؤشر معلوماتي" };
     if(kpi.direction === "none" || !kpi.direction) return { key:"gray", label:"يحتاج تحديد الاتجاه" };
     if(kpi.direction === "conditional") return { key:"gray", label:"مؤشر مشروط" };
@@ -3437,6 +3469,10 @@ function calcTrend(act, prev, kpi, target){
     return better ? { key:"up", label:"تحسن ↗" } : { key:"down", label:"تراجع ↘" };
 }
 
+// A period with no reading shows «غير مدخل» (not entered), never zero (owner's request, v4.26).
+const NOT_ENTERED = "غير مدخل";
+function actText(val, kpi){ return val == null || !Number.isFinite(Number(val)) ? NOT_ENTERED : fmt(val, kpi); }
+const actHtml = (val, kpi, cls) => val == null || !Number.isFinite(Number(val)) ? `<span class="${cls} not-entered">${NOT_ENTERED}</span>` : `<span class="${cls}">${fmt(val, kpi)}</span>`;
 function fmt(val, kpi){
     if(val == null || !Number.isFinite(Number(val))) return "—";
     return Number(val).toLocaleString("en-US",{maximumFractionDigits: kpi.wholeNumber ? 0 : 2}) + (kpi.unit === "%" ? "%" : "");
@@ -3569,7 +3605,7 @@ function keyKpiCard(k, label, year, selQ){
     const barColor = x => x.status.key === "gray" ? "#94a3b8" : statusColor(x.status.key);
     const tgtText = targetText(k, cur.target);
     const unit = k.unit && k.unit !== "%" ? `<span class="kpi-unit text-[11px] font-bold text-slate-500 mr-1">${escapeHtml(k.unit)}</span>` : "";
-    const tip = x => `${periodName(x.q)}: الفعلي ${fmt(x.act, k)} · المستهدف ${x.target != null ? fmt(x.target, k) : "غير محدد"} · ${x.status.label}`;
+    const tip = x => `${periodName(x.q)}: الفعلي ${actText(x.act, k)} · المستهدف ${x.target != null ? fmt(x.target, k) : "غير محدد"} · ${x.status.label}`;
     const edit = can("editKpi") ? `<button type="button" class="key-edit" onclick="openQuarterModal('${escapeAttr(k.code)}', ${year})" title="تعديل القيم الربعية مباشرة"><i class="fa-solid fa-pen ml-1"></i>تعديل القيم</button>` : "";
     return `<div class="key-wrap">
     <button type="button" class="key-card" style="--status:${color}" onclick="openKpiDetail('${escapeAttr(k.code)}')" aria-label="تفاصيل ${escapeAttr(label)}">
@@ -3581,7 +3617,7 @@ function keyKpiCard(k, label, year, selQ){
             <span class="pill status-${cur.status.key} !py-0.5 !px-2 !text-[10px] shrink-0">${cur.status.label}</span>
         </div>
         <div class="flex items-end justify-between gap-2">
-            <div><span class="k-value">${fmt(cur.act, k)}</span>${cur.act != null ? unit : ""}</div>
+            <div>${actHtml(cur.act, k, "k-value")}${cur.act != null ? unit : ""}</div>
             <div class="text-[10px] text-slate-500 font-bold">${periodName(selQ)}</div>
         </div>
         <div class="k-meta"><span>المستهدف: <b>${tgtText}</b></span><span>${cur.ach != null ? `الإنجاز: <b>${cur.ach.toFixed(0)}%</b>` : ""}</span></div>
@@ -3592,7 +3628,7 @@ function keyKpiCard(k, label, year, selQ){
                     : x.target != null ? `<div class="tgt" style="bottom:${pct(x.target).toFixed(1)}%"></div>` : ""}
             </div>`).join("")}
         </div>
-        <div class="kq-labels" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${fmt(x.act, k)}</b>${manualQuarter(k, year, x.q) != null ? `<span class="kq-manual" title="قيمة معدلة من مدير النظام">✎ يدوي</span>` : ""}</div>`).join("")}</div>
+        <div class="kq-labels" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${actText(x.act, k)}</b>${manualQuarter(k, year, x.q) != null ? `<span class="kq-manual" title="قيمة معدلة من مدير النظام">✎ يدوي</span>` : ""}</div>`).join("")}</div>
         ${edit ? `<div class="h-5"></div>` : ""}
     </button>${edit}</div>`;
 }
@@ -3694,7 +3730,7 @@ function periodColumns(k, year, q, compact){
     const many = pts.length > 6;
     const col = x => {
         const c = x.status.key === "gray" ? "#94a3b8" : statusColor(x.status.key);
-        const tip = `${x.label}${x.y !== Number(year) && q !== "ALL" ? " " + x.y : ""}: ${fmt(x.act, k)}${x.target != null ? ` · المستهدف ${targetText(k, x.target)}` : ""} · ${x.status.label}`;
+        const tip = `${x.label}${x.y !== Number(year) && q !== "ALL" ? " " + x.y : ""}: ${actText(x.act, k)}${x.target != null ? ` · المستهدف ${targetText(k, x.target)}` : ""} · ${x.status.label}`;
         return `<div class="pc-col ${x === sel ? "sel" : ""}" title="${escapeAttr(tip)}">${x.act != null ? `<div class="bar" style="height:${pct(x.act)}%;background:${c}"></div>` : ""}</div>`;
     };
     return `<div class="pc ${compact ? "compact" : ""}">
@@ -3702,7 +3738,7 @@ function periodColumns(k, year, q, compact){
             <div class="pc-bars" style="grid-template-columns:repeat(${pts.length},1fr)">${pts.map(col).join("")}</div>
             ${lines.map(l => `<div class="pc-line" style="bottom:${pct(l.v)}%"><span dir="rtl">${l.html}</span></div>`).join("")}
         </div>
-        <div class="pc-labels" style="grid-template-columns:repeat(${pts.length},1fr)">${pts.map(x => `<div class="${x === sel ? "sel" : ""}">${escapeHtml(x.label)}${!many ? `<b>${fmt(x.act, k)}</b>` : ""}</div>`).join("")}</div>
+        <div class="pc-labels" style="grid-template-columns:repeat(${pts.length},1fr)">${pts.map(x => `<div class="${x === sel ? "sel" : ""}">${escapeHtml(x.label)}${!many ? `<b>${actText(x.act, k)}</b>` : ""}</div>`).join("")}</div>
     </div>`;
 }
 
@@ -3775,7 +3811,7 @@ function kpiCard(r, year){
             <span class="pill status-${r.status.key} !py-0.5 !px-2 !text-[10px] shrink-0">${r.status.label}</span>
         </div>
         <div class="flex items-end justify-between gap-2">
-            <div><span class="kpi-value">${fmt(r.act, k)}</span>${r.act != null ? unit : ""}</div>
+            <div>${actHtml(r.act, k, "kpi-value")}${r.act != null ? unit : ""}</div>
             ${r.act != null && r.prev != null ? trendPill(r.trend) : ""}
         </div>
         <div class="kpi-meta"><span>المستهدف: <b>${targetText(k, tgt)}</b></span><span>${r.ach != null ? `الإنجاز: <b>${r.ach.toFixed(0)}%</b>` : ""}</span></div>
@@ -3886,7 +3922,7 @@ function renderDetailQuarterChart(k){
         type:"line", data:{ labels: pts.map(p => p.label), datasets },
         options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:12 } }, interaction:{ mode:"index", intersect:false },
             scales:{ y:{ position:"right", beginAtZero: k.unit !== "%", ticks:{ callback:v => fmt(v, k) } }, x:{ reverse:true, offset:true, grid:{ display:false } } },
-            plugins:{ legend:{ position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : fmt(c.raw, k)}` } } } }
+            plugins:{ legend:{ position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? NOT_ENTERED : fmt(c.raw, k)}` } } } }
     });
 }
 
@@ -3909,7 +3945,7 @@ function renderDetailMonthChart(k, year){
         ] },
         options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:{ left:12 } }, interaction:{ mode:"index", intersect:false },
             scales:{ y:{ position:"right", beginAtZero:true, ticks:{ callback:v => fmt(v, k) } }, x:{ reverse:true, grid:{ display:false } } },
-            plugins:{ legend:{ display: showTarget, position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? "لا توجد بيانات" : fmt(c.raw, k)}` } } } }
+            plugins:{ legend:{ display: showTarget, position:"bottom" }, tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${c.raw == null ? NOT_ENTERED : fmt(c.raw, k)}` } } } }
     });
 }
 
@@ -3928,7 +3964,7 @@ function renderDetailQuarterTable(k, year){
         const tgt = effectiveTarget(k, y);
         return `<tr><td class="font-black">${y}</td>${cols.map(q => {
             const c = detailCell(k, y, q);
-            return `<td><div class="font-bold text-slate-900">${fmt(c.act, k)}</div>${c.ach != null ? `<div class="text-[10px] font-bold" style="color:${statusColor(c.st.key)}">${c.ach.toFixed(0)}% · ${c.st.label}</div>` : ""}</td>`;
+            return `<td><div class="font-bold ${c.act == null ? "text-slate-400" : "text-slate-900"}">${actText(c.act, k)}</div>${c.ach != null ? `<div class="text-[10px] font-bold" style="color:${statusColor(c.st.key)}">${c.ach.toFixed(0)}% · ${c.st.label}</div>` : ""}</td>`;
         }).join("")}<td class="text-xs">${tgt != null ? fmt(tgt, k) : "—"}<div class="text-[10px] text-slate-400">${targetSource(k, y)}</div></td></tr>`;
     }).join("");
 }
@@ -4108,7 +4144,7 @@ function renderTable(results){
             <tr class="cursor-pointer" title="عرض تفاصيل المؤشر" onclick="openKpiDetail('${escapeAttr(k.code)}')">
                 <td class="kpi-name-cell"><div class="font-bold text-slate-900">${escapeHtml(k.name)}</div><div class="text-[10px] text-slate-400 font-mono">${escapeHtml(k.code)}${staleNote(k)}</div></td>
                 <td>${frequencyName(k.frequency)}</td>
-                <td class="font-extrabold text-slate-900">${fmt(r.act, k)}</td>
+                <td class="font-extrabold ${r.act == null ? "text-slate-400" : "text-slate-900"}">${actText(r.act, k)}</td>
                 <td>${targetLabel(k, r.target)}</td>
                 <td><div class="font-bold">${achStr}</div>${r.ach!=null?`<div class="progress mt-1 w-20"><div style="width:${Math.min(r.ach,100)}%;background:${statusColor(r.status.key)}"></div></div>`:""}</td>
                 <td>${varNum}</td>
@@ -4127,7 +4163,7 @@ function renderCharts(results){
     if(statusChart) statusChart.destroy();
     statusChart = new Chart(document.getElementById("statusChart"), {
         type: 'doughnut',
-        data: { labels: ["محقق", "تحذير", "غير محقق", "بدون بيانات"], datasets:[{ data:[counts.green, counts.yellow, counts.red, counts.gray], backgroundColor:['#10b981','#f59e0b','#ef4444','#cbd5e1'], borderColor:'#ffffff', borderWidth:2 }] },
+        data: { labels: ["محقق", "تحذير", "غير محقق", NOT_ENTERED], datasets:[{ data:[counts.green, counts.yellow, counts.red, counts.gray], backgroundColor:['#10b981','#f59e0b','#ef4444','#cbd5e1'], borderColor:'#ffffff', borderWidth:2 }] },
         options: { responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{ legend:{ position:'bottom' } } }
     });
 
@@ -4228,7 +4264,7 @@ function printKeyKpis(){
         const unit = k.unit && k.unit !== "%" ? `<span class="unit">${escapeHtml(k.unit)}</span>` : "";
         cards.push(`<div class="kp-card" style="--st:${tone[key][0]};--stbg:${tone[key][1]};--stfg:${tone[key][2]}">
             <div class="hd"><div><div class="lb">${escapeHtml(label)}</div><div class="nm">${escapeHtml(k.name)}</div></div><span class="pill2">${escapeHtml(cur.status.label)}</span></div>
-            <div class="row"><div><span class="val">${fmt(cur.act, k)}</span>${cur.act != null ? unit : ""}</div>
+            <div class="row"><div><span class="val">${actText(cur.act, k)}</span>${cur.act != null ? unit : ""}</div>
                 <div class="delta" style="color:${trendColor}">${change != null ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}% عن ${pq === "Q4" && py !== year ? `Q4 ${py}` : pq}` : ""}${cur.act != null && prev != null ? ` · ${escapeHtml(trend.label)}` : ""}</div></div>
             <div class="meta"><span>المستهدف: <b>${targetText(k, cur.target)}</b></span><span>${cur.ach != null ? `الإنجاز: <b>${cur.ach.toFixed(0)}%</b>` : ""}</span></div>
             <div class="kp-bars" ${cols}>${qs.map(x => {
@@ -4236,7 +4272,7 @@ function printKeyKpis(){
                 const lines = band ? band.map(v => `<div class="tg" style="bottom:${pct(v)}%"></div>`).join("") : x.target != null ? `<div class="tg" style="bottom:${pct(x.target)}%"></div>` : "";
                 return `<div class="kp-col ${x.q === selQ ? "sel" : ""}">${x.act != null ? `<div class="bar" style="height:${pct(x.act)}%;background:${c} !important"></div>` : ""}${lines}</div>`;
             }).join("")}</div>
-            <div class="kp-lab" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${fmt(x.act, k)}</b></div>`).join("")}</div>
+            <div class="kp-lab" ${cols}>${qs.map(x => `<div class="${x.q === selQ ? "sel" : ""}">${x.q}<b>${actText(x.act, k)}</b></div>`).join("")}</div>
         </div>`);
     });
     const total = cards.length;
